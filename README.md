@@ -20,7 +20,7 @@ Node.js 22.13以上が必要です。
 
 ## GitHub Pagesで公開
 
-このフォルダには、main へのpushでビルドと公開を行う .github/workflows/pages.yml を入れてあります。
+このフォルダには、main または codex/web-initial へのpushでビルドと公開を行う .github/workflows/pages.yml を入れてあります。
 
 1. GitHubで空のリポジトリを作ります。無料プランでGitHub Pagesを使う場合は、リポジトリをPublicにします。Pagesのサイト自体もインターネットで公開されます。README・.gitignore・ライセンスはGitHub側では追加しません。
 2. リポジトリの Settings → Pages → Build and deployment → Source を GitHub Actions にします。
@@ -32,7 +32,7 @@ Node.js 22.13以上が必要です。
        git remote add origin https://github.com/<アカウント名>/<リポジトリ名>.git
        git push -u origin main
 
-4. Actions タブで Deploy Web が完了すると、公開URLが表示されます。以後 main にpushするたびに更新されます。
+4. Actions タブで Deploy Web が完了すると、公開URLが表示されます。以後 main または codex/web-initial にpushするたびに更新されます。
 
 ## データ保存
 
