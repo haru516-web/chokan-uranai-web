@@ -16,15 +16,7 @@ import { Today } from './Today';
 import { Atlas, Calendar, Chapter, Journal, Myth, NoteEditor, Ranking, Resident, type Note } from './screens';
 import { C, S } from './ui';
 import { findQuestion, type Reflection, type SavedQuestion } from './voyage';
-
-const tabs = [
-  { id: 'today', label: '今日', mark: '☾' },
-  { id: 'questions', label: '問い', mark: '◌' },
-  { id: 'chart', label: '海図', mark: '◈' },
-  { id: 'atlas', label: '図鑑', mark: '✦' },
-  { id: 'journal', label: '航海帳', mark: '⌑' },
-] as const;
-type Tab = typeof tabs[number]['id'];
+import { PetNavigation, type MainTab } from './PetNavigation';
 type Detail =
   | { kind: 'profile'; questionId?: string }
   | { kind: 'question'; id: string; personal?: boolean }
@@ -56,7 +48,7 @@ function Voyage() {
   const [stored, setStored] = useState<Saved>(empty);
   const [inputs, setInputs] = useState<Inputs | null>(null);
   const [today, setToday] = useState(jstToday);
-  const [tab, setTab] = useState<Tab>('questions');
+  const [tab, setTab] = useState<MainTab>('today');
   const [path, setPath] = useState<Detail[]>([]);
   const [todayVisit, setTodayVisit] = useState(0);
   const [selectedQuestionId, setSelectedQuestionId] = useState<string>();
@@ -95,9 +87,10 @@ function Voyage() {
     return () => { clearInterval(timer); subscription.remove(); };
   }, []);
 
-  function go(next: Tab) {
+  function go(next: MainTab) {
     setPath([]);
     setTab(next);
+    setTodayVisit(previous => previous + 1);
     if (Platform.OS === 'ios') void Haptics.selectionAsync().catch(() => {});
   }
   const open = (next: Detail) => setPath(previous => [...previous, next]);
@@ -250,7 +243,7 @@ function Voyage() {
       </View>
       {storageError && <Text accessibilityRole="alert" style={[S.tiny, layout.error]}>端末の保存領域にアクセスできませんでした。この画面で続けられます。</Text>}
       {ready ? <>
-        <ScrollView key={tab === 'today' ? `today-${todayVisit}` : tab} style={[layout.scroll, detail && layout.hidden]} contentContainerStyle={layout.content}
+        <ScrollView key={`${tab}-${todayVisit}`} style={[layout.scroll, detail && layout.hidden]} contentContainerStyle={layout.content}
           keyboardShouldPersistTaps="handled">
           {body}
         </ScrollView>
@@ -260,17 +253,8 @@ function Voyage() {
           {detailBody(entry)}
         </ScrollView>)}
       </> : <View style={[layout.scroll, layout.content]}><Text style={S.body}>海図をひらいています…</Text></View>}
-      <View accessibilityRole="tablist" style={layout.nav}>
-        {tabs.map(item => {
-          const active = tab === item.id;
-          return <Pressable key={item.id} accessibilityRole="tab" aria-selected={active} onPress={() => go(item.id)}
-            style={({ pressed }) => [layout.navItem, active && layout.navActive, pressed && { opacity: 0.65 }]}>
-            <Text aria-hidden style={[layout.mark, active && { color: C.gold }]}>{item.mark}</Text>
-            <Text style={[layout.navLabel, active && { color: C.gold }]}>{item.label}</Text>
-          </Pressable>;
-        })}
-      </View>
     </KeyboardAvoidingView>
+    <PetNavigation seasonIndex={profile?.t.mod ?? null} activeTab={tab} onSelect={go} />
   </SafeAreaView>;
 }
 
@@ -282,12 +266,7 @@ const layout = StyleSheet.create({
   back: { minHeight: 44, justifyContent: 'center', paddingRight: 14 },
   scroll: { flex: 1 },
   hidden: { display: 'none' },
-  content: { padding: 16, paddingBottom: 28 },
-  nav: { flexDirection: 'row', gap: 3, paddingHorizontal: 9, paddingTop: 6, paddingBottom: 5, borderTopWidth: 1, borderTopColor: C.line, backgroundColor: C.panel },
-  navItem: { flex: 1, minHeight: 51, justifyContent: 'center', alignItems: 'center', borderRadius: 13, gap: 2 },
-  navActive: { backgroundColor: C.raised },
-  mark: { color: C.aqua, fontSize: 20, lineHeight: 22 },
-  navLabel: { color: C.muted, fontWeight: '700', fontSize: 11, lineHeight: 16 },
+  content: { padding: 16, paddingBottom: 116 },
   error: { backgroundColor: '#4b2c29', padding: 8, color: C.error },
 });
 
