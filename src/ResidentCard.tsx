@@ -4,9 +4,9 @@ import Svg, { Circle, G, Path, Rect, Text as SvgText, type Svg as SvgHandle } fr
 import { dateLabel, type readDay, type Profile } from './domain';
 import { DailyRank } from './DailyRank';
 import { GodAnimation } from './GodAnimation';
-import { OUTER, SEASON, STAGES } from './scoring';
+import { labelOf, OUTER, SEASON, STAGES } from './scoring';
 import { TideWheel } from './TideCharts';
-import { Button, C, Card, S } from './ui';
+import { Button, C, Card, Chip, Chips, S } from './ui';
 import { headwind, ownResident, residents, vortex } from './voyage';
 
 type Entry = typeof residents[number];
@@ -36,6 +36,13 @@ export function TideMarks({ profile }: { profile: Profile }) {
     {profile.t.A && <><Text style={S.h3}>A　渦の印</Text><Text style={S.body}>{vortex}</Text></>}</>;
 }
 
+export function TypeBadges({ profile }: { profile: Profile }) {
+  return <Chips>
+    <Chip>{profile.t.minus ? '− マイナスあり' : '− マイナスなし'}</Chip>
+    <Chip>{profile.t.A ? 'A 渦あり' : 'A 渦なし'}</Chip>
+  </Chips>;
+}
+
 export function TideSummary({ profile, reading, isToday = true, children }: {
   profile: Profile; reading: ReturnType<typeof readDay>;
   isToday?: boolean; children?: ReactNode;
@@ -44,9 +51,11 @@ export function TideSummary({ profile, reading, isToday = true, children }: {
   const season = profile.t.mod;
   const { context } = reading;
   return <View style={[S.card, S.pad, styles.crest]}>
-    <Text style={S.kicker}>あなたの占いタイプ</Text>
-    <Text style={[S.title, styles.center]} accessibilityRole="header">{entry.band}</Text>
+    <Text style={S.kicker}>あなたの名札</Text>
+    <Text style={[S.title, styles.center]} accessibilityRole="header">{labelOf(profile.t)}</Text>
+    <Text style={[S.h3, styles.center]}>タイプ名　{entry.band}</Text>
     <Text style={[S.body, styles.center]}>{entry.subtitle}</Text>
+    <TypeBadges profile={profile} />
     <Text style={[S.tiny, styles.center]}>{dateLabel(context)}</Text>
     <View style={styles.resultRow}>
       <GodAnimation index={season} style={styles.god} label={SEASON[season].n + 'の神'} />
@@ -115,13 +124,16 @@ export function ShareTideCard({ profile }: { profile: Profile }) {
     <Text style={S.body}>共有する画像に入るのは、ここに表示された内容だけです。</Text>
     <View style={{ alignItems: 'center' }}>
       <Svg ref={svg} width={previewWidth} height={previewWidth * 460 / 420} viewBox="0 0 420 460"
-        accessibilityLabel={`${entry.band}、${entry.subtitle}。 ${entry.hook}`} accessible>
+        accessibilityLabel={`${labelOf(profile.t)}、タイプ名 ${entry.band}。マイナス${profile.t.minus ? 'あり' : 'なし'}、A${profile.t.A ? 'あり' : 'なし'}。${entry.subtitle}。${entry.hook}`} accessible>
         <Rect width={420} height={460} rx={22} fill={C.base} />
         <Rect x={15} y={15} width={390} height={430} rx={16} stroke={C.gold} fill="none" />
-        <SvgText x={210} y={107} fill={C.ink} fontSize={42} fontWeight="bold" textAnchor="middle">{entry.band}</SvgText>
-        <SvgText x={210} y={144} fill={C.gold} fontSize={18} textAnchor="middle">{entry.subtitle}</SvgText>
+        <SvgText x={210} y={107} fill={C.ink} fontSize={38} fontWeight="bold" textAnchor="middle">{labelOf(profile.t)}</SvgText>
+        <SvgText x={210} y={142} fill={C.gold} fontSize={17} textAnchor="middle">{entry.band}</SvgText>
+        <SvgText x={210} y={164} fill={C.aqua} fontSize={13} textAnchor="middle">
+          {`− マイナス${profile.t.minus ? 'あり' : 'なし'} · A 渦${profile.t.A ? 'あり' : 'なし'}`}
+        </SvgText>
         <Path d="M16 224Q113 171 209 227T404 221M16 240Q113 187 209 243T404 237" stroke={C.line} fill="none" />
-        <G transform="translate(158 172) scale(1.3)"><SymbolLines entry={entry} /></G>
+        <G transform="translate(158 202) scale(1.3)"><SymbolLines entry={entry} minus={profile.t.minus} hasVortex={profile.t.A} /></G>
         {hookLines.map((line, i) => <SvgText key={i} x={210} y={318 + 23 * i} fill={C.ink} fontSize={15} textAnchor="middle">{line}</SvgText>)}
         <SvgText x={383} y={418} fill={C.aqua} fontSize={14} textAnchor="end">潮環占い</SvgText>
       </Svg>

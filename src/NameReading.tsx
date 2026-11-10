@@ -1,10 +1,10 @@
 import { Text } from 'react-native';
 import { content, type Profile } from './domain';
 import readingText from './reading-text.json';
-import { TideMarks } from './ResidentCard';
+import { TideMarks, TypeBadges } from './ResidentCard';
 import { labelOf, SEASON, STAGES } from './scoring';
 import { Meter } from './TideCharts';
-import { Card, Chip, Chips, S, Section } from './ui';
+import { Card, S, Section } from './ui';
 import { ownResident, residents } from './voyage';
 
 const seasonOrder = [1, 2, 3, 0];
@@ -17,10 +17,7 @@ export function BornSea({ profile }: { profile: Profile }) {
     <Text style={S.h2}>{resident.hook}</Text>
     <Text style={S.body}>{resident.inner}</Text>
     <Text style={S.tiny}>あなたの名札　{labelOf(t)}</Text>
-    {(t.minus || t.A) && <Chips>
-      {t.minus && <Chip>− 向かい風</Chip>}
-      {t.A && <Chip>A 渦</Chip>}
-    </Chips>}
+    <TypeBadges profile={profile} />
   </Card>;
 }
 
@@ -63,6 +60,7 @@ export function NameReadingDetails({ profile }: { profile: Profile }) {
     <Card>
       <Text style={S.kicker}>参　向かい風と渦</Text>
       <Text style={S.h2}>{labelOf(t)}</Text>
+      <TypeBadges profile={profile} />
       <TideMarks profile={profile} />
       {t.minus && <Text style={S.body}>占術上は向かい風がかかり、暖流・寒流との相性が同じ季節の標準の名札と逆に働きます。</Text>}
       {t.A && <Text style={S.body}>占術上は月の距離に呼応し、個人の読みの振れ幅が大きくなります。</Text>}
