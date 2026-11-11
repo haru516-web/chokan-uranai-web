@@ -54,7 +54,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
   const dayWord = isToday ? '今日' : shortDate(c);
 
   function selectDay(value: number) {
-    setOffset(value);
+    setOffset(Math.min(0, value));
     setShareMessage('');
     setFold(null);
   }
@@ -79,7 +79,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
   const dayNavigation = <View style={S.between}>
     <Chip onPress={() => selectDay(offset - 1)}>‹ 前の日</Chip>
     <Chip active={offset === 0} onPress={() => selectDay(0)}>今日</Chip>
-    <Chip onPress={() => selectDay(offset + 1)}>次の日 ›</Chip>
+    <Text style={S.tiny}>明日の結果は、明日のお楽しみ</Text>
   </View>;
 
   const moonCard = <View style={S.stack}>
