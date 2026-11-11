@@ -61,7 +61,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
 
   async function share() {
     if (!reading) return;
-    const message = ['潮環占い｜' + dateLabel(c), (resident ? resident.band + '（' + resident.subtitle + '）' : labelOf(reading.row.t)) + '　' + reading.row.rank + '位／160 · ' + reading.outlook.title,
+    const message = ['潮環占い｜' + dateLabel(c), (resident ? resident.band + '（' + resident.subtitle + '）名札 ' + labelOf(reading.row.t) : labelOf(reading.row.t)) + '　' + reading.row.rank + '位／160 · ' + reading.outlook.title,
       reading.outlook.line, '今日の一手　' + reading.outlook.action].join('\n');
     try {
       if (Platform.OS === 'web') {
@@ -128,6 +128,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
         {activePerson && !activePerson.me && <Text style={S.tiny}>{activePerson.inputs.name}さんのタイプ</Text>}
         <Text style={styles.typeName}>{resident?.band}</Text>
         <Text style={[S.tiny, { color: tierColor }]}>{resident?.subtitle}</Text>
+        <View style={[styles.tag, { borderColor: tierColor }]}><Text style={styles.tagText}>名札　{labelOf(profile.t)}{profile.t.minus ? '　− 向かい風' : ''}{profile.t.A ? '　A 渦' : ''}</Text></View>
         <Pop delay={120}><Text accessibilityRole="header" style={[styles.tier, { color: tierColor }]}>{tierIcons[reading.layers.day]} {outlook.title}</Text></Pop>
         <Pop delay={240}><Text style={styles.rankLine}><Text style={[styles.rankNum, { color: tierColor }]}>{row.rank}</Text> 位 / 160</Text></Pop>
       </View>
@@ -275,6 +276,8 @@ const styles = StyleSheet.create({
   hero: { borderWidth: 1, borderColor: '#4c5271', borderRadius: 22, padding: 18, gap: 12, backgroundColor: '#141e37' },
   welcome: { color: C.ink, fontSize: 32, lineHeight: 44, fontWeight: '800' },
   poster: { borderWidth: 3, borderRadius: 28, padding: 18, gap: 10, overflow: 'hidden', backgroundColor: '#141e37' },
+  tag: { marginTop: 4, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 14, borderWidth: 1, backgroundColor: '#0f1830' },
+  tagText: { color: C.ink, fontSize: 13, fontWeight: '800' },
   typeName: { color: C.ink, fontSize: 26, lineHeight: 34, fontFamily: rounded, fontWeight: '900' },
   tier: { fontSize: 54, lineHeight: 62, fontFamily: display },
   rankLine: { color: C.muted, fontSize: 18, fontWeight: '800' },
