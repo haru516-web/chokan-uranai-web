@@ -14,12 +14,12 @@ import { findQuestion, nextTideChange, ownResident, revisitQuestion, type Questi
 type Reading = ReturnType<typeof readDay>;
 
 export function Today({ today, profile, goMyth, openCalendar, create, ranks, onSave, questions, reflections, openQuestion, openQuestions, openHomecoming,
-  shareTideCard, selectedQuestion }: {
+  shareTideCard, openSelf, selectedQuestion }: {
   today: Date; profile: Profile | null; goMyth: () => void; openCalendar: (date: Date, mode: 'current' | 'stage') => void;
   create: () => void; ranks: (date: Date) => void; onSave: (day: string) => void;
   questions: SavedQuestion[]; reflections: Reflection[]; openQuestion: (id: string) => void;
   openQuestions: () => void; openHomecoming: (year: number) => void;
-  shareTideCard: () => void;
+  shareTideCard: () => void; openSelf: () => void;
   selectedQuestion?: { question: Question; saved: boolean; toggle: () => void; compare: () => void };
 }) {
   const [offset, setOffset] = useState(0);
@@ -91,6 +91,11 @@ export function Today({ today, profile, goMyth, openCalendar, create, ranks, onS
       </LayeredReading>
       <TideFlow profile={profile} context={c} showCalendar={openCalendar} />
       <DailyAdvice reading={reading} isToday={isToday} />
+      {isToday && <View style={[S.card, S.pad, { borderColor: '#4c6aa8' }]}>
+        <Text style={S.h3}>やりたいこと、今日動く？</Text>
+        <Text style={S.body}>自分の意志と潮を重ねて、自分で決める。</Text>
+        <Button onPress={openSelf}>決めてみる　›</Button>
+      </View>}
       {currentQuestion && <SelectedQuestionReading question={currentQuestion.question} profile={profile} />}
     </>}
     {!!events.length && <Chips>{events.map(event => <Chip key={event}>{event}</Chip>)}</Chips>}

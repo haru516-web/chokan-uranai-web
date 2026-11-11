@@ -5,6 +5,7 @@ import { SEASON } from './scoring';
 
 export const mainTabs = [
   { id: 'today', label: '今日', mark: '☾' },
+  { id: 'self', label: '自分', mark: '◇' },
   { id: 'questions', label: '問い', mark: '◌' },
   { id: 'chart', label: '海図', mark: '◈' },
   { id: 'atlas', label: '図鑑', mark: '✦' },
@@ -144,7 +145,7 @@ export function PetNavigation({ seasonIndex, activeTab, onSelect }: {
   return <div className="pet-navigation-layer" role="group" aria-label="潮環占いの画面メニュー">
     {open && <button type="button" className="pet-menu-scrim" aria-label="メニューを閉じる" onClick={() => setOpen(false)} />}
     {mainTabs.map((item, index) => {
-      const angle = (-90 + index * 72) * Math.PI / 180;
+      const angle = (-90 + index * 360 / mainTabs.length) * Math.PI / 180;
       const x = Math.cos(angle) * orbitRadius;
       const y = Math.sin(angle) * orbitRadius;
       const style = {

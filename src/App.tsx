@@ -18,8 +18,13 @@ import { C, S } from './ui';
 import { findQuestion, type Reflection, type SavedQuestion } from './voyage';
 import { PetNavigation, type MainTab } from './PetNavigation';
 import { Explanation } from './Explanation';
+import { SelfHome, SelfQuiz, SelfResultView, SelfWish } from './SelfPurity';
+import { emptySelf, score, type Move, type SelfState } from './self';
 type Detail =
   | { kind: 'explanation' }
+  | { kind: 'selfQuiz' }
+  | { kind: 'selfResult'; id: number }
+  | { kind: 'selfWish' }
   | { kind: 'profile'; questionId?: string }
   | { kind: 'question'; id: string; personal?: boolean }
   | { kind: 'compare'; id: string }
@@ -35,8 +40,8 @@ type Detail =
   | { kind: 'note'; day: string }
   | { kind: 'rank'; date: Date };
 
-type Saved = { inputs: Inputs | null; notes: Note[]; favorites: number[]; read: number[]; questions: SavedQuestion[]; reflections: Reflection[] };
-const empty: Saved = { inputs: null, notes: [], favorites: [], read: [], questions: [], reflections: [] };
+type Saved = { inputs: Inputs | null; notes: Note[]; favorites: number[]; read: number[]; questions: SavedQuestion[]; reflections: Reflection[]; self: SelfState };
+const empty: Saved = { inputs: null, notes: [], favorites: [], read: [], questions: [], reflections: [], self: emptySelf };
 const storageKey = 'chokan/v1';
 let pendingSave: Promise<void> = Promise.resolve();
 
@@ -63,7 +68,8 @@ function Voyage() {
     let mounted = true;
     AsyncStorage.getItem(storageKey).then(raw => {
       if (!mounted || !raw) return;
-      const data: Saved = { ...empty, ...JSON.parse(raw) };
+      const parsed = JSON.parse(raw);
+      const data: Saved = { ...empty, ...parsed, self: { ...emptySelf, ...parsed.self } };
       if (data.inputs && validate(data.inputs)) data.inputs = null;
       setStored(data);
       setInputs(data.inputs);
@@ -110,6 +116,23 @@ function Voyage() {
   const writeReflection = (year: number, month: number, questionId?: string) => open({ kind: 'reflection', year, month, questionId });
   const editReflection = (record: Reflection) => open({ kind: 'reflection', year: record.year, month: record.month, id: record.id });
 
+  const self = stored.self;
+  const updateSelf = (change: (value: SelfState) => SelfState) => setStored(previous => ({ ...previous, self: change(previous.self) }));
+  const startQuiz = () => open({ kind: 'selfQuiz' });
+  const openWish = () => open({ kind: 'selfWish' });
+
+  function finishQuiz(answers: number[]) {
+    const { p, s } = score(answers);
+    const id = Date.now();
+    updateSelf(value => ({ ...value, results: [{ id, day, p, s, answers }, ...value.results].slice(0, 60) }));
+    setPath(previous => [...previous.slice(0, -1), { kind: 'selfResult', id }]);
+    if (Platform.OS === 'ios') void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+  }
+
+  function saveMove(move: Omit<Move, 'id'>, wish: string) {
+    updateSelf(value => ({ ...value, wish, moves: [{ ...move, id: Date.now() }, ...value.moves].slice(0, 60) }));
+  }
+
   function removeQuestion(id: string, day: string) {
     setStored(previous => ({ ...previous, questions: previous.questions.filter(entry => entry.id !== id || entry.day !== day) }));
   }
@@ -137,7 +160,7 @@ function Voyage() {
     today: <Today today={today} profile={profile} goMyth={openMyth} openCalendar={openCalendar} create={editProfile}
       ranks={openRanking} onSave={openNote} questions={stored.questions} reflections={stored.reflections}
       openQuestion={id => openQuestion(id, true)} openQuestions={() => go('questions')}
-      shareTideCard={() => open({ kind: 'share' })}
+      shareTideCard={() => open({ kind: 'share' })} openSelf={openWish}
       selectedQuestion={selectedQuestion ? {
         question: selectedQuestion,
         saved: stored.questions.some(entry => entry.id === selectedQuestion.id && entry.day === day),
@@ -145,6 +168,10 @@ function Voyage() {
         compare: () => compare(selectedQuestion.id),
       } : undefined}
       openHomecoming={year => open({ kind: 'homecoming', year })} />,
+    self: <SelfHome state={self} profile={profile} today={day} start={startQuiz} openWish={openWish}
+      openResult={id => open({ kind: 'selfResult', id })} goToday={() => go('today')}
+      saveCheck={reason => updateSelf(value => ({ ...value, checks: [{ day, reason }, ...value.checks.filter(check => check.day !== day)].slice(0, 60) }))}
+      saveAfter={(id, after) => updateSelf(value => ({ ...value, moves: value.moves.map(move => move.id === id ? { ...move, after } : move) }))} />,
     questions: <QuestionSea open={openQuestion} create={profile ? undefined : editProfile} />,
     chart: <LifeChart today={today} profile={profile} create={editProfile} calendar={() => openCalendar()}
       write={writeReflection} showToday={() => go('today')} records={stored.reflections} edit={editReflection} />,
@@ -159,6 +186,16 @@ function Voyage() {
     switch (detail.kind) {
       case 'explanation':
         return <Explanation today={today} profile={profile} />;
+      case 'selfQuiz':
+        return <SelfQuiz done={finishQuiz} />;
+      case 'selfResult': {
+        const index = self.results.findIndex(entry => entry.id === detail.id);
+        const result = self.results[index];
+        return result && <SelfResultView result={result} previous={self.results[index + 1]} profile={profile}
+          again={() => setPath(previous => [...previous.slice(0, -1), { kind: 'selfQuiz' }])} openWish={openWish} openHome={() => go('self')} />;
+      }
+      case 'selfWish':
+        return <SelfWish profile={profile} today={today} wish={self.wish} saveMove={saveMove} createProfile={editProfile} finish={() => go('self')} />;
       case 'profile':
         return <ProfileForm title="あなたの海を、ひらきます。" initial={inputs ?? blankInputs} persist={!!stored.inputs}
           onSubmit={(next, remember) => saveProfile(next, remember, detail.questionId)} />;
