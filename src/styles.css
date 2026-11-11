@@ -169,18 +169,22 @@ button, input, textarea, select { font: inherit; }
   .pet-main-button, .pet-orbit-button { transition-duration: 0ms; }
 }
 
-/* 演出アニメーション。OS の「動きを減らす」設定に左右されず動かす（装飾のみ・ゆっくり）。 */
+/* 演出アニメーション。OS の「動きを減らす」設定に左右されず動かす（装飾のみ）。
+   遅延は各要素の inline style(animation-delay) で指定する。 */
 @keyframes fx-pop { 0% { opacity: 0; transform: scale(.8) translateY(16px); } 60% { opacity: 1; transform: scale(1.05) translateY(0); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes fx-slam { 0% { opacity: 0; transform: scale(2.4); filter: blur(6px); } 55% { opacity: 1; transform: scale(.94); filter: blur(0); } 72% { transform: scale(1.04) rotate(-1deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
+@keyframes fx-up { 0% { opacity: 0; transform: translateY(22px); } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes fx-fade { 0% { opacity: 0; } 100% { opacity: 1; } }
 @keyframes fx-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 @keyframes fx-twinkle { 0%, 100% { opacity: .15; transform: scale(.6); } 50% { opacity: 1; transform: scale(1.25); } }
 @keyframes fx-pulse { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
-[data-fx="pop"] { animation: fx-pop .62s cubic-bezier(.2,.8,.2,1) both !important; }
+@keyframes fx-wave { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+[data-fx="pop"] { animation-name: fx-pop !important; animation-duration: .62s !important; animation-timing-function: cubic-bezier(.2,.8,.2,1) !important; animation-fill-mode: both !important; }
+[data-fx="slam"] { animation-name: fx-slam !important; animation-duration: .7s !important; animation-timing-function: cubic-bezier(.2,.9,.2,1) !important; animation-fill-mode: both !important; }
+[data-fx="up"] { animation-name: fx-up !important; animation-duration: .6s !important; animation-timing-function: cubic-bezier(.2,.8,.2,1) !important; animation-fill-mode: both !important; }
+[data-fx="fade"] { animation-name: fx-fade !important; animation-duration: .6s !important; animation-fill-mode: both !important; }
 [data-fx="float"] { animation: fx-float 3.2s ease-in-out infinite !important; }
 [data-fx="twinkle"] { animation: fx-twinkle 2.4s ease-in-out infinite !important; }
 [data-fx="pulse"] { animation: fx-pulse 2.6s ease-in-out infinite !important; }
-[data-fx="pop"][data-d="1"] { animation-delay: 60ms !important; } [data-fx="pop"][data-d="2"] { animation-delay: 120ms !important; }
-[data-fx="pop"][data-d="3"] { animation-delay: 180ms !important; } [data-fx="pop"][data-d="4"] { animation-delay: 240ms !important; }
-[data-fx="pop"][data-d="5"] { animation-delay: 300ms !important; }
-[data-fx="twinkle"][data-d="1"] { animation-delay: 300ms !important; } [data-fx="twinkle"][data-d="2"] { animation-delay: 600ms !important; }
-[data-fx="twinkle"][data-d="3"] { animation-delay: 900ms !important; } [data-fx="twinkle"][data-d="4"] { animation-delay: 1200ms !important; }
-[data-fx="twinkle"][data-d="5"] { animation-delay: 1500ms !important; }
+.fx-wave-a { animation: fx-wave 9s linear infinite; }
+.fx-wave-b { animation: fx-wave 14s linear infinite reverse; }

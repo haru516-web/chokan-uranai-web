@@ -1,6 +1,6 @@
 // 画面に感情の起伏をつくる演出部品（ふわっと登場／きらきら／ゲージ／2軸マップ）。
 // web 専用の CSS アニメーション（RN-web の animationKeyframes）を使う。
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { C } from './ui';
 
@@ -10,8 +10,17 @@ const fx = (name: string, delay = 0) => ({ dataSet: { fx: name, d: delay } }) as
 
 
 /** ふわっと弾んで登場する。 */
+export type RevealKind = 'pop' | 'slam' | 'up' | 'fade';
+/** 時間差で姿を現す。instant なら演出なしで即表示。 */
+export function Reveal({ children, kind = 'pop', delay = 0, style, instant }: {
+  children: ReactNode; kind?: RevealKind; delay?: number; style?: StyleProp<ViewStyle>; instant?: boolean;
+}) {
+  return <View {...(instant ? {} : fx(kind))} style={[instant ? null : anim({ animationDelay: delay + 'ms' }), style]}>{children}</View>;
+}
+
+/** ふわっと弾んで登場する。 */
 export function Pop({ children, delay = 0, style }: { children: ReactNode; delay?: number; style?: StyleProp<ViewStyle> }) {
-  return <View {...fx('pop', Math.round(delay / 60))} style={style}>{children}</View>;
+  return <Reveal kind="pop" delay={delay} style={style}>{children}</Reveal>;
 }
 
 /** ゆらゆら浮かぶ。 */
@@ -109,4 +118,66 @@ export function TierStrip({ level }: { level: number }) {
 /** 枠の内側がゆっくり脈打つように光る（注意が必要な日用）。 */
 export function GlowPulse({ color, radius = 25 }: { color: string; radius?: number }) {
   return <View pointerEvents="none" {...fx('pulse')} style={[StyleSheet.absoluteFill, anim({ borderRadius: radius, boxShadow: `inset 0 0 38px 4px ${color}aa` })]} />;
+}
+
+/** from から to まで数字をカウントする。 */
+export function CountUp({ to, from = 160, delay = 0, duration = 1200, instant, style }: {
+  to: number; from?: number; delay?: number; duration?: number; instant?: boolean; style?: StyleProp<import('react-native').TextStyle>;
+}) {
+  const [value, setValue] = useState(instant ? to : from);
+  useEffect(() => {
+    if (instant) { setValue(to); return; }
+    setValue(from);
+    let frame = 0;
+    const start = performance.now() + delay;
+    const tick = (now: number) => {
+      const progress = Math.min(1, Math.max(0, (now - start) / duration));
+      setValue(Math.round(from + (to - from) * (1 - Math.pow(1 - progress, 3))));
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [to, from, delay, duration, instant]);
+  return <Text style={style}>{value}</Text>;
+}
+
+/** 1文字ずつ打ち出す。レイアウトは最初から全文ぶんを確保して揺れないようにする。 */
+export function TypeText({ text, delay = 0, speed = 30, instant, style }: {
+  text: string; delay?: number; speed?: number; instant?: boolean; style?: StyleProp<import('react-native').TextStyle>;
+}) {
+  const [count, setCount] = useState(instant ? text.length : 0);
+  useEffect(() => {
+    if (instant) { setCount(text.length); return; }
+    setCount(0);
+    let index = 0;
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const starter = setTimeout(() => {
+      timer = setInterval(() => {
+        index += 1;
+        setCount(index);
+        if (index >= text.length && timer) clearInterval(timer);
+      }, speed);
+    }, delay);
+    return () => { clearTimeout(starter); if (timer) clearInterval(timer); };
+  }, [text, delay, speed, instant]);
+  return <Text style={style} accessibilityLabel={text}>
+    <Text>{text.slice(0, count)}</Text><Text style={{ opacity: 0 }}>{text.slice(count)}</Text>
+  </Text>;
+}
+
+function wavePath(amp: number, phase: number) {
+  const points: string[] = [];
+  for (let x = 0; x <= 800; x += 10) points.push((x === 0 ? 'M' : 'L') + x + ' ' + (34 + amp * Math.sin(2 * Math.PI * x / 200 + phase)).toFixed(1));
+  return points.join(' ') + ' L800 80 L0 80 Z';
+}
+/** 下から寄せる波。荒れる日ほど波が高い。 */
+export function Waves({ color, amp = 8 }: { color: string; amp?: number }) {
+  return <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 64, overflow: 'hidden', opacity: 0.32 }}>
+    <div className="fx-wave-a" style={{ position: 'absolute', bottom: 0, left: 0, width: '200%', height: 64 }}>
+      <svg viewBox="0 0 800 80" preserveAspectRatio="none" width="100%" height="64"><path d={wavePath(amp, 0)} fill={color} opacity=".8" /></svg>
+    </div>
+    <div className="fx-wave-b" style={{ position: 'absolute', bottom: 0, left: 0, width: '200%', height: 64 }}>
+      <svg viewBox="0 0 800 80" preserveAspectRatio="none" width="100%" height="64"><path d={wavePath(amp * 0.7, 2)} fill={color} opacity=".6" /></svg>
+    </div>
+  </View>;
 }

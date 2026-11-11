@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import type { ReactNode } from 'react';
 import { currents, scenes, stages } from './art';
@@ -11,11 +11,13 @@ import { ctxFor, FIVE_PHASES, labelOf, OUTER, SEASON, STAGES } from './scoring';
 import { Meter, SeaGlobe } from './TideCharts';
 import { GodAnimation } from './GodAnimation';
 import { PersonSwitcher, type Person } from './People';
-import { Float, glow, GlowPulse, Pop, Sparkles, TierStrip } from './Visual';
+import { CountUp, Float, glow, GlowPulse, Reveal, Sparkles, TierStrip, TypeText, Waves } from './Visual';
 import { Button, C, Card, Chip, Chips, Fold, NextLinks, S, Tile, display, rounded } from './ui';
 import { findQuestion, nextTideChange, ownResident, revisitQuestion, type Question, type Reflection, type SavedQuestion } from './voyage';
 
 type Reading = ReturnType<typeof readDay>;
+// 結果の演出は、その人・その日の初回だけフル再生。再訪は即表示（「もう一度」で再生できる）。
+const seenResults = new Set<string>();
 const tierIcons = ['🎣', '⛵', '🌙', '⚡', '🌀'];
 type FoldId = 'why' | 'me' | 'layers' | 'flow' | 'moon';
 
@@ -36,6 +38,13 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
   const [showScore, setShowScore] = useState(false);
   const toggle = (id: FoldId) => setFold(current => current === id ? null : id);
   const date = addDays(today, offset);
+  const [replay, setReplay] = useState(0);
+  const [skipKey, setSkipKey] = useState('');
+  const seenKey = activeId + '-' + dateKey(date);
+  const playKey = seenKey + '-' + replay;
+  const wasSeen = useMemo(() => replay === 0 && seenResults.has(seenKey), [seenKey, replay]);
+  useEffect(() => { seenResults.add(seenKey); }, [seenKey]);
+  const instant = wasSeen || skipKey === playKey;
   const reading = profile && readDay(date, profile);
   const c = reading?.context ?? ctxFor(date);
   const events = calendarEvents(date, profile);
@@ -120,7 +129,9 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
   const events2 = events;
   const activePerson = people.find(person => person.id === activeId);
   return <View style={S.stack}>
-    <View style={[styles.poster, glow(tierColor), { borderColor: tierColor, boxShadow: pulse(48) } as object]}>
+    <Pressable accessible={false} onPress={() => setSkipKey(playKey)}>
+    <View key={playKey} style={[styles.poster, glow(tierColor), { borderColor: tierColor, boxShadow: pulse(48) } as object]}>
+      <Waves color={tierColor} amp={[5, 7, 9, 15, 20][reading.layers.day]} />
       {danger && <GlowPulse color={tierColor} />}
       <Sparkles color={tierColor} />
       <View style={S.between}>
@@ -128,27 +139,39 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
         <Text style={[S.kicker, { color: C.ink, opacity: .7 }]}>潮環占い</Text>
       </View>
       <View style={{ alignItems: 'center', gap: 2 }}>
-        <Float><GodAnimation forcePlay index={profile.t.mod} style={{ width: 84 }} /></Float>
+        <Reveal kind="pop" instant={instant}><Float><GodAnimation forcePlay index={profile.t.mod} style={{ width: 84 }} /></Float></Reveal>
         {activePerson && !activePerson.me && <Text style={S.tiny}>{activePerson.inputs.name}さんのタイプ</Text>}
-        <Text accessibilityRole="header" style={styles.plate}>{labelOf(profile.t)}</Text>
-        <Text style={styles.typeName}>{resident?.band}</Text>
+        <View accessible accessibilityRole="header" accessibilityLabel={labelOf(profile.t)} style={{ flexDirection: 'row' }}>
+          {[...labelOf(profile.t)].map((char, index) => <Reveal key={index} kind="pop" delay={260 + index * 90} instant={instant}><Text style={styles.plate}>{char}</Text></Reveal>)}
+        </View>
+        <Reveal kind="up" delay={760} instant={instant}><Text style={styles.typeName}>{resident?.band}</Text></Reveal>
       </View>
-      <View style={styles.todayHead}>
-        <View style={[styles.rule, { backgroundColor: tierColor }]} />
-        <Text style={[styles.todayLabel, { color: tierColor }]}>{dayWord}の運勢</Text>
-        <View style={[styles.rule, { backgroundColor: tierColor }]} />
-      </View>
+      <Reveal kind="fade" delay={1000} instant={instant}>
+        <View style={styles.todayHead}>
+          <View style={[styles.rule, { backgroundColor: tierColor }]} />
+          <Text style={[styles.todayLabel, { color: tierColor }]}>{dayWord}の運勢</Text>
+          <View style={[styles.rule, { backgroundColor: tierColor }]} />
+        </View>
+      </Reveal>
       <View style={{ alignItems: 'center', gap: 0 }}>
-        <Pop delay={120}><Text style={[styles.tier, { color: tierColor }]}>{tierIcons[reading.layers.day]} {outlook.title}</Text></Pop>
-        <Pop delay={240}><Text style={styles.rankLine}><Text style={[styles.rankNum, { color: tierColor }]}>{row.rank}</Text> 位 / 160</Text></Pop>
+        <Reveal kind="slam" delay={1200} instant={instant}><Text style={[styles.tier, { color: tierColor }]}>{tierIcons[reading.layers.day]} {outlook.title}</Text></Reveal>
+        <Reveal kind="fade" delay={1500} instant={instant}>
+          <Text style={styles.rankLine}><CountUp to={row.rank} delay={1500} instant={instant} style={[styles.rankNum, { color: tierColor }]} /> 位 / 160</Text>
+        </Reveal>
       </View>
-      <TierStrip level={reading.layers.day} />
-      <Text style={styles.line}>{outlook.line}</Text>
-      <View style={styles.action}>
-        <Text style={S.kicker}>{dayWord}の一手</Text>
-        <Text style={styles.actionText}>{outlook.action}</Text>
-      </View>
+      <Reveal kind="up" delay={2300} instant={instant}><TierStrip level={reading.layers.day} /></Reveal>
+      <TypeText text={outlook.line} delay={2600} speed={26} instant={instant} style={styles.line} />
+      <Reveal kind="up" delay={2600 + outlook.line.length * 26 + 200} instant={instant}>
+        <View style={styles.action}>
+          <Text style={S.kicker}>{dayWord}の一手</Text>
+          <Text style={styles.actionText}>{outlook.action}</Text>
+        </View>
+      </Reveal>
     </View>
+    </Pressable>
+    <Chips>
+      <Chip onPress={() => setReplay(value => value + 1)}>▶ もう一度見る</Chip>
+    </Chips>
     {dayNavigation}
     <PersonSwitcher people={people} activeId={activeId} onSwitch={onSwitch} onAdd={onAdd} onManage={onManage} />
     <Chips>
