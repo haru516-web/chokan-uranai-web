@@ -44,16 +44,16 @@ function Stars({ count, color, play, delay }: { count: number; color: string; pl
   </View>;
 }
 
-export function FortuneAreas({ fortune, dayWord }: { fortune: Fortune; dayWord: string }) {
+export function FortuneAreas({ fortune, dayWord, hideSea }: { fortune: Fortune; dayWord: string; hideSea?: boolean }) {
   const [ref, seen] = useInView<HTMLDivElement>();
   return <View ref={ref as never} style={S.stack}>
-    <View style={S.card}>
+    {!hideSea && <View style={S.card}>
       {tierArt[fortune.level] && <Art source={tierArt[fortune.level]!} height={140} />}
       <View style={styles.sea}>
         <Text style={S.kicker}>{dayWord}の海のようす</Text>
         <Text style={styles.seaText}>{fortune.sea}</Text>
       </View>
-    </View>
+    </View>}
     <View style={styles.grid}>
       {fortune.areas.map((area, index) => <View key={area.id} {...(seen ? fx('pop') : {})}
         style={[S.card, styles.area, asStyle(seen ? { animationDelay: index * 110 + 'ms', borderColor: area.color + '66' } : { opacity: 0 })]}>
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   sea: { padding: 16, gap: 6, backgroundColor: '#15213d' },
   seaText: { color: C.ink, fontSize: 17, lineHeight: 29, fontFamily: rounded, fontWeight: '700' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  area: { flexGrow: 1, flexBasis: '46%', minWidth: 150, padding: 14, gap: 6 },
+  area: { flexGrow: 1, flexBasis: '46%', minWidth: 128, padding: 14, gap: 6 },
   areaIcon: { width: 36, height: 36, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   areaText: { color: C.muted, fontSize: 14, lineHeight: 23 },
   best: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 9 },
