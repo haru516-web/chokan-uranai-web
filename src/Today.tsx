@@ -10,6 +10,7 @@ import { TideFlow } from './ResidentCard';
 import { ctxFor, FIVE_PHASES, labelOf, OUTER, SEASON, STAGES } from './scoring';
 import { Meter, SeaGlobe } from './TideCharts';
 import { GodAnimation } from './GodAnimation';
+import { PersonSwitcher, type Person } from './People';
 import { Float, glow, Pop, RankGauge, Sparkles } from './Visual';
 import { Button, C, Card, Chip, Chips, Fold, NextLinks, S, Tile } from './ui';
 import { findQuestion, nextTideChange, ownResident, revisitQuestion, type Question, type Reflection, type SavedQuestion } from './voyage';
@@ -18,8 +19,9 @@ type Reading = ReturnType<typeof readDay>;
 const tierIcons = ['🎣', '⛵', '🌙', '⚡', '🌀'];
 type FoldId = 'why' | 'me' | 'layers' | 'flow' | 'moon';
 
-export function Today({ today, profile, goMyth, openCalendar, create, ranks, onSave, questions, reflections, openQuestion, openQuestions, openHomecoming,
+export function Today({ people, activeId, onSwitch, onAdd, onManage, today, profile, goMyth, openCalendar, create, ranks, onSave, questions, reflections, openQuestion, openQuestions, openHomecoming,
   shareTideCard, goSelf, openExplanation, startQuiz, selfLast, selectedQuestion }: {
+  people: Person[]; activeId: number | null; onSwitch: (id: number) => void; onAdd: () => void; onManage: () => void;
   today: Date; profile: Profile | null; goMyth: () => void; openCalendar: (date: Date, mode: 'current' | 'stage') => void;
   create: () => void; ranks: (date: Date) => void; onSave: (day: string) => void;
   questions: SavedQuestion[]; reflections: Reflection[]; openQuestion: (id: string) => void;
@@ -113,12 +115,14 @@ export function Today({ today, profile, goMyth, openCalendar, create, ranks, onS
   const { outlook, row } = reading;
   const tierColor = tierColors[reading.layers.day];
   const events2 = events;
+  const activePerson = people.find(person => person.id === activeId);
   return <View style={S.stack}>
+    <PersonSwitcher people={people} activeId={activeId} onSwitch={onSwitch} onAdd={onAdd} onManage={onManage} />
     <View style={[styles.hero, glow(tierColor), { borderColor: tierColor, overflow: 'hidden' }]}>
       {reading.layers.day <= 1 && <Sparkles color={tierColor} />}
       <View style={S.between}>
         <Text style={S.kicker}>{dateLabel(c)}</Text>
-        <Text style={S.tiny}>{resident?.band}</Text>
+        <Text style={S.tiny}>{(activePerson && !activePerson.me ? activePerson.inputs.name + 'さん · ' : '') + (resident?.band ?? '')}</Text>
       </View>
       <View style={S.between}>
         <View style={{ flex: 1, gap: 2 }}>

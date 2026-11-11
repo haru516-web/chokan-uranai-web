@@ -294,14 +294,8 @@ export function Journal({ profile, notes, edit, pair, create, openNote, showToda
       <ReflectionCards records={reflections} edit={editReflection} />
     </>}
     <Fold title="私の潮札・データの管理" hint={resident ? resident.band + '・端末に保存中' : '未作成'} open={fold === 'data'} onToggle={() => setFold(fold === 'data' ? null : 'data')}>
-      {profile && resident ? <>
-        <Text style={S.h3}>{resident.band}</Text>
-        <Text style={S.body}>{resident.subtitle}　名札 {labelOf(profile.t)}</Text>
-        <Button quiet onPress={edit}>入力内容を変更</Button>
-        {confirm ? <View style={S.stack}><Text style={S.body}>この端末の潮札と入力内容を削除しますか？</Text>
-          <Chips><Chip onPress={() => setConfirm(false)}>キャンセル</Chip><Chip active onPress={() => { onForget(); setConfirm(false); }}>潮札を削除</Chip></Chips>
-        </View> : <Chip onPress={() => setConfirm(true)}>潮札を削除する</Chip>}
-      </> : <Button onPress={edit}>潮札をつくる</Button>}
+      <Text style={S.body}>登録した人の入力内容や、記録のすべてを消せます。</Text>
+      <Button quiet onPress={onForget}>人の管理・データのリセット</Button>
       <Button quiet onPress={pair}>二人の海をみる</Button>
     </Fold>
     <Fold title="潮環占いについて" hint="占いの位置づけ・出典" open={fold === 'about'} onToggle={() => setFold(fold === 'about' ? null : 'about')}>

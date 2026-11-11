@@ -22,9 +22,10 @@ const detailTitles: Record<string, string> = {
   explanation: '仕組みの解説', selfQuiz: '診断', selfResult: '診断の結果', selfWish: '意志を潮に乗せる', profile: '自分の海をひらく',
   question: '問いを読む', compare: 'あの頃の海と比べる', homecoming: '帰郷の年', reflection: '振り返りを書く', trail: '問いの記録',
   share: '潮札を共有', calendar: '運勢の流れ', myth: '潮環神話', pair: '相性を見る', resident: '住人の紹介', chapter: '神話を読む',
-  note: '航海帳に記す', rank: '160名札の順位',
+  note: '航海帳に記す', rank: '160名札の順位', people: '人の管理・リセット',
 };
 import { Explanation } from './Explanation';
+import { PeopleManager, PersonSwitcher, type Person } from './People';
 import { SelfHome, SelfQuiz, SelfResultView, SelfWish } from './SelfPurity';
 import { emptySelf, quadOf, quads, score, type Move, type SelfState } from './self';
 type Detail =
@@ -32,7 +33,8 @@ type Detail =
   | { kind: 'selfQuiz' }
   | { kind: 'selfResult'; id: number }
   | { kind: 'selfWish' }
-  | { kind: 'profile'; questionId?: string }
+  | { kind: 'profile'; questionId?: string; add?: boolean }
+  | { kind: 'people' }
   | { kind: 'question'; id: string; personal?: boolean }
   | { kind: 'compare'; id: string }
   | { kind: 'homecoming'; year: number }
@@ -47,8 +49,8 @@ type Detail =
   | { kind: 'note'; day: string }
   | { kind: 'rank'; date: Date };
 
-type Saved = { inputs: Inputs | null; notes: Note[]; favorites: number[]; read: number[]; questions: SavedQuestion[]; reflections: Reflection[]; self: SelfState };
-const empty: Saved = { inputs: null, notes: [], favorites: [], read: [], questions: [], reflections: [], self: emptySelf };
+type Saved = { inputs: Inputs | null; people: Person[]; notes: Note[]; favorites: number[]; read: number[]; questions: SavedQuestion[]; reflections: Reflection[]; self: SelfState };
+const empty: Saved = { inputs: null, people: [], notes: [], favorites: [], read: [], questions: [], reflections: [], self: emptySelf };
 const storageKey = 'chokan/v1';
 let pendingSave: Promise<void> = Promise.resolve();
 
@@ -61,14 +63,19 @@ function Voyage() {
   const [ready, setReady] = useState(false);
   const [storageError, setStorageError] = useState(false);
   const [stored, setStored] = useState<Saved>(empty);
-  const [inputs, setInputs] = useState<Inputs | null>(null);
+  const [people, setPeople] = useState<Person[]>([]);
+  const [activeId, setActiveId] = useState<number | null>(null);
   const [today, setToday] = useState(jstToday);
   const [tab, setTab] = useState<MainTab>('today');
   const [path, setPath] = useState<Detail[]>([]);
   const [todayVisit, setTodayVisit] = useState(0);
   const [selectedQuestionId, setSelectedQuestionId] = useState<string>();
   const detail = path[path.length - 1];
+  const active = people.find(person => person.id === activeId) ?? null;
+  const inputs = active?.inputs ?? null;
   const profile = inputs ? makeProfile(inputs) : null;
+  const me = people.find(person => person.me) ?? people[0];
+  const meProfile = me ? makeProfile(me.inputs) : null;
   const selectedQuestion = findQuestion(selectedQuestionId);
   const day = dateKey(today);
 
@@ -83,10 +90,14 @@ function Voyage() {
       if (!mounted || !raw) return;
       const parsed = JSON.parse(raw);
       const data: Saved = { ...empty, ...parsed, self: { ...emptySelf, ...parsed.self } };
-      if (data.inputs && validate(data.inputs)) data.inputs = null;
+      let list: Person[] = Array.isArray(parsed.people) ? parsed.people.filter((person: Person) => person?.inputs && !validate(person.inputs)) : [];
+      if (!list.length && parsed.inputs && !validate(parsed.inputs)) list = [{ id: 1, inputs: parsed.inputs, me: true, saved: true }];
+      data.inputs = null;
+      data.people = list;
       setStored(data);
-      setInputs(data.inputs);
-      if (data.inputs) setTab('today');
+      setPeople(list);
+      setActiveId((list.find(person => person.me) ?? list[0])?.id ?? null);
+      if (list.length) setTab('today');
     }).catch(() => { if (mounted) setStorageError(true); })
       .finally(() => { if (mounted) setReady(true); });
     return () => { mounted = false; };
@@ -159,9 +170,34 @@ function Voyage() {
     }));
   }
 
-  function saveProfile(next: Inputs, remember: boolean, questionId?: string) {
-    setInputs(next);
-    setStored(previous => ({ ...previous, inputs: remember ? next : null }));
+  function commitPeople(next: Person[], nextActive: number | null) {
+    setPeople(next);
+    setActiveId(nextActive);
+    setStored(previous => ({ ...previous, inputs: null, people: next.filter(person => person.saved) }));
+  }
+
+  function removePerson(id: number) {
+    const next = people.filter(person => person.id !== id);
+    commitPeople(next, id === activeId ? ((next.find(person => person.me) ?? next[0])?.id ?? null) : activeId);
+  }
+
+  function resetAll() {
+    setPeople([]);
+    setActiveId(null);
+    setSelectedQuestionId(undefined);
+    setStored({ ...empty });
+    setPath([]);
+    setTab('today');
+    setTodayVisit(previous => previous + 1);
+  }
+
+  function saveProfile(next: Inputs, remember: boolean, questionId?: string, add?: boolean) {
+    if (add || !active) {
+      const person: Person = { id: Date.now(), inputs: next, me: people.length === 0, saved: remember };
+      commitPeople([...people, person], person.id);
+    } else {
+      commitPeople(people.map(entry => entry.id === active.id ? { ...entry, inputs: next, saved: remember } : entry), active.id);
+    }
     setSelectedQuestionId(questionId);
     setTodayVisit(previous => previous + 1);
     setPath([]);
@@ -170,7 +206,8 @@ function Voyage() {
   }
 
   const body = {
-    today: <Today today={today} profile={profile} goMyth={openMyth} openCalendar={openCalendar} create={editProfile}
+    today: <Today people={people} activeId={activeId} onSwitch={id => { setActiveId(id); setTodayVisit(previous => previous + 1); }}
+      onAdd={() => open({ kind: 'profile', add: true })} onManage={() => open({ kind: 'people' })} today={today} profile={profile} goMyth={openMyth} openCalendar={openCalendar} create={editProfile}
       ranks={openRanking} onSave={openNote} questions={stored.questions} reflections={stored.reflections}
       openQuestion={id => openQuestion(id, true)} openQuestions={() => go('questions')}
       shareTideCard={() => open({ kind: 'share' })} goSelf={() => go('self')}
@@ -183,7 +220,7 @@ function Voyage() {
         compare: () => compare(selectedQuestion.id),
       } : undefined}
       openHomecoming={year => open({ kind: 'homecoming', year })} />,
-    self: <SelfHome state={self} profile={profile} today={day} start={startQuiz} openWish={openWish}
+    self: <SelfHome state={self} profile={meProfile} today={day} start={startQuiz} openWish={openWish}
       openResult={id => open({ kind: 'selfResult', id })} goToday={() => go('today')}
       saveCheck={reason => updateSelf(value => ({ ...value, checks: [{ day, reason }, ...value.checks.filter(check => check.day !== day)].slice(0, 60) }))}
       saveAfter={(id, after) => updateSelf(value => ({ ...value, moves: value.moves.map(move => move.id === id ? { ...move, after } : move) }))} />,
@@ -194,7 +231,7 @@ function Voyage() {
     journal: <Journal profile={profile} notes={stored.notes} edit={editProfile} pair={() => open({ kind: 'pair' })} showToday={() => go('today')}
       questions={stored.questions} reflections={stored.reflections} openTrail={openTrail} editReflection={editReflection} openChart={() => go('chart')}
       create={() => openNote(dateKey(today))} openNote={openNote} goSelf={() => go('self')} selfCount={self.results.length}
-      onForget={() => { setInputs(null); setSelectedQuestionId(undefined); setStored(previous => ({ ...previous, inputs: null })); }} />,
+      onForget={() => open({ kind: 'people' })} />,
   }[tab];
 
   function detailBody(detail: Detail) {
@@ -206,14 +243,18 @@ function Voyage() {
       case 'selfResult': {
         const index = self.results.findIndex(entry => entry.id === detail.id);
         const result = self.results[index];
-        return result && <SelfResultView result={result} previous={self.results[index + 1]} profile={profile}
+        return result && <SelfResultView result={result} previous={self.results[index + 1]} profile={meProfile}
           again={() => setPath(previous => [...previous.slice(0, -1), { kind: 'selfQuiz' }])} openWish={openWish} openHome={() => go('self')} />;
       }
       case 'selfWish':
-        return <SelfWish profile={profile} today={today} wish={self.wish} saveMove={saveMove} createProfile={editProfile} finish={() => go('self')} />;
+        return <SelfWish profile={meProfile} today={today} wish={self.wish} saveMove={saveMove} createProfile={editProfile} finish={() => go('self')} />;
       case 'profile':
-        return <ProfileForm title="あなたの海を、ひらきます。" initial={inputs ?? blankInputs} persist={!!stored.inputs}
-          onSubmit={(next, remember) => saveProfile(next, remember, detail.questionId)} />;
+        return <ProfileForm title={detail.add ? '友人・気になる人を占う' : 'あなたの海を、ひらきます。'} initial={detail.add ? blankInputs : inputs ?? blankInputs}
+          persist={detail.add ? false : active ? active.saved : true} submitLabel={detail.add ? 'この人を占う' : undefined}
+          onSubmit={(next, remember) => saveProfile(next, remember, detail.questionId, detail.add)} />;
+      case 'people':
+        return <PeopleManager people={people} activeId={activeId} select={id => { setActiveId(id); go('today'); }} remove={removePerson}
+          add={() => open({ kind: 'profile', add: true })} resetAll={resetAll} />;
       case 'question': {
         const question = findQuestion(detail.id);
         return question && <QuestionAnswer question={question} profile={profile} today={today} personal={!!detail.personal && !!profile}
