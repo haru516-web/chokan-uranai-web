@@ -113,11 +113,14 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
 
   /* ---------- 結論ファースト ---------- */
   const { outlook, row } = reading;
-  const tierColor = tierColors[reading.layers.day];
+  // 荒波・轟沈は「注意」を赤で示し、ゆっくり脈打つ光で目を引く。
+  const tierColor = ['#efd393', '#b6dfc4', '#c1d2ef', '#ff5a4d', '#e0245e'][reading.layers.day];
+  const danger = reading.layers.day >= 3;
+  const pulse = (spread: number) => `0 0 0 1px ${tierColor}66, 0 0 ${spread}px ${tierColor}${spread > 40 ? '99' : '55'}`;
   const events2 = events;
   const activePerson = people.find(person => person.id === activeId);
   return <View style={S.stack}>
-    <View style={[styles.poster, glow(tierColor), { borderColor: tierColor, boxShadow: '0 0 0 1px ' + tierColor + '66, 0 0 48px ' + tierColor + '55' } as object]}>
+    <View style={[styles.poster, glow(tierColor), { borderColor: tierColor, boxShadow: pulse(48), ...(danger ? { animationKeyframes: { '0%': { boxShadow: pulse(18) }, '50%': { boxShadow: pulse(56) }, '100%': { boxShadow: pulse(18) } }, animationDuration: '2.6s', animationIterationCount: 'infinite', animationTimingFunction: 'ease-in-out' } : {}) } as object]}>
       <Sparkles color={tierColor} />
       <View style={S.between}>
         <Text style={S.kicker}>{dateLabel(c)}</Text>

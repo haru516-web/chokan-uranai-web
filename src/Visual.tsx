@@ -116,7 +116,7 @@ export function QuadMap({ p, s, prev, quads }: {
 }
 
 const tierNames = ['大漁', '順風', '凪', '荒波', '轟沈'];
-const tierCols = ['#efd393', '#b6dfc4', '#c1d2ef', '#e3af92', '#e0a5b3'];
+const tierCols = ['#efd393', '#b6dfc4', '#c1d2ef', '#ff5a4d', '#e0245e'];
 /** 5段階のどこにいるかを、色つきの帯で見せる。今日の段階だけ強調。 */
 export function TierStrip({ level }: { level: number }) {
   return <View style={{ flexDirection: 'row', gap: 5 }} accessible accessibilityLabel={'今日は5段階中、' + tierNames[level]}>
