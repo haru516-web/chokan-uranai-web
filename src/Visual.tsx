@@ -29,9 +29,10 @@ export function Float({ children, style }: { children: ReactNode; style?: StyleP
   return <View {...fx('float')} style={style}>{children}</View>;
 }
 
+// 文字と重ならないよう、星は左右の余白にだけ置く。
 const stars = [
-  { l: '6%', t: '10%', d: 0, s: 16 }, { l: '88%', t: '8%', d: 400, s: 20 }, { l: '78%', t: '46%', d: 900, s: 12 },
-  { l: '14%', t: '64%', d: 300, s: 14 }, { l: '92%', t: '78%', d: 1200, s: 16 }, { l: '48%', t: '4%', d: 700, s: 12 },
+  { l: '2%', t: '8%', d: 0, s: 14 }, { l: '93%', t: '6%', d: 400, s: 18 }, { l: '94%', t: '36%', d: 900, s: 12 },
+  { l: '3%', t: '42%', d: 300, s: 12 }, { l: '93%', t: '62%', d: 1200, s: 14 }, { l: '2%', t: '70%', d: 700, s: 16 },
 ];
 /** 背景にまたたく星。祝いたい場面（大漁・診断結果）に。 */
 export function Sparkles({ color = C.gold }: { color?: string }) {
@@ -203,7 +204,7 @@ export function Waves({ color, level }: { color: string; level: number }) {
   const sea = SEAS[level];
   const h = sea.height;
   const unit = 100; // viewBox の高さ
-  return <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: h, overflow: 'hidden', opacity: sea.op + 0.1 }}>
+  return <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: h, overflow: 'hidden', borderBottomLeftRadius: 25, borderBottomRightRadius: 25, opacity: sea.op + 0.1 }}>
     <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: h, ...(sea.heave ? { animation: `fx-heave ${sea.heave}s ease-in-out infinite` } : {}) }}>
       {Array.from({ length: sea.layers }, (_, layer) => {
         const front = layer === sea.layers - 1;

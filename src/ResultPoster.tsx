@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
-import { callGod } from './WanderingGod';
+import { GodAnimation } from './GodAnimation';
 import type { readDay } from './domain';
 import { labelOf } from './scoring';
 import { C, display, rounded, S } from './ui';
 import { imeSegmentsFor } from './kana';
-import { Burst, fx, glow, GlowPulse, ImeText, imeDuration, Reveal, Sparkles, TierStrip, TypeText, Waves } from './Visual';
+import { Burst, Float, fx, glow, GlowPulse, ImeText, imeDuration, Reveal, Sparkles, TierStrip, TypeText, Waves } from './Visual';
 
 type Reading = ReturnType<typeof readDay>;
 
@@ -48,10 +48,6 @@ export function ResultPoster({ reading, band, personName, dateText, dayWord, ins
     return () => cancelAnimationFrame(frame);
   }, [rank, instant]);
 
-  // 神様は画面全体を漂う存在。結果が出るとき画面の真ん中から覗き、確定の瞬間に跳ねる。
-  useEffect(() => { if (!instant) callGod('peek'); }, [instant]);
-  useEffect(() => { if (done && !instant) callGod('jump'); }, [done, instant]);
-
   const level = done ? finalLevel : levelOfRank(value);
   const color = COLORS[level];
   const danger = done && finalLevel >= 3;
@@ -77,6 +73,10 @@ export function ResultPoster({ reading, band, personName, dateText, dayWord, ins
       <Text style={[S.kicker, { color: C.ink, opacity: .7 }]}>潮環占い</Text>
     </View>
     <View style={{ alignItems: 'center', gap: 2 }}>
+      {/* 神様の定位置（文字と重ならない専用の場所）。結果が出るときは、近くから覗いて離れ、ここに収まる。 */}
+      <View {...(instant ? {} : fx('peek'))} style={{ width: 84, marginBottom: 4 }}>
+        <View {...(confirm ? fx('jump') : {})}><Float><GodAnimation forcePlay index={reading.row.t.mod} style={{ width: 84 }} /></Float></View>
+      </View>
       {personName && <Text style={S.tiny}>{personName}さんのタイプ</Text>}
       <View accessible accessibilityRole="header" accessibilityLabel={labelOf(reading.row.t)} style={{ flexDirection: 'row' }}>
         {plate.map((char, index) => <Reveal key={index} kind="pop" delay={260 + o + index * 90} instant={instant}>
@@ -117,7 +117,7 @@ export function ResultPoster({ reading, band, personName, dateText, dayWord, ins
 }
 
 const styles = StyleSheet.create({
-  poster: { borderWidth: 3, borderRadius: 28, padding: 18, paddingBottom: 64, gap: 12, overflow: 'hidden', backgroundColor: '#141e37' },
+  poster: { borderWidth: 3, borderRadius: 28, padding: 18, paddingBottom: 64, gap: 12, backgroundColor: '#141e37' },
   plate: { color: C.ink, fontSize: 58, lineHeight: 66, fontFamily: display, textAlign: 'center' },
   typeName: { color: C.ink, fontSize: 20, lineHeight: 28, textAlign: 'center', fontFamily: rounded, fontWeight: '900' },
   todayHead: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 2 },
