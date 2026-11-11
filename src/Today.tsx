@@ -11,7 +11,8 @@ import { ctxFor, FIVE_PHASES, labelOf, OUTER, SEASON, STAGES } from './scoring';
 import { Meter, SeaGlobe } from './TideCharts';
 import { GodAnimation } from './GodAnimation';
 import { PersonSwitcher, type Person } from './People';
-import { CountUp, Float, glow, GlowPulse, Reveal, Sparkles, TierStrip, TypeText, Waves } from './Visual';
+import { ResultPoster } from './ResultPoster';
+import { Float, glow, Sparkles } from './Visual';
 import { Button, C, Card, Chip, Chips, Fold, NextLinks, S, Tile, display, rounded } from './ui';
 import { findQuestion, nextTideChange, ownResident, revisitQuestion, type Question, type Reflection, type SavedQuestion } from './voyage';
 
@@ -130,44 +131,8 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
   const activePerson = people.find(person => person.id === activeId);
   return <View style={S.stack}>
     <Pressable accessible={false} onPress={() => setSkipKey(playKey)}>
-    <View key={playKey} style={[styles.poster, glow(tierColor), { borderColor: tierColor, boxShadow: pulse(48) } as object]}>
-      <Waves color={tierColor} amp={[5, 7, 9, 15, 20][reading.layers.day]} />
-      {danger && <GlowPulse color={tierColor} />}
-      <Sparkles color={tierColor} />
-      <View style={S.between}>
-        <Text style={S.kicker}>{dateLabel(c)}</Text>
-        <Text style={[S.kicker, { color: C.ink, opacity: .7 }]}>潮環占い</Text>
-      </View>
-      <View style={{ alignItems: 'center', gap: 2 }}>
-        <Reveal kind="pop" instant={instant}><Float><GodAnimation forcePlay index={profile.t.mod} style={{ width: 84 }} /></Float></Reveal>
-        {activePerson && !activePerson.me && <Text style={S.tiny}>{activePerson.inputs.name}さんのタイプ</Text>}
-        <View accessible accessibilityRole="header" accessibilityLabel={labelOf(profile.t)} style={{ flexDirection: 'row' }}>
-          {[...labelOf(profile.t)].map((char, index) => <Reveal key={index} kind="pop" delay={260 + index * 90} instant={instant}><Text style={styles.plate}>{char}</Text></Reveal>)}
-        </View>
-        <Reveal kind="up" delay={760} instant={instant}><Text style={styles.typeName}>{resident?.band}</Text></Reveal>
-      </View>
-      <Reveal kind="fade" delay={1000} instant={instant}>
-        <View style={styles.todayHead}>
-          <View style={[styles.rule, { backgroundColor: tierColor }]} />
-          <Text style={[styles.todayLabel, { color: tierColor }]}>{dayWord}の運勢</Text>
-          <View style={[styles.rule, { backgroundColor: tierColor }]} />
-        </View>
-      </Reveal>
-      <View style={{ alignItems: 'center', gap: 0 }}>
-        <Reveal kind="slam" delay={1200} instant={instant}><Text style={[styles.tier, { color: tierColor }]}>{tierIcons[reading.layers.day]} {outlook.title}</Text></Reveal>
-        <Reveal kind="fade" delay={1500} instant={instant}>
-          <Text style={styles.rankLine}><CountUp to={row.rank} delay={1500} instant={instant} style={[styles.rankNum, { color: tierColor }]} /> 位 / 160</Text>
-        </Reveal>
-      </View>
-      <Reveal kind="up" delay={2300} instant={instant}><TierStrip level={reading.layers.day} /></Reveal>
-      <TypeText text={outlook.line} delay={2600} speed={26} instant={instant} style={styles.line} />
-      <Reveal kind="up" delay={2600 + outlook.line.length * 26 + 200} instant={instant}>
-        <View style={styles.action}>
-          <Text style={S.kicker}>{dayWord}の一手</Text>
-          <Text style={styles.actionText}>{outlook.action}</Text>
-        </View>
-      </Reveal>
-    </View>
+      <ResultPoster key={playKey + (instant ? 'i' : '')} reading={reading} band={resident?.band} dateText={dateLabel(c)} dayWord={dayWord}
+        personName={activePerson && !activePerson.me ? activePerson.inputs.name : undefined} instant={instant} />
     </Pressable>
     <Chips>
       <Chip onPress={() => setReplay(value => value + 1)}>▶ もう一度見る</Chip>

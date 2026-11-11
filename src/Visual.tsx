@@ -2,11 +2,11 @@
 // web 専用の CSS アニメーション（RN-web の animationKeyframes）を使う。
 import { useEffect, useState, type ReactNode } from 'react';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
-import { C } from './ui';
+import { C, display as displayFont } from './ui';
 
 const anim = (style: object) => style as unknown as ViewStyle;
 /** CSS 側（styles.css）で定義したアニメーションを data 属性で当てる。 */
-const fx = (name: string, delay = 0) => ({ dataSet: { fx: name, d: delay } }) as object;
+export const fx = (name: string, delay = 0) => ({ dataSet: { fx: name, d: delay } }) as object;
 
 
 /** ふわっと弾んで登場する。 */
@@ -105,13 +105,24 @@ export function QuadMap({ p, s, prev, quads }: {
 
 const tierNames = ['大漁', '順風', '凪', '荒波', '轟沈'];
 const tierCols = ['#efd393', '#b6dfc4', '#c1d2ef', '#ff5a4d', '#e0245e'];
-/** 5段階のどこにいるかを、色つきの帯で見せる。今日の段階だけ強調。 */
+/** 5段階を並べ、いまの段階だけ大きく強調する。 */
 export function TierStrip({ level }: { level: number }) {
-  return <View style={{ flexDirection: 'row', gap: 5 }} accessible accessibilityLabel={'今日は5段階中、' + tierNames[level]}>
-    {tierNames.map((name, index) => <View key={name} style={{ flex: index === level ? 1.6 : 1, gap: 4, alignItems: 'center' }}>
-      <View style={{ height: index === level ? 12 : 7, alignSelf: 'stretch', borderRadius: 6, backgroundColor: tierCols[index], opacity: index === level ? 1 : 0.3 }} />
-      <Text style={{ fontSize: 11, fontWeight: '800', color: index === level ? tierCols[index] : '#6c7896' }}>{name}</Text>
-    </View>)}
+  return <View style={{ flexDirection: 'row', gap: 5, alignItems: 'flex-end' }} accessible accessibilityLabel={'今日は5段階中、' + tierNames[level]}>
+    {tierNames.map((name, index) => {
+      const active = index === level;
+      return <View key={name} style={{ flex: active ? 2.4 : 1, gap: 4, alignItems: 'center' }}>
+        <Text style={{ fontSize: active ? 32 : 11, lineHeight: active ? 48 : 15, paddingTop: active ? 4 : 0, marginBottom: active ? 4 : 0, fontWeight: active ? '400' : '800', color: active ? tierCols[index] : '#6c7896', fontFamily: active ? displayFont : undefined }}>{name}</Text>
+        <View style={{ height: active ? 12 : 7, alignSelf: 'stretch', borderRadius: 6, backgroundColor: tierCols[index], opacity: active ? 1 : 0.3 }} />
+      </View>;
+    })}
+  </View>;
+}
+
+/** 確定の瞬間、中心から星がはじけ飛ぶ。 */
+export function Burst({ color }: { color: string }) {
+  return <View pointerEvents="none" style={{ position: 'absolute', left: '50%', top: '50%', width: 0, height: 0 }}>
+    {Array.from({ length: 12 }, (_, i) => <Text key={i} {...({ dataSet: { fx: 'burst', i } } as object)} style={{ position: 'absolute', marginLeft: -9, marginTop: -11, fontSize: 18, color }}>✦</Text>)}
+    <View {...fx('ring')} style={{ position: 'absolute', width: 60, height: 60, marginLeft: -30, marginTop: -30, borderRadius: 30, borderWidth: 3, borderColor: color }} />
   </View>;
 }
 

@@ -188,3 +188,27 @@ button, input, textarea, select { font: inherit; }
 [data-fx="pulse"] { animation: fx-pulse 2.6s ease-in-out infinite !important; }
 .fx-wave-a { animation: fx-wave 9s linear infinite; }
 .fx-wave-b { animation: fx-wave 14s linear infinite reverse; }
+
+/* 順位が確定した瞬間の演出 */
+@keyframes fx-confirm { 0% { transform: scale(1); filter: brightness(1); } 35% { transform: scale(1.035); filter: brightness(1.35); } 100% { transform: scale(1); filter: brightness(1); } }
+@keyframes fx-punch { 0% { transform: scale(1); } 35% { transform: scale(1.3); } 65% { transform: scale(.94); } 100% { transform: scale(1); } }
+@keyframes fx-jump { 0% { transform: translateY(0) scale(1); } 40% { transform: translateY(-22px) scale(1.12); } 100% { transform: translateY(0) scale(1); } }
+@keyframes fx-ring { 0% { transform: scale(.2); opacity: .95; } 100% { transform: scale(7); opacity: 0; } }
+@keyframes fx-burst { 0% { opacity: 1; transform: translate(0, 0) scale(1.2); } 100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(.4); } }
+[data-fx="confirm"] { animation-name: fx-confirm !important; animation-duration: .7s !important; animation-fill-mode: none !important; }
+[data-fx="punch"] { animation-name: fx-punch !important; animation-duration: .6s !important; animation-timing-function: cubic-bezier(.3,1.4,.5,1) !important; }
+[data-fx="jump"] { animation-name: fx-jump !important; animation-duration: .65s !important; animation-timing-function: cubic-bezier(.3,1.4,.5,1) !important; }
+[data-fx="ring"] { animation-name: fx-ring !important; animation-duration: 1s !important; animation-timing-function: ease-out !important; animation-fill-mode: both !important; }
+[data-fx="burst"] { animation-name: fx-burst !important; animation-duration: .95s !important; animation-timing-function: cubic-bezier(.1,.8,.3,1) !important; animation-fill-mode: both !important; }
+[data-fx="burst"][data-i="0"] { --tx: 160px; --ty: 0px; }
+[data-fx="burst"][data-i="1"] { --tx: 104px; --ty: 60px; }
+[data-fx="burst"][data-i="2"] { --tx: 80px; --ty: 139px; }
+[data-fx="burst"][data-i="3"] { --tx: 0px; --ty: 120px; }
+[data-fx="burst"][data-i="4"] { --tx: -80px; --ty: 139px; }
+[data-fx="burst"][data-i="5"] { --tx: -104px; --ty: 60px; }
+[data-fx="burst"][data-i="6"] { --tx: -160px; --ty: 0px; }
+[data-fx="burst"][data-i="7"] { --tx: -104px; --ty: -60px; }
+[data-fx="burst"][data-i="8"] { --tx: -80px; --ty: -139px; }
+[data-fx="burst"][data-i="9"] { --tx: 0px; --ty: -120px; }
+[data-fx="burst"][data-i="10"] { --tx: 80px; --ty: -139px; }
+[data-fx="burst"][data-i="11"] { --tx: 104px; --ty: -60px; }
