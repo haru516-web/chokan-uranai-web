@@ -173,7 +173,7 @@ function Voyage() {
     today: <Today today={today} profile={profile} goMyth={openMyth} openCalendar={openCalendar} create={editProfile}
       ranks={openRanking} onSave={openNote} questions={stored.questions} reflections={stored.reflections}
       openQuestion={id => openQuestion(id, true)} openQuestions={() => go('questions')}
-      shareTideCard={() => open({ kind: 'share' })} openSelf={openWish} goSelf={() => go('self')}
+      shareTideCard={() => open({ kind: 'share' })} goSelf={() => go('self')}
       openExplanation={() => open({ kind: 'explanation' })} startQuiz={startQuiz}
       selfLast={self.results[0] ? { name: quads[quadOf(self.results[0].p, self.results[0].s)].name, mark: quads[quadOf(self.results[0].p, self.results[0].s)].mark, color: quads[quadOf(self.results[0].p, self.results[0].s)].color } : null}
       selectedQuestion={selectedQuestion ? {

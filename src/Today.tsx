@@ -19,12 +19,12 @@ const tierIcons = ['🎣', '⛵', '🌙', '⚡', '🌀'];
 type FoldId = 'why' | 'me' | 'layers' | 'flow' | 'moon';
 
 export function Today({ today, profile, goMyth, openCalendar, create, ranks, onSave, questions, reflections, openQuestion, openQuestions, openHomecoming,
-  shareTideCard, openSelf, goSelf, openExplanation, startQuiz, selfLast, selectedQuestion }: {
+  shareTideCard, goSelf, openExplanation, startQuiz, selfLast, selectedQuestion }: {
   today: Date; profile: Profile | null; goMyth: () => void; openCalendar: (date: Date, mode: 'current' | 'stage') => void;
   create: () => void; ranks: (date: Date) => void; onSave: (day: string) => void;
   questions: SavedQuestion[]; reflections: Reflection[]; openQuestion: (id: string) => void;
   openQuestions: () => void; openHomecoming: (year: number) => void;
-  shareTideCard: () => void; openSelf: () => void; goSelf: () => void; openExplanation: () => void; startQuiz: () => void;
+  shareTideCard: () => void; goSelf: () => void; openExplanation: () => void; startQuiz: () => void;
   selfLast: { name: string; mark: string; color: string } | null;
   selectedQuestion?: { question: Question; saved: boolean; toggle: () => void; compare: () => void };
 }) {
@@ -134,7 +134,6 @@ export function Today({ today, profile, goMyth, openCalendar, create, ranks, onS
         <Text style={S.kicker}>{dayWord}の一手</Text>
         <Text style={styles.actionText}>{outlook.action}</Text>
       </View>
-      {isToday && <Button onPress={openSelf}>これをやるか、自分で決める　›</Button>}
       <Chips>
         <Chip onPress={() => onSave(dateKey(date))}>記録する</Chip>
         <Chip onPress={() => { void share(); }}>共有</Chip>
