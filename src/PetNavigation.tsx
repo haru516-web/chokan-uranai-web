@@ -7,9 +7,9 @@ export const mainTabs = [
   { id: 'today', label: '今日', title: '今日の占い', mark: '☾' },
   { id: 'self', label: '自分', title: '自己純度', mark: '◇' },
   { id: 'questions', label: '問い', title: '問いの海', mark: '◌' },
-  { id: 'chart', label: '海図', title: '人生の海図', mark: '◈' },
+  { id: 'chart', label: '人生', title: '人生の流れ', mark: '◈' },
   { id: 'atlas', label: '図鑑', title: '住人図鑑', mark: '✦' },
-  { id: 'journal', label: '航海帳', title: '航海帳（記録）', mark: '⌑' },
+  { id: 'journal', label: '記録', title: '記録（航海帳）', mark: '⌑' },
 ] as const;
 
 export type MainTab = typeof mainTabs[number]['id'];
@@ -25,7 +25,7 @@ export function TabBar({ seasonIndex, activeTab, onSelect, wide }: {
       const active = item.id === activeTab;
       return <Pressable key={item.id} accessibilityRole="tab" accessibilityState={{ selected: active }} onPress={() => onSelect(item.id)}
         style={({ pressed }) => [s.topTab, wide && { flex: 1 }, active && { borderBottomColor: tint }, pressed && { opacity: .6 }]}>
-        <Text style={[s.topLabel, active && { color: C.ink }]}>{wide ? item.title.replace('（記録）', '') : item.label}</Text>
+        <Text style={[s.topLabel, active && { color: C.ink }]}>{wide ? item.title.replace('（航海帳）', '') : item.label}</Text>
       </Pressable>;
     })}
   </ScrollView>;

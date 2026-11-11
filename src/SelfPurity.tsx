@@ -81,13 +81,13 @@ export function SelfHome({ state, profile, today, start, openResult, openWish, s
   const quad = last && quads[quadOf(last.p, last.s)];
 
   return <View style={S.stack}>
-    <View style={st.hero}>
+    {!last && <View style={st.hero}>
       <Text style={S.kicker}>自己純度</Text>
       <Text accessibilityRole="header" style={st.heroTitle}>今の自分は、{'\n'}自分で選べてる？</Text>
       <Text style={S.body}>8つの場面を、直感でタップ。約1分。</Text>
-      <Button onPress={start}>{last ? 'もういちど測る' : 'はじめる　›'}</Button>
+      <Button onPress={start}>はじめる　›</Button>
       <Text style={S.tiny}>名前も生年月日も要りません。正解はありません。</Text>
-    </View>
+    </View>}
 
     {last && quad && <Pressable accessibilityRole="button" onPress={() => openResult(last.id)} style={({ pressed }) => [S.card, S.pad, pressed && { opacity: .75 }]}>
       <View style={S.between}>
@@ -100,6 +100,7 @@ export function SelfHome({ state, profile, today, start, openResult, openWish, s
       <Bar label="自我強度" value={last.s} color={AQUA} />
       <Delta now={last.s} before={prev?.s} />
     </Pressable>}
+    {last && <Button quiet onPress={start}>もういちど測って、変化を見る</Button>}
 
     {pending && <FollowUp move={pending} save={after => saveAfter(pending.id, after)} />}
 

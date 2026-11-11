@@ -168,7 +168,8 @@ function Voyage() {
     today: <Today today={today} profile={profile} goMyth={openMyth} openCalendar={openCalendar} create={editProfile}
       ranks={openRanking} onSave={openNote} questions={stored.questions} reflections={stored.reflections}
       openQuestion={id => openQuestion(id, true)} openQuestions={() => go('questions')}
-      shareTideCard={() => open({ kind: 'share' })} openSelf={openWish}
+      shareTideCard={() => open({ kind: 'share' })} openSelf={openWish} goSelf={() => go('self')}
+      openExplanation={() => open({ kind: 'explanation' })} startQuiz={startQuiz}
       selectedQuestion={selectedQuestion ? {
         question: selectedQuestion,
         saved: stored.questions.some(entry => entry.id === selectedQuestion.id && entry.day === day),

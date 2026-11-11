@@ -63,6 +63,37 @@ export function Card({ children }: { children: ReactNode }) {
   return <View style={[S.card, S.pad]}>{children}</View>;
 }
 
+// タップで開閉する見出し。長い説明は閉じておき、気になった人だけが開く。
+export function Fold({ title, hint, children, open, onToggle }: {
+  title: string; hint?: string; children: ReactNode; open: boolean; onToggle: () => void;
+}) {
+  return <View style={[S.card, open && { borderColor: C.gold }]}>
+    <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={onToggle}
+      style={({ pressed }) => [b.fold, pressed && b.dim]}>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={S.h3}>{title}</Text>
+        {hint && !open && <Text style={S.tiny}>{hint}</Text>}
+      </View>
+      <Text style={[S.h2, { color: C.gold }]}>{open ? '−' : '＋'}</Text>
+    </Pressable>
+    {open && <View style={b.foldBody}>{children}</View>}
+  </View>;
+}
+
+// 次に進む先を、行き先が分かる文言で並べる。
+export function NextLinks({ items }: { items: { label: string; hint?: string; onPress: () => void }[] }) {
+  return <View style={{ gap: 8 }}>
+    {items.map(item => <Pressable key={item.label} accessibilityRole="button" onPress={item.onPress}
+      style={({ pressed }) => [S.card, b.link, pressed && b.dim]}>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={S.h3}>{item.label}</Text>
+        {item.hint && <Text style={S.tiny}>{item.hint}</Text>}
+      </View>
+      <Text style={[S.h2, { color: C.gold }]}>›</Text>
+    </Pressable>)}
+  </View>;
+}
+
 export function Tile({ source, title, subtitle, onPress }: { source: string | number; title: string; subtitle: string; onPress: () => void }) {
   return <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [S.card, { flex: 1 }, pressed && b.dim]}>
     <Art source={source} height={132} />
@@ -74,6 +105,9 @@ const b = StyleSheet.create({
   button: { paddingHorizontal: 16, paddingVertical: 12, minHeight: 46, alignItems: 'center', justifyContent: 'center', backgroundColor: C.gold, borderRadius: 14, borderColor: C.gold, borderWidth: 1 },
   quiet: { backgroundColor: C.panel, borderColor: C.line },
   dim: { opacity: 0.65 },
+  fold: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 17, paddingVertical: 14, minHeight: 56 },
+  foldBody: { paddingHorizontal: 17, paddingBottom: 17, gap: 10 },
+  link: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 17, paddingVertical: 14, minHeight: 60 },
   text: { fontSize: 14, color: C.dark, fontWeight: '800', textAlign: 'center' },
   chip: { paddingHorizontal: 11, paddingVertical: 8, minHeight: 36, justifyContent: 'center', borderRadius: 100, backgroundColor: C.panel, borderWidth: 1, borderColor: C.line },
   chipActive: { backgroundColor: C.aqua, borderColor: C.aqua },
