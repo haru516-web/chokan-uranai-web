@@ -8,10 +8,13 @@ import { SelectedQuestionReading } from './Questions';
 import { TideFlow } from './ResidentCard';
 import { ctxFor, FIVE_PHASES, labelOf, OUTER, SEASON, STAGES } from './scoring';
 import { Meter, SeaGlobe } from './TideCharts';
+import { GodAnimation } from './GodAnimation';
+import { Float, glow, Pop, RankGauge, Sparkles } from './Visual';
 import { Button, C, Card, Chip, Chips, Fold, NextLinks, S, Tile } from './ui';
 import { findQuestion, nextTideChange, ownResident, revisitQuestion, type Question, type Reflection, type SavedQuestion } from './voyage';
 
 type Reading = ReturnType<typeof readDay>;
+const tierIcons = ['🎣', '⛵', '🌙', '⚡', '🌀'];
 type FoldId = 'why' | 'me' | 'layers' | 'flow' | 'moon';
 
 export function Today({ today, profile, goMyth, openCalendar, create, ranks, onSave, questions, reflections, openQuestion, openQuestions, openHomecoming,
@@ -84,17 +87,23 @@ export function Today({ today, profile, goMyth, openCalendar, create, ranks, onS
 
   /* ---------- はじめての人：目的別の入口 ---------- */
   if (!reading || !profile) return <View style={S.stack}>
-    <View style={styles.hero}>
-      <Text style={S.kicker}>潮環占い</Text>
-      <Text accessibilityRole="header" style={styles.welcome}>今日の自分の{'\n'}流れを読もう</Text>
-      <Text style={S.body}>{dateLabel(c)}　{c.moon}</Text>
+    <View style={[styles.hero, glow(C.gold), { borderColor: C.gold, overflow: 'hidden' }]}>
+      <Sparkles />
+      <View style={S.between}>
+        <View style={{ flex: 1, gap: 8 }}>
+          <Text style={S.kicker}>潮環占い</Text>
+          <Pop><Text accessibilityRole="header" style={styles.welcome}>今日の自分の{'\n'}流れを読もう</Text></Pop>
+          <Text style={S.body}>{dateLabel(c)}　{c.moon}</Text>
+        </View>
+        <Float><GodAnimation index={4} style={{ width: 96 }} /></Float>
+      </View>
     </View>
     <Text style={S.h2}>どれからにする？</Text>
     <NextLinks items={[
-      { label: '今日の運勢を見る', hint: '生年月日と名前だけ・約30秒', onPress: create },
-      { label: '自分を見つめる 1分診断', hint: '名前も生年月日も要りません', onPress: startQuiz },
-      { label: '今のモヤモヤから問いを読む', hint: '入力なしで読めます', onPress: openQuestions },
-      { label: 'まず仕組みを知りたい', hint: '占いの考え方を図で説明', onPress: openExplanation },
+      { icon: '✨', label: '今日の運勢を見る', hint: '生年月日と名前だけ・約30秒', onPress: create },
+      { icon: '🧭', label: '自分を見つめる 1分診断', hint: '名前も生年月日も要りません', onPress: startQuiz },
+      { icon: '💭', label: '今のモヤモヤから問いを読む', hint: '入力なしで読めます', onPress: openQuestions },
+      { icon: '📖', label: 'まず仕組みを知りたい', hint: '占いの考え方を図で説明', onPress: openExplanation },
     ]} />
     <Fold title="今日の海をのぞく" hint="日付と月だけでわかる、今日の海のようす" open={fold === 'moon'} onToggle={() => toggle('moon')}>
       <Text style={S.tiny}>{c.yearPillar}　／　{OUTER[c.outer].n}　／　{c.solarMonthTerm} {STAGES[c.stage].n}</Text>
@@ -108,15 +117,21 @@ export function Today({ today, profile, goMyth, openCalendar, create, ranks, onS
   const tierColor = tierColors[reading.layers.day];
   const events2 = events;
   return <View style={S.stack}>
-    <View style={[styles.hero, { borderColor: tierColor }]}>
+    <View style={[styles.hero, glow(tierColor), { borderColor: tierColor, overflow: 'hidden' }]}>
+      {reading.layers.day <= 1 && <Sparkles color={tierColor} />}
       <View style={S.between}>
         <Text style={S.kicker}>{dateLabel(c)}</Text>
         <Text style={S.tiny}>{resident?.band}</Text>
       </View>
-      <View style={[S.row, { alignItems: 'flex-end' }]}>
-        <Text accessibilityRole="header" style={[styles.tier, { color: tierColor }]}>{outlook.title}</Text>
-        <Text style={[S.body, { paddingBottom: 8 }]}>{dayWord}は {row.rank}位 / 160</Text>
+      <View style={S.between}>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Pop><Text style={styles.tierIcon}>{tierIcons[reading.layers.day]}</Text></Pop>
+          <Pop delay={120}><Text accessibilityRole="header" style={[styles.tier, { color: tierColor }]}>{outlook.title}</Text></Pop>
+          <Text style={S.body}>{dayWord}は {row.rank}位 / 160</Text>
+        </View>
+        <Float><GodAnimation index={profile.t.mod} style={{ width: 112 }} /></Float>
       </View>
+      <RankGauge rank={row.rank} color={tierColor} />
       <Text style={S.h2}>{outlook.line}</Text>
       <View style={styles.action}>
         <Text style={S.kicker}>{dayWord}の一手</Text>
@@ -180,10 +195,10 @@ export function Today({ today, profile, goMyth, openCalendar, create, ranks, onS
 
     <Text style={S.h2}>次はどうする？</Text>
     <NextLinks items={[
-      { label: '自分の判断を見つめる（自己純度）', hint: '8つの場面を直感で選ぶ・約1分', onPress: goSelf },
-      { label: '今の気持ちに近い問いを読む', hint: '悩みから選べます', onPress: openQuestions },
-      { label: 'この日の160名札の順位', hint: '全タイプの中での位置', onPress: () => ranks(date) },
-      { label: '潮札を画像で共有', onPress: shareTideCard },
+      { icon: '🧭', label: '自分の判断を見つめる（自己純度）', hint: '8つの場面を直感で選ぶ・約1分', onPress: goSelf },
+      { icon: '💭', label: '今の気持ちに近い問いを読む', hint: '悩みから選べます', onPress: openQuestions },
+      { icon: '📊', label: 'この日の160名札の順位', hint: '全タイプの中での位置', onPress: () => ranks(date) },
+      { icon: '🖼️', label: '潮札を画像で共有', onPress: shareTideCard },
     ]} />
     <View style={S.row}>
       <Tile source={currents[c.outer]} subtitle="今年の海流" title={OUTER[c.outer].n} onPress={() => openCalendar(date, 'current')} />
@@ -227,6 +242,7 @@ const styles = StyleSheet.create({
   hero: { borderWidth: 1, borderColor: '#4c5271', borderRadius: 22, padding: 18, gap: 12, backgroundColor: '#141e37' },
   welcome: { color: C.ink, fontSize: 32, lineHeight: 44, fontWeight: '800' },
   tier: { fontSize: 54, lineHeight: 62, fontWeight: '800' },
+  tierIcon: { fontSize: 34, lineHeight: 42 },
   action: { gap: 4, padding: 14, borderRadius: 16, backgroundColor: '#0f1830', borderWidth: 1, borderColor: C.line },
   actionText: { color: C.ink, fontSize: 19, lineHeight: 28, fontWeight: '800' },
   factor: { borderTopWidth: 1, borderTopColor: C.line, paddingTop: 8, gap: 3 },

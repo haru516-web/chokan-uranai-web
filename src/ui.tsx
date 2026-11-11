@@ -81,10 +81,11 @@ export function Fold({ title, hint, children, open, onToggle }: {
 }
 
 // 次に進む先を、行き先が分かる文言で並べる。
-export function NextLinks({ items }: { items: { label: string; hint?: string; onPress: () => void }[] }) {
+export function NextLinks({ items }: { items: { icon?: string; label: string; hint?: string; onPress: () => void }[] }) {
   return <View style={{ gap: 8 }}>
     {items.map(item => <Pressable key={item.label} accessibilityRole="button" onPress={item.onPress}
       style={({ pressed }) => [S.card, b.link, pressed && b.dim]}>
+      {item.icon && <View style={b.icon}><Text style={{ fontSize: 22 }}>{item.icon}</Text></View>}
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={S.h3}>{item.label}</Text>
         {item.hint && <Text style={S.tiny}>{item.hint}</Text>}
@@ -107,6 +108,7 @@ const b = StyleSheet.create({
   dim: { opacity: 0.65 },
   fold: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 17, paddingVertical: 14, minHeight: 56 },
   foldBody: { paddingHorizontal: 17, paddingBottom: 17, gap: 10 },
+  icon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#243253' },
   link: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 17, paddingVertical: 14, minHeight: 60 },
   text: { fontSize: 16, color: C.dark, fontWeight: '800', textAlign: 'center' },
   chip: { paddingHorizontal: 14, paddingVertical: 9, minHeight: 42, justifyContent: 'center', borderRadius: 100, backgroundColor: C.panel, borderWidth: 1, borderColor: C.line },

@@ -57,11 +57,11 @@ export const scenes: Scene[] = [
 ];
 
 export type Quad = 'compass' | 'explorer' | 'anchor' | 'drift';
-export const quads: Record<Quad, { name: string; line: string; ask: string; color: string }> = {
-  compass: { name: '羅針盤の人', line: '自分の物差しで選び、揺れても戻ってこられる。', ask: 'その物差しは、いつ・何で作られた？', color: '#eacc8c' },
-  explorer: { name: '探索の人', line: '自分で選んでいる。物差しはまだ育ち中で、動いていい。', ask: '最近「これは好き」と言い切れたものは？', color: '#b6dfc4' },
-  anchor: { name: '錨の人', line: '守る力が強い。その基準が自分発かを、ときどき確かめたい。', ask: '守っているものは、誰の言葉から来た？', color: '#c1d2ef' },
-  drift: { name: '潮に乗る人', line: '周りの空気を読む力がある。いまは自分の好みを探す時期。', ask: '誰にも言わなくていい。本当は何が好き？', color: '#e3af92' },
+export const quads: Record<Quad, { name: string; mark: string; line: string; ask: string; color: string }> = {
+  compass: { name: '羅針盤の人', mark: '🧭', line: '自分の物差しで選び、揺れても戻ってこられる。', ask: 'その物差しは、いつ・何で作られた？', color: '#eacc8c' },
+  explorer: { name: '探索の人', mark: '🔭', line: '自分で選んでいる。物差しはまだ育ち中で、動いていい。', ask: '最近「これは好き」と言い切れたものは？', color: '#b6dfc4' },
+  anchor: { name: '錨の人', mark: '⚓', line: '守る力が強い。その基準が自分発かを、ときどき確かめたい。', ask: '守っているものは、誰の言葉から来た？', color: '#c1d2ef' },
+  drift: { name: '潮に乗る人', mark: '🌊', line: '周りの空気を読む力がある。いまは自分の好みを探す時期。', ask: '誰にも言わなくていい。本当は何が好き？', color: '#e3af92' },
 };
 
 export type SelfResult = { id: number; day: string; p: number; s: number; answers: number[] };
@@ -141,3 +141,6 @@ export const residentAsk = [
 
 export type SelfState = { results: SelfResult[]; checks: Check[]; moves: Move[]; wish: string };
 export const emptySelf: SelfState = { results: [], checks: [], moves: [], wish: '' };
+
+export const sceneIcons: Record<string, string> = { trend: '🛍️', mocked: '💬', mentor: '🧑‍🏫', love: '💘', unseen: '🌱', sns: '📱', fail: '🧩', shift: '🌊' };
+export const optionColors = ['#eacc8c', '#9fd8c7', '#a8c4f0', '#e3af92'];

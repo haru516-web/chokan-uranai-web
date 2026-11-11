@@ -3,10 +3,11 @@ import { Platform, Pressable, Share, StyleSheet, Text, TextInput, View } from 'r
 import Svg, { Circle, Line, Polyline } from './web/svg';
 import { readDay, residentIndex, type Profile } from './domain';
 import {
-  changedCount, choices, dones, highlights, learns, quadOf, quads, reasons, residentAsk, scenes, tideGuide, wants, whys, wishIdeas,
+  changedCount, choices, optionColors, sceneIcons, dones, highlights, learns, quadOf, quads, reasons, residentAsk, scenes, tideGuide, wants, whys, wishIdeas,
   type Move, type SelfResult, type SelfState,
 } from './self';
 import { Button, C, Card, Chip, Chips, S } from './ui';
+import { Float, glow, Pop, QuadMap, Sparkles } from './Visual';
 
 const GOLD = C.gold;
 const AQUA = '#8fb4e8';
@@ -34,9 +35,10 @@ function useIn(key: unknown) {
   return shown;
 }
 
-function Big({ children, mark, onPress, selected, sub }: { children: string; mark?: string; onPress: () => void; selected?: boolean; sub?: string }) {
+function Big({ children, mark, onPress, selected, sub, dot }: { children: string; mark?: string; onPress: () => void; selected?: boolean; sub?: string; dot?: string }) {
   return <Pressable accessibilityRole="button" accessibilityState={{ selected: !!selected }} onPress={onPress}
     style={({ pressed }) => [st.big, selected && st.bigOn, pressed && { opacity: .7, transform: [{ scale: .98 }] }]}>
+    {dot && <View style={[st.dotMark, { backgroundColor: selected ? C.dark : dot }]} />}
     {mark && <Text style={st.bigMark}>{mark}</Text>}
     <View style={{ flex: 1 }}>
       <Text style={[st.bigText, selected && { color: C.dark }]}>{children}</Text>
@@ -94,7 +96,7 @@ export function SelfHome({ state, profile, today, start, openResult, openWish, s
         <Text style={S.kicker}>いまの目安 · {last.day.slice(5).replace('-', '/')}</Text>
         <Text style={S.tiny}>くわしく ›</Text>
       </View>
-      <Text style={[st.type, { color: quad.color }]}>{quad.name}</Text>
+      <Text style={[st.type, { color: quad.color }]}>{quad.mark}　{quad.name}</Text>
       <Bar label="自己純度" value={last.p} color={GOLD} />
       <Delta now={last.p} before={prev?.p} />
       <Bar label="自我強度" value={last.s} color={AQUA} />
@@ -204,11 +206,14 @@ export function SelfQuiz({ done }: { done: (answers: number[]) => void }) {
       {scenes.map((item, i) => <View key={item.id} style={[st.seg, i < index && { backgroundColor: GOLD }, i === index && { backgroundColor: '#8f7d4c' }]} />)}
     </View>
     <View style={[st.fade, { opacity: shown ? 1 : 0, transform: [{ translateY: shown ? 0 : 12 }], gap: 14 }]}>
-      <Text style={S.kicker}>{index + 1} / {scenes.length}　{scene.tag}</Text>
-      <Text accessibilityRole="header" style={st.scene}>{scene.scene}</Text>
+      <View style={st.sceneCard}>
+        <Float><Text style={st.sceneIcon}>{sceneIcons[scene.id]}</Text></Float>
+        <Text style={S.kicker}>{index + 1} / {scenes.length}　{scene.tag}</Text>
+        <Text accessibilityRole="header" style={[st.scene, { textAlign: "center" }]}>{scene.scene}</Text>
+      </View>
       <Text style={S.tiny}>こんなとき、近いのは？</Text>
       <View style={{ gap: 10 }}>
-        {scene.options.map((option, i) => <Big key={option.text} selected={picked === i} onPress={() => pick(i)}>{option.text}</Big>)}
+        {scene.options.map((option, i) => <Big key={option.text} dot={optionColors[i]} selected={picked === i} onPress={() => pick(i)}>{option.text}</Big>)}
       </View>
     </View>
     {index > 0 && picked === null && <Button quiet onPress={() => setAnswers(answers.slice(0, -1))}>‹ ひとつ戻る</Button>}
@@ -226,11 +231,17 @@ export function SelfResultView({ result, previous, profile, again, openWish, ope
   const changed = previous ? changedCount(result.answers, previous.answers) : null;
   const text = ['潮環占い｜自己純度', quad.name, '自己純度 ' + result.p + '／自我強度 ' + result.s + '（いまの目安）', quad.line].join('\n');
   return <View style={S.stack}>
-    <View style={[st.hero, { borderColor: quad.color }]}>
+    <View style={[st.hero, glow(quad.color), { borderColor: quad.color, alignItems: 'center', overflow: 'hidden' }]}>
+      <Sparkles color={quad.color} />
       <Text style={S.kicker}>いまの自分は</Text>
-      <Text accessibilityRole="header" style={[st.heroTitle, { color: quad.color }]}>{quad.name}</Text>
-      <Text style={S.h3}>{quad.line}</Text>
+      <Pop><Text style={st.resultMark}>{quad.mark}</Text></Pop>
+      <Pop delay={150}><Text accessibilityRole="header" style={[st.heroTitle, { color: quad.color, textAlign: 'center' }]}>{quad.name}</Text></Pop>
+      <Pop delay={300}><Text style={[S.h3, { textAlign: 'center' }]}>{quad.line}</Text></Pop>
     </View>
+    <Card>
+      <QuadMap p={result.p} s={result.s} prev={previous ? { p: previous.p, s: previous.s } : undefined} quads={quads} />
+      <Text style={S.tiny}>{previous ? '白い輪が前回の位置。点線が動いた道すじです。' : '2回目からは、前回の位置との動きが線で見えます。'}</Text>
+    </Card>
     <Card>
       <Bar label="自己純度" value={result.p} color={GOLD} note="自分で評価して選べている度合い" />
       <Delta now={result.p} before={previous?.p} />
@@ -348,6 +359,10 @@ const st = StyleSheet.create({
   heroTitle: { color: C.ink, fontSize: 30, lineHeight: 41, fontWeight: '800' },
   huge: { fontSize: 44, lineHeight: 52 },
   scene: { color: C.ink, fontSize: 24, lineHeight: 34, fontWeight: '800' },
+  sceneCard: { alignItems: 'center', gap: 8, padding: 18, borderRadius: 22, backgroundColor: '#17223d', borderWidth: 1, borderColor: C.line },
+  sceneIcon: { fontSize: 52, lineHeight: 64 },
+  resultMark: { fontSize: 64, lineHeight: 76 },
+  dotMark: { width: 14, height: 14, borderRadius: 7 },
   type: { fontSize: 26, lineHeight: 34, fontWeight: '800' },
   big: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 64, paddingHorizontal: 18, paddingVertical: 14, borderRadius: 18, backgroundColor: C.panel, borderWidth: 1, borderColor: C.line },
   bigOn: { backgroundColor: C.gold, borderColor: C.gold },

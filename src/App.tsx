@@ -285,6 +285,7 @@ function Voyage() {
     <StatusBar style="light" />
     {Platform.OS === 'web' && <Image source={harbor} style={[StyleSheet.absoluteFill, { opacity: 0.18 }]} contentFit="cover" />}
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={layout.frame}>
+      <View pointerEvents="none" style={[layout.wash, { backgroundImage: `linear-gradient(180deg, ${mainTabs.find(item => item.id === tab)?.accent ?? '#eacc8c'}30 0%, transparent 100%)` } as object]} />
       <View style={layout.header}>
         {detail
           ? <Pressable accessibilityRole="button" accessibilityLabel="前の画面に戻る" onPress={back} style={layout.backBtn}>
@@ -329,6 +330,7 @@ const layout = StyleSheet.create({
   backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: C.panel, borderWidth: 1, borderColor: C.line },
   backMark: { color: C.ink, fontSize: 28, lineHeight: 30, fontWeight: '700' },
   help: { paddingHorizontal: 12, minHeight: 40, justifyContent: 'center', borderRadius: 20, borderWidth: 1, borderColor: '#4c6aa8' },
+  wash: { position: 'absolute', top: 0, left: 0, right: 0, height: 300 },
   scroll: { flex: 1 },
   hidden: { display: 'none' },
   content: { padding: 16, paddingBottom: 32 },
