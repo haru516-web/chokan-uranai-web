@@ -19,7 +19,13 @@ export const iconArt = {
 export const harbor = find(artFiles, 'harbor.webp');
 export const seal = find(artFiles, 'app-icon.png');
 export const godSheets = ['winter', 'spring', 'summer', 'autumn', 'origin'].map(name => find(deityFiles, 'sheet-' + name + '.webp'));
-export const residentArt = Array.from({ length: 16 }, (_, i) => find(artFiles, 'resident-' + String(i + 1).padStart(2, '0') + '.webp'));
+// 図鑑の住人は、神をモチーフにした新デザイン（assets/design-concepts/deity-residents/resident-XX-<季節>-<深さ>.webp）。
+const deityResidentFiles = import.meta.glob('../assets/design-concepts/deity-residents/*.webp', { eager: true, import: 'default', query: '?url' }) as Record<string, string>;
+export const residentArt = Array.from({ length: 16 }, (_, i) => {
+  const id = 'resident-' + String(i + 1).padStart(2, '0');
+  const entry = Object.entries(deityResidentFiles).find(([path]) => path.split('/').pop()!.startsWith(id + '-'));
+  return entry ? entry[1] : find(artFiles, id + '.webp');
+});
 export const currents = Array.from({ length: 12 }, (_, i) => find(artFiles, 'current-' + String(i + 1).padStart(2, '0') + '.webp'));
 export const stages = Array.from({ length: 12 }, (_, i) => find(artFiles, 'stage-' + String(i + 1).padStart(2, '0') + '.webp'));
 export const scenes = Array.from({ length: 8 }, (_, i) => find(artFiles, 'scene-' + String(i + 1).padStart(2, '0') + '.webp'));
