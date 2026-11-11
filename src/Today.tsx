@@ -11,7 +11,7 @@ import { ctxFor, FIVE_PHASES, labelOf, OUTER, SEASON, STAGES } from './scoring';
 import { Meter, SeaGlobe } from './TideCharts';
 import { GodAnimation } from './GodAnimation';
 import { PersonSwitcher, type Person } from './People';
-import { Float, glow, Pop, Sparkles, TierStrip } from './Visual';
+import { Float, glow, GlowPulse, Pop, Sparkles, TierStrip } from './Visual';
 import { Button, C, Card, Chip, Chips, Fold, NextLinks, S, Tile, display, rounded } from './ui';
 import { findQuestion, nextTideChange, ownResident, revisitQuestion, type Question, type Reflection, type SavedQuestion } from './voyage';
 
@@ -120,7 +120,8 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
   const events2 = events;
   const activePerson = people.find(person => person.id === activeId);
   return <View style={S.stack}>
-    <View style={[styles.poster, glow(tierColor), { borderColor: tierColor, boxShadow: pulse(48), ...(danger ? { animationKeyframes: { '0%': { boxShadow: pulse(18) }, '50%': { boxShadow: pulse(56) }, '100%': { boxShadow: pulse(18) } }, animationDuration: '2.6s', animationIterationCount: 'infinite', animationTimingFunction: 'ease-in-out' } : {}) } as object]}>
+    <View style={[styles.poster, glow(tierColor), { borderColor: tierColor, boxShadow: pulse(48) } as object]}>
+      {danger && <GlowPulse color={tierColor} />}
       <Sparkles color={tierColor} />
       <View style={S.between}>
         <Text style={S.kicker}>{dateLabel(c)}</Text>

@@ -5,36 +5,18 @@ import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-na
 import { C } from './ui';
 
 const anim = (style: object) => style as unknown as ViewStyle;
+/** CSS 側（styles.css）で定義したアニメーションを data 属性で当てる。 */
+const fx = (name: string, delay = 0) => ({ dataSet: { fx: name, d: delay } }) as object;
 
-const popKeys = {
-  '0%': { opacity: 0, transform: [{ scale: 0.8 }, { translateY: 16 }] },
-  '60%': { opacity: 1, transform: [{ scale: 1.05 }, { translateY: 0 }] },
-  '100%': { opacity: 1, transform: [{ scale: 1 }, { translateY: 0 }] },
-};
-const twinkleKeys = {
-  '0%': { opacity: 0.15, transform: [{ scale: 0.6 }] },
-  '50%': { opacity: 1, transform: [{ scale: 1.25 }] },
-  '100%': { opacity: 0.15, transform: [{ scale: 0.6 }] },
-};
-const floatKeys = {
-  '0%': { transform: [{ translateY: 0 }] },
-  '50%': { transform: [{ translateY: -8 }] },
-  '100%': { transform: [{ translateY: 0 }] },
-};
 
 /** ふわっと弾んで登場する。 */
 export function Pop({ children, delay = 0, style }: { children: ReactNode; delay?: number; style?: StyleProp<ViewStyle> }) {
-  return <View style={[anim({
-    animationKeyframes: popKeys, animationDuration: '620ms', animationDelay: delay + 'ms',
-    animationFillMode: 'both', animationTimingFunction: 'cubic-bezier(.2,.8,.2,1)',
-  }), style]}>{children}</View>;
+  return <View {...fx('pop', Math.round(delay / 60))} style={style}>{children}</View>;
 }
 
 /** ゆらゆら浮かぶ。 */
 export function Float({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
-  return <View style={[anim({
-    animationKeyframes: floatKeys, animationDuration: '3.2s', animationIterationCount: 'infinite', animationTimingFunction: 'ease-in-out',
-  }), style]}>{children}</View>;
+  return <View {...fx('float')} style={style}>{children}</View>;
 }
 
 const stars = [
@@ -44,11 +26,8 @@ const stars = [
 /** 背景にまたたく星。祝いたい場面（大漁・診断結果）に。 */
 export function Sparkles({ color = C.gold }: { color?: string }) {
   return <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-    {stars.map((star, index) => <Text key={index} style={[anim({
-      position: 'absolute', left: star.l, top: star.t, fontSize: star.s, color,
-      animationKeyframes: twinkleKeys, animationDuration: '2.4s', animationDelay: star.d + 'ms',
-      animationIterationCount: 'infinite',
-    })]}>✦</Text>)}
+    {stars.map((star, index) => <Text key={index} {...fx('twinkle', Math.round(star.d / 300))}
+      style={{ position: 'absolute', left: star.l as never, top: star.t as never, fontSize: star.s, color }}>✦</Text>)}
   </View>;
 }
 
@@ -125,4 +104,9 @@ export function TierStrip({ level }: { level: number }) {
       <Text style={{ fontSize: 11, fontWeight: '800', color: index === level ? tierCols[index] : '#6c7896' }}>{name}</Text>
     </View>)}
   </View>;
+}
+
+/** 枠の内側がゆっくり脈打つように光る（注意が必要な日用）。 */
+export function GlowPulse({ color, radius = 25 }: { color: string; radius?: number }) {
+  return <View pointerEvents="none" {...fx('pulse')} style={[StyleSheet.absoluteFill, anim({ borderRadius: radius, boxShadow: `inset 0 0 38px 4px ${color}aa` })]} />;
 }
