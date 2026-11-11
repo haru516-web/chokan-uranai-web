@@ -10,12 +10,12 @@ export const C = {
 
 const serif = Platform.select({ ios: 'Hiragino Mincho ProN', web: '"Yu Mincho", "Hiragino Mincho ProN", serif', default: 'serif' });
 export const S = StyleSheet.create({
-  body: { color: C.muted, fontSize: 14, lineHeight: 24 },
+  body: { color: C.muted, fontSize: 16, lineHeight: 27 },
   title: { color: C.ink, fontSize: 30, lineHeight: 42, fontFamily: serif, fontWeight: '700' },
-  h2: { color: C.ink, fontSize: 22, lineHeight: 31, fontFamily: serif, fontWeight: '700' },
-  h3: { color: C.ink, fontSize: 17, lineHeight: 25, fontWeight: '700' },
-  kicker: { color: C.gold, fontSize: 10, lineHeight: 16, fontWeight: '800', letterSpacing: 2 },
-  tiny: { color: C.muted, fontSize: 11, lineHeight: 17 },
+  h2: { color: C.ink, fontSize: 23, lineHeight: 32, fontFamily: serif, fontWeight: '700' },
+  h3: { color: C.ink, fontSize: 18, lineHeight: 27, fontWeight: '700' },
+  kicker: { color: C.gold, fontSize: 12, lineHeight: 18, fontWeight: '800', letterSpacing: 2 },
+  tiny: { color: C.muted, fontSize: 13, lineHeight: 20 },
   card: { backgroundColor: C.panel, borderColor: C.line, borderWidth: 1, borderRadius: 20, overflow: 'hidden' },
   pad: { padding: 17, gap: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -102,16 +102,16 @@ export function Tile({ source, title, subtitle, onPress }: { source: string | nu
 }
 
 const b = StyleSheet.create({
-  button: { paddingHorizontal: 16, paddingVertical: 12, minHeight: 46, alignItems: 'center', justifyContent: 'center', backgroundColor: C.gold, borderRadius: 14, borderColor: C.gold, borderWidth: 1 },
+  button: { paddingHorizontal: 16, paddingVertical: 12, minHeight: 52, alignItems: 'center', justifyContent: 'center', backgroundColor: C.gold, borderRadius: 14, borderColor: C.gold, borderWidth: 1 },
   quiet: { backgroundColor: C.panel, borderColor: C.line },
   dim: { opacity: 0.65 },
   fold: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 17, paddingVertical: 14, minHeight: 56 },
   foldBody: { paddingHorizontal: 17, paddingBottom: 17, gap: 10 },
   link: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 17, paddingVertical: 14, minHeight: 60 },
-  text: { fontSize: 14, color: C.dark, fontWeight: '800', textAlign: 'center' },
-  chip: { paddingHorizontal: 11, paddingVertical: 8, minHeight: 36, justifyContent: 'center', borderRadius: 100, backgroundColor: C.panel, borderWidth: 1, borderColor: C.line },
+  text: { fontSize: 16, color: C.dark, fontWeight: '800', textAlign: 'center' },
+  chip: { paddingHorizontal: 14, paddingVertical: 9, minHeight: 42, justifyContent: 'center', borderRadius: 100, backgroundColor: C.panel, borderWidth: 1, borderColor: C.line },
   chipActive: { backgroundColor: C.aqua, borderColor: C.aqua },
-  chipText: { fontSize: 12, color: C.muted, fontWeight: '700' },
+  chipText: { fontSize: 14, color: C.muted, fontWeight: '700' },
 });
 
 

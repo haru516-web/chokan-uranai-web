@@ -40,6 +40,7 @@ export function PairReading({ profile }: { profile: Profile | null }) {
     <Card><Text style={S.h3}>{seasonTitle}</Text><Text style={S.tiny}>{SEASON[first.mod].n} × {SEASON[second.mod].n}</Text><Text style={S.body}>{seasonText}</Text></Card>
     <Card><Text style={S.h3}>{depth <= 1 ? '近い深さで泳ぐ二人' : '違う深さを持ち寄る二人'}</Text>
       <Text style={S.body}>深さの差は {depth.toFixed(1)}。{depth <= 1 ? '同じ歩幅で進みやすい場面を探してみましょう。' : 'すぐに動く時間と、少し考える時間をどちらも取ってみましょう。'}</Text></Card>
-    <Button quiet onPress={() => { setFirst(profile); setSecond(null); }}>入力し直す</Button>
+    <Button quiet onPress={() => { setFirst(profile); setSecond(null); }}>別の人で入力し直す</Button>
+    <Text style={S.tiny}>相性の良し悪しを決めるものではなく、会話のきっかけです。</Text>
   </View>;
 }

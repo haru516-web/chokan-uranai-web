@@ -11,6 +11,14 @@ body {
   overscroll-behavior-y: none;
 }
 button, input, textarea, select { font: inherit; }
+[role="button"], [role="tab"] { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+[role="button"]:focus-visible, [role="tab"]:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px solid #eacc8c;
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0ms !important; animation-duration: 0ms !important; }
+}
 * { box-sizing: border-box; }
 
 .web-safe-area-root {

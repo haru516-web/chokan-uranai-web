@@ -73,6 +73,11 @@ function Voyage() {
   const day = dateKey(today);
 
   useEffect(() => {
+    const page = detail ? detailTitles[detail.kind] : mainTabs.find(item => item.id === tab)?.title;
+    if (Platform.OS === 'web') document.title = page ? page + '｜潮環占い' : '潮環占い';
+  }, [detail, tab]);
+
+  useEffect(() => {
     let mounted = true;
     AsyncStorage.getItem(storageKey).then(raw => {
       if (!mounted || !raw) return;
