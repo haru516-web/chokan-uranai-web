@@ -17,7 +17,9 @@ import { Atlas, Calendar, Chapter, Journal, Myth, NoteEditor, Ranking, Resident,
 import { C, S } from './ui';
 import { findQuestion, type Reflection, type SavedQuestion } from './voyage';
 import { PetNavigation, type MainTab } from './PetNavigation';
+import { Explanation } from './Explanation';
 type Detail =
+  | { kind: 'explanation' }
   | { kind: 'profile'; questionId?: string }
   | { kind: 'question'; id: string; personal?: boolean }
   | { kind: 'compare'; id: string }
@@ -142,7 +144,7 @@ function Voyage() {
         toggle: () => toggleQuestion(selectedQuestion.id),
         compare: () => compare(selectedQuestion.id),
       } : undefined}
-      openHomecoming={() => open({ kind: 'homecoming', year: today.getUTCFullYear() - 12 })} />,
+      openHomecoming={year => open({ kind: 'homecoming', year })} />,
     questions: <QuestionSea open={openQuestion} create={profile ? undefined : editProfile} />,
     chart: <LifeChart today={today} profile={profile} create={editProfile} calendar={() => openCalendar()}
       write={writeReflection} showToday={() => go('today')} records={stored.reflections} edit={editReflection} />,
@@ -155,6 +157,8 @@ function Voyage() {
 
   function detailBody(detail: Detail) {
     switch (detail.kind) {
+      case 'explanation':
+        return <Explanation today={today} profile={profile} />;
       case 'profile':
         return <ProfileForm title="あなたの海を、ひらきます。" initial={inputs ?? blankInputs} persist={!!stored.inputs}
           onSubmit={(next, remember) => saveProfile(next, remember, detail.questionId)} />;
@@ -239,7 +243,10 @@ function Voyage() {
             <Image source={seal} style={{ width: 35, height: 35, borderRadius: 10 }} />
             <Text style={layout.brand}>潮環占い</Text>
           </View>}
-        <Text style={[S.kicker, { color: C.aqua }]}>潮の羅針盤</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel="仕組みの解説を開く" onPress={() => { if (detail?.kind !== 'explanation') open({ kind: 'explanation' }); }}
+          style={{ paddingHorizontal: 15, paddingVertical: 10, borderRadius: 8, backgroundColor: '#245bdf' }}>
+          <Text style={{ color: '#fff', fontWeight: '800' }}>解説</Text>
+        </Pressable>
       </View>
       {storageError && <Text accessibilityRole="alert" style={[S.tiny, layout.error]}>端末の保存領域にアクセスできませんでした。この画面で続けられます。</Text>}
       {ready ? <>
@@ -248,13 +255,13 @@ function Voyage() {
           {body}
         </ScrollView>
         {path.map((entry, index) => <ScrollView key={entry.kind + index}
-          style={[layout.scroll, index !== path.length - 1 && layout.hidden]} contentContainerStyle={layout.content}
+          style={[layout.scroll, index !== path.length - 1 && layout.hidden]} contentContainerStyle={entry.kind === 'explanation' ? { backgroundColor: '#f5f7fb', paddingBottom: 50 } : layout.content}
           keyboardShouldPersistTaps="handled">
           {detailBody(entry)}
         </ScrollView>)}
       </> : <View style={[layout.scroll, layout.content]}><Text style={S.body}>海図をひらいています…</Text></View>}
     </KeyboardAvoidingView>
-    <PetNavigation seasonIndex={profile?.t.mod ?? null} activeTab={tab} onSelect={go} />
+    {detail?.kind !== 'explanation' && <PetNavigation seasonIndex={profile?.t.mod ?? null} activeTab={tab} onSelect={go} />}
   </SafeAreaView>;
 }
 

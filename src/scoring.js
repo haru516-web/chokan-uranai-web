@@ -1,4 +1,5 @@
 import { moonAt } from './moon';
+import { BRANCHES, BRANCH_ELEMENTS, FIVE_PHASES, SOLAR_MONTH_TERMS, solarCalendarFor, solarMonthStartDate } from './solarCalendar';
 
 // Scoring and astronomical cycles carried over from the original prototype.
 const numStr = n => n.toFixed(1);
@@ -22,20 +23,26 @@ export const OUTER=[
 ];
 /* index = (Y+M+D) mod 4 */
 export const SEASON=[
- {n:"冬",ang:270,home:11,act:"蓄える",col:"#8ecbff",moon:"下弦の頃"},
- {n:"春",ang:0,home:1,act:"始める",col:"#7ee2a0",moon:"新月の頃"},
- {n:"夏",ang:90,home:4,act:"広げる",col:"#ffb26b",moon:"上弦の頃"},
- {n:"秋",ang:180,home:9,act:"実らせる",col:"#f2c979",moon:"満月の頃"}
+ {n:"冬",element:4,ang:270,home:11,act:"蓄える",col:"#8ecbff",moon:"下弦の頃"},
+ {n:"春",element:0,ang:0,home:1,act:"始める",col:"#7ee2a0",moon:"新月の頃"},
+ {n:"夏",element:1,ang:90,home:4,act:"広げる",col:"#ffb26b",moon:"上弦の頃"},
+ {n:"秋",element:3,ang:180,home:9,act:"実らせる",col:"#f2c979",moon:"満月の頃"}
 ];
+export { FIVE_PHASES, SOLAR_MONTH_TERMS, solarMonthStartDate };
 export const NUMS=[1,1.5,2,2.5,3,3.5,4,4.5,5,5.5];
 var TIDE_AMP={"最接近":1,"近い":.78,"ふつう":.55,"遠い":.32,"最遠":.1};   /* strength of the tide-raising pull by Earth-Moon distance (independent of the moon's shape) */
 var WD=["日","月","火","水","木","金","土"];
 
 export function ctxFor(d){
-  var Y=d.getUTCFullYear(), MO=d.getUTCMonth()+1, DA=d.getUTCDate(), K=Y+660;
+  var Y=d.getUTCFullYear(), MO=d.getUTCMonth()+1, DA=d.getUTCDate(), cal=solarCalendarFor(d), K=cal.solarYear+660;
   var mp=moonAt(d);   /* real moon: phase angle, age, shape and tide all from one value */
   return {Y:Y,MO:MO,DA:DA,K:K,wd:d.getUTCDay(),age:mp.age,ph:mp.e,tide:mp.distName,dist:mp.dist,phaseTide:mp.tide,moon:mp.moon,
-    stage:(((K-1)%4)*3+Math.floor((MO-1)/4))%12, outer:(9+(K-1))%12,
+    solarYear:cal.solarYear,yearStemIndex:cal.yearStemIndex,yearBranchIndex:cal.yearBranchIndex,yearStem:cal.yearStem,yearBranch:cal.yearBranch,
+    yearPillar:cal.yearPillar,yearElement:cal.yearElement,yearBranchElement:cal.yearBranchElement,yearPolarity:cal.yearPolarity,solarTermIndex:cal.solarTermIndex,solarTerm:cal.solarTerm,
+    solarMonth:cal.solarMonth,solarMonthTerm:cal.solarMonthTerm,monthBranchIndex:cal.monthBranchIndex,monthBranch:cal.monthBranch,
+    monthElement:cal.monthElement,monthPolarity:cal.monthPolarity,dayCycleIndex:cal.dayCycleIndex,dayStemIndex:cal.dayStemIndex,
+    dayBranchIndex:cal.dayBranchIndex,dayStem:cal.dayStem,dayBranch:cal.dayBranch,dayPillar:cal.dayPillar,dayElement:cal.dayElement,
+    dayPolarity:cal.dayPolarity,stage:cal.solarMonth,outer:cal.yearBranchIndex,
     dayIndex:Math.floor(Date.UTC(Y,MO-1,DA)/86400000), seed:Y*10000+MO*100+DA};
 }
 /* ---- the 160 types ---- */
@@ -48,9 +55,22 @@ var TYPES=[];
 export function labelOf(t){ return SEASON[t.mod].n+(t.A?" A":"")+(t.minus?"-":"")+numStr(t.num); }
 
 function ringOf(stage,mod){ var r=Math.abs(stage-SEASON[mod].home); return Math.min(r,12-r); }
-function compOf(outer,t){
-  var warmCur=(OUTER[outer].t==="暖流"), warmSeason=(t.mod===1||t.mod===2);
-  var v=(warmCur===warmSeason)?2:-2; return t.minus? -v : v;
+const GENERATES=[1,2,3,4,0];
+const CONTROLS=[2,3,4,0,1];
+function relationOf(person,environment){
+  if(person===environment) return {kind:"同気",score:1.2,description:"同じ働きが重なります"};
+  if(GENERATES[environment]===person) return {kind:"相生",score:1.8,description:"時の流れが基調を育てます"};
+  if(GENERATES[person]===environment) return {kind:"流出",score:-0.6,description:"力を外へ渡す流れです"};
+  if(CONTROLS[person]===environment) return {kind:"調整",score:0.8,description:"流れに働きかけやすい関係です"};
+  return {kind:"相剋",score:-1.3,description:"周囲の圧を受け、調整が要る関係です"};
+}
+function compOf(yearElement,yearBranchElement,t){
+  var stemRelation=fivePhaseRelation(t,yearElement).score;
+  var branchRelation=fivePhaseRelation(t,yearBranchElement).score;
+  return (stemRelation+branchRelation)/2;
+}
+export function fivePhaseRelation(type,element){
+  return type.minus ? relationOf(element,SEASON[type.mod].element) : relationOf(SEASON[type.mod].element,element);
 }
 function partsFor(c,t){
   var dd=(t.num-3.25)/2.25;                                   /* depth -1..+1 */
@@ -59,11 +79,13 @@ function partsFor(c,t){
   var moon=Math.cos((moonAng-phase)*Math.PI/180)*2;           /* season x moon  -2..+2 */
   var depth=dd*(TIDE_AMP[c.tide]-0.55)*2;                     /* depth x moon distance (tide strength) */
   var ring=ringOf(c.stage,t.mod);
-  var aff=(1-ring/3)*1.5;                                     /* sea state x season's home sea -1.5..+1.5 */
-  var comp=compOf(c.outer,t);                                 /* current x season, flipped by minus */
+  var monthRelation=fivePhaseRelation(t,c.monthElement);
+  var aff=(1-ring/3)*1.5+monthRelation.score*.45;               /* solar month and the profile's five-phase correspondence */
+  var comp=compOf(c.yearElement,c.yearBranchElement,t);        /* stem and branch elements x season profile */
   /* 日の海: a fast 12-day wave. Each type starts at its own position (season/depth/minus/A), so the order reshuffles every day. */
-  var off=(t.mod*3+t.ni+(t.minus?5:0)+(t.A?7:0))%12, dpos=(c.dayIndex+off)%12;
-  var day=(STAGE_PTS[dpos]-5.5)/4.5*1.6;
+  var off=(t.mod*3+t.ni+(t.minus?5:0)+(t.A?7:0))%12, dpos=(c.dayBranchIndex+off)%12;
+  var dayRelation=fivePhaseRelation(t,c.dayElement);
+  var day=(STAGE_PTS[dpos]-5.5)/4.5*1.6+dayRelation.score*.35;
   var vor=t.A? (TIDE_AMP[c.tide]-0.55)*1.6 : 0;                /* A (vortex) resonates with a near moon (big pull) */
   var hw=t.minus? -1.5 : 0;                                    /* 「−」: constant headwind, so minus types sink toward the bottom more often (design intent: 免罪符) */
   return {base:STAGE_PTS[c.stage],moon:moon,depth:depth,aff:aff,comp:comp,ring:ring,day:day,dpos:dpos,vor:vor,hw:hw};
@@ -96,18 +118,22 @@ export function axes(c, row) {
 }
 
 export function personalFor(c,prof,row){
-  var pos=(((prof.Y+prof.M+prof.D+(prof.total||0)+c.dayIndex)%12)+12)%12;
+  var offset=((prof.Y+prof.M+prof.D+(prof.total||0))%12+12)%12;
+  var pos=(c.dayBranchIndex+offset)%12;
   var wave=(STAGE_PTS[pos]-5.5)/4.5*1.6;
-  var ret=(((c.K-(prof.Y+660))%12===0)&&c.Y>=prof.Y)? 1 : 0;
+  var ret=(c.solarYear>prof.birthSolarYear&&c.yearBranchIndex===prof.birthYearBranchIndex)?1:0;
   return {pos:pos,wave:wave,ret:ret,delta:wave-row.p.day+ret};
 }
 
 export function blockScoreOf(y,b,t){
-  var K=y+660, st=(((K-1)%4)*3+b)%12, outer=(9+(K-1))%12;
-  return {st:st,outer:outer,score:STAGE_PTS[st]+(1-ringOf(st,t.mod)/3)*1.5+compOf(outer,t)+(t.minus?-1.5:0)};
+  var st=((b%12)+12)%12, outer=((y-4)%12+12)%12, yearStem=((y-4)%10+10)%10;
+  var yearElement=Math.floor(yearStem/2), yearBranchElement=BRANCH_ELEMENTS[outer], monthBranch=BRANCHES[(st+2)%12], monthElement=BRANCH_ELEMENTS[(st+2)%12];
+  var monthRelation=fivePhaseRelation(t,monthElement);
+  return {st:st,outer:outer,yearElement:yearElement,yearBranchElement:yearBranchElement,monthElement:monthElement,
+    score:STAGE_PTS[st]+(1-ringOf(st,t.mod)/3)*1.5+monthRelation.score*.45+compOf(yearElement,yearBranchElement,t)+(t.minus?-1.5:0)};
 }
 export function yearScoreOf(y,t){
-  var K=y+660, outer=(9+(K-1))%12, sum=0, b;
-  for(b=0;b<3;b++) sum+=blockScoreOf(y,b,t).score;
-  return {outer:outer,score:sum/3};
+  var outer=((y-4)%12+12)%12, sum=0, b;
+  for(b=0;b<12;b++) sum+=blockScoreOf(y,b,t).score;
+  return {outer:outer,score:sum/12};
 }

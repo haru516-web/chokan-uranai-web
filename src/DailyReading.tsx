@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { shortDate, tierColors, tiers, type readDay } from './domain';
-import { OUTER, STAGES } from './scoring';
+import { FIVE_PHASES, OUTER, STAGES } from './scoring';
 import { Card, S } from './ui';
 import type { ReactNode } from 'react';
 
@@ -23,22 +23,22 @@ export function DailyAdvice({ reading, isToday = true, children }: ReadingCardPr
 }
 
 export function LayeredReading({ reading, isToday = true, children }: ReadingCardProps) {
-  const { context, layers } = reading;
-  const blockStart = Math.floor((context.MO - 1) / 4) * 4 + 1;
+  const { context, layers, fivePhase } = reading;
   return <Card>
-    <Text style={S.kicker}>年・4か月・{isToday ? '今日' : 'この日'}</Text>
+    <Text style={S.kicker}>年・節気・{isToday ? '今日' : 'この日'}</Text>
     <Text accessibilityRole="header" style={S.h2}>三つの海を重ねて読む</Text>
     <View style={S.row}>
       {([
-        [context.Y + '年', OUTER[context.outer].th, layers.year],
-        [blockStart + '〜' + (blockStart + 3) + '月', STAGES[context.stage].n, layers.block],
-        [shortDate(context), context.moon, layers.day],
+        [context.yearPillar + '年', OUTER[context.outer].th, layers.year],
+        [context.solarMonthTerm, STAGES[context.stage].n, layers.block],
+        [shortDate(context), context.dayPillar + ' · ' + context.moon, layers.day],
       ] as const).map(([when, theme, level]) => <View key={when} style={[styles.layer, { borderTopColor: tierColors[level] }]}>
         <Text style={S.tiny}>{when}</Text>
         <Text style={[S.h3, { color: tierColors[level] }]}>{tiers[level]}</Text>
         <Text style={S.tiny}>{theme}</Text>
       </View>)}
     </View>
+    <Text style={S.tiny}>潮環の季節型 {FIVE_PHASES[fivePhase.personal].name} × 年干 {FIVE_PHASES[fivePhase.year].name}（{fivePhase.yearRelation.kind}）・年支 {FIVE_PHASES[fivePhase.yearBranch].name}（{fivePhase.yearBranchRelation.kind}）× 月 {FIVE_PHASES[fivePhase.month].name}（{fivePhase.monthRelation.kind}）× 日 {FIVE_PHASES[fivePhase.day].name}（{fivePhase.dayRelation.kind}）</Text>
     <Text style={S.body}>{layers.text}</Text>
     {children}
   </Card>;

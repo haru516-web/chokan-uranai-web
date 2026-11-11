@@ -1,5 +1,5 @@
 import { analyze, nameChars, strokeOf } from './strokes';
-import { NUMS, axes, blockScoreOf, ctxFor, dayTable, personalFor, yearScoreOf, type SeaContext, type SeaType } from './scoring';
+import { NUMS, SEASON, axes, blockScoreOf, ctxFor, dayTable, fivePhaseRelation, personalFor, yearScoreOf, type SeaContext, type SeaType } from './scoring';
 import content from './content.json';
 import readingText from './reading-text.json';
 
@@ -36,12 +36,15 @@ export function validate(inputs: Inputs) {
 export function makeProfile(inputs: Inputs) {
   const strokes = nameChars(normalizeName(inputs.name)).map(char => strokeOf(char)?.n ?? Number(inputs.manual[char]));
   const result = analyze(inputs.birth, strokes);
+  const birthDate = new Date(inputs.birth + 'T00:00:00Z');
+  const birthCalendar = ctxFor(birthDate);
   const ni = NUMS.indexOf(result.num);
   const t: SeaType = {
     mod: result.mod, ni, num: result.num, minus: result.minus, A: result.A,
     key: result.mod * 40 + ni * 4 + Number(result.minus) * 2 + Number(result.A),
   };
-  return { ...result, t, name: normalizeName(inputs.name) };
+  return { ...result, t, name: normalizeName(inputs.name), birthSolarYear: birthCalendar.solarYear,
+    birthYearBranchIndex: birthCalendar.yearBranchIndex };
 }
 export type Profile = ReturnType<typeof makeProfile>;
 export function residentIndex(type: SeaType) {
@@ -53,14 +56,20 @@ export const tiers = ['大漁', '順風', '凪', '荒波', '轟沈'] as const;
 export const tierColors = ['#efd393', '#b6dfc4', '#c1d2ef', '#e3af92', '#e0a5b3'];
 type Tier = 0 | 1 | 2 | 3 | 4;
 
+const cycleCache = new Map<number, { years: number[]; blocks: number[] }>();
 export function cycleFor(type: SeaType) {
+  const cached = cycleCache.get(type.key);
+  if (cached) return cached;
   const years: number[] = [];
   const blocks: number[] = [];
-  for (let year = 2000; year < 2012; year++) {
+  // A full stem-branch cycle is needed now that year scores include both elements.
+  for (let year = 1984; year < 2044; year++) {
     years.push(yearScoreOf(year, type).score);
-    for (let block = 0; block < 3; block++) blocks.push(blockScoreOf(year, block, type).score);
+    for (let solarMonth = 0; solarMonth < 12; solarMonth++) blocks.push(blockScoreOf(year, solarMonth, type).score);
   }
-  return { years: years.sort((a, b) => b - a), blocks: blocks.sort((a, b) => b - a) };
+  const cycle = { years: years.sort((a, b) => b - a), blocks: blocks.sort((a, b) => b - a) };
+  cycleCache.set(type.key, cycle);
+  return cycle;
 }
 
 export function cycleTier(score: number, sortedScores: number[]): Tier {
@@ -82,9 +91,9 @@ function layeredReading(year: Tier, block: Tier, day: Tier) {
   else if (day > 2) lead = '今日は大きな決断を急がず、潮が変わるまで見張りに回る日です。';
   else lead = '今日は大きな波が少なく、自分の速度で進めます。年の流れを見ながら、手元を一つ整えましょう。';
   const middle = [
-    '四か月の海も背中を押しています。', '四か月の海には、まだ追い風があります。',
-    '四か月の海は穏やかです。', '四か月の海は荒れやすい時期。余力を残しておきましょう。',
-    '四か月の海はもっとも荒れる時期。長く守りたいものを優先しましょう。',
+    '節気の海も背中を押しています。', '節気の海には、まだ追い風があります。',
+    '節気の海は穏やかです。', '節気の海は荒れやすい時期。余力を残しておきましょう。',
+    '節気の海はもっとも荒れる時期。長く守りたいものを優先しましょう。',
   ][block];
   return lead + middle;
 }
@@ -105,10 +114,21 @@ export function readDay(date: Date, profile: Profile) {
   const action = readingText.HAND[axis][(seed + 1) % readingText.HAND[axis].length].replace(/^今日の一手：/, '');
   const outlook = { title: tiers[level], color: tierColors[level], line, detail, action };
   const cycle = cycleFor(profile.t);
-  const year = cycleTier(yearScoreOf(context.Y, profile.t).score, cycle.years);
-  const block = cycleTier(blockScoreOf(context.Y, Math.floor((context.MO - 1) / 4), profile.t).score, cycle.blocks);
+  const year = cycleTier(yearScoreOf(context.solarYear, profile.t).score, cycle.years);
+  const block = cycleTier(blockScoreOf(context.solarYear, context.solarMonth, profile.t).score, cycle.blocks);
+  const fivePhase = {
+    personal: SEASON[profile.t.mod].element,
+    year: context.yearElement,
+    yearBranch: context.yearBranchElement,
+    month: context.monthElement,
+    day: context.dayElement,
+    yearRelation: fivePhaseRelation(profile.t, context.yearElement),
+    yearBranchRelation: fivePhaseRelation(profile.t, context.yearBranchElement),
+    monthRelation: fivePhaseRelation(profile.t, context.monthElement),
+    dayRelation: fivePhaseRelation(profile.t, context.dayElement),
+  };
   return { context, row, personal, personalRank, outlook, force, mean: table.mean,
-    layers: { year, block, day: level, text: layeredReading(year, block, level) } };
+    fivePhase, layers: { year, block, day: level, text: layeredReading(year, block, level) } };
 }
 
 export const lifeFields = [
@@ -121,15 +141,15 @@ export const lifeFields = [
 
 export function calendarEvents(date: Date, profile: Profile | null) {
   const c = ctxFor(date);
+  const before = ctxFor(addDays(date, -1));
   const result = [];
-  if (c.DA === 1 && c.MO === 1) result.push('はじまりの潮替わり · 新しい海流');
-  if (c.DA === 1 && (c.MO === 5 || c.MO === 9)) result.push('潮替わり');
+  if (before.solarMonth !== c.solarMonth) result.push('潮替わり · ' + c.solarMonthTerm);
+  if (before.solarYear !== c.solarYear) result.push('年の海流替わり · ' + c.yearPillar);
   // Use the day when the phase crosses 0° or 180° since the previous JST noon.
-  const before = ctxFor(addDays(date, -1)).ph;
-  if (before > c.ph) result.push('月を読む日 · 新月');
-  if (before < 180 && c.ph >= 180) result.push('月を読む日 · 満月');
+  if (before.ph > c.ph) result.push('月を読む日 · 新月');
+  if (before.ph < 180 && c.ph >= 180) result.push('月を読む日 · 満月');
   if (profile && c.MO === profile.M && c.DA === profile.D) result.push('私の出航日');
-  if (profile && c.Y > profile.Y && (c.Y - profile.Y) % 12 === 0) result.push('帰郷の年');
+  if (profile && c.solarYear > profile.birthSolarYear && c.yearBranchIndex === profile.birthYearBranchIndex) result.push('帰郷の年');
   return result;
 }
 

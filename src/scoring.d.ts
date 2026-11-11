@@ -3,6 +3,12 @@ export type SeaContext = {
   Y: number; MO: number; DA: number; K: number; wd: number; age: number;
   ph: number; tide: string; dist: number; phaseTide: string; moon: string;
   stage: number; outer: number; dayIndex: number; seed: number;
+  solarYear: number; yearStemIndex: number; yearBranchIndex: number; yearStem: string; yearBranch: string;
+  yearPillar: string; yearElement: number; yearBranchElement: number; yearPolarity: '陰' | '陽'; solarTermIndex: number; solarTerm: string;
+  solarMonth: number; solarMonthTerm: string; monthBranchIndex: number; monthBranch: string;
+  monthElement: number; monthPolarity: '陰' | '陽';
+  dayCycleIndex: number; dayStemIndex: number; dayBranchIndex: number; dayStem: string; dayBranch: string;
+  dayPillar: string; dayElement: number; dayPolarity: '陰' | '陽';
 };
 export type RankRow = {
   t: SeaType; score: number; rank: number;
@@ -11,11 +17,15 @@ export type RankRow = {
 export const NUMS: number[];
 export const STAGES: { n: string; d: string }[];
 export const OUTER: { n: string; th: string; t: string; d: string }[];
-export const SEASON: { n: string; act: string; col: string; moon: string; home: number }[];
+export const SEASON: { n: string; element: number; ang: number; act: string; col: string; moon: string; home: number }[];
+export const FIVE_PHASES: { name: string; action: string }[];
+export const SOLAR_MONTH_TERMS: string[];
 export function ctxFor(date: Date): SeaContext;
+export function solarMonthStartDate(solarYear: number, solarMonth: number): Date;
+export function fivePhaseRelation(type: SeaType, element: number): { kind: string; score: number; description: string };
 export function labelOf(type: SeaType): string;
 export function dayTable(context: SeaContext): { rows: RankRow[]; byKey: Record<number, RankRow>; mean: number };
 export function axes(context: SeaContext, row: RankRow): { go: number; change: number };
-export function personalFor(context: SeaContext, profile: { Y: number; M: number; D: number; total: number }, row: RankRow): { pos: number; delta: number; ret: number };
-export function blockScoreOf(year: number, block: number, type: SeaType): { st: number; outer: number; score: number };
+export function personalFor(context: SeaContext, profile: { Y: number; M: number; D: number; total: number; birthSolarYear: number; birthYearBranchIndex: number }, row: RankRow): { pos: number; wave: number; delta: number; ret: number };
+export function blockScoreOf(year: number, solarMonth: number, type: SeaType): { st: number; outer: number; yearElement: number; yearBranchElement: number; monthElement: number; score: number };
 export function yearScoreOf(year: number, type: SeaType): { outer: number; score: number };

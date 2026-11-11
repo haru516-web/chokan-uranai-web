@@ -4,7 +4,7 @@ import Svg, { Circle, G, Path, Rect, Text as SvgText, type Svg as SvgHandle } fr
 import { dateLabel, type readDay, type Profile } from './domain';
 import { DailyRank } from './DailyRank';
 import { GodAnimation } from './GodAnimation';
-import { labelOf, OUTER, SEASON, STAGES } from './scoring';
+import { labelOf, OUTER, SEASON, solarMonthStartDate, STAGES } from './scoring';
 import { TideWheel } from './TideCharts';
 import { Button, C, Card, Chip, Chips, S } from './ui';
 import { headwind, ownResident, residents, vortex } from './voyage';
@@ -61,7 +61,7 @@ export function TideSummary({ profile, reading, isToday = true, children }: {
       <GodAnimation index={season} style={styles.god} label={SEASON[season].n + 'の神'} />
       <View style={styles.rank}><DailyRank reading={reading} isToday={isToday} /></View>
     </View>
-    <Text style={[S.tiny, styles.center]}>{OUTER[context.outer].n}　／　{STAGES[context.stage].n}　／　{context.moon}</Text>
+    <Text style={[S.tiny, styles.center]}>{context.yearPillar}　／　{OUTER[context.outer].n}　·　{context.solarMonthTerm} {STAGES[context.stage].n}　／　{context.moon}</Text>
     {children}
   </View>;
 }
@@ -73,9 +73,10 @@ export function TideFlow({ profile, context, showCalendar }: {
   return <Card>
     <View style={styles.flow}>
       <Text style={[S.h2, styles.center]} accessibilityRole="header">運勢の流れ</Text>
-      <Text style={[S.tiny, styles.center]}>外側は12年の海流、内側は月と4か月ごとの海況です。</Text>
+      <Text style={[S.tiny, styles.center]}>外側は十二支で巡る年の海流、内側は月と節気ごとの海況です。</Text>
       <TideWheel context={context} profile={profile}
-        onYear={year => showCalendar(new Date(Date.UTC(year, context.MO - 1, 1)), 'current')}
+        onYear={year => showCalendar(solarMonthStartDate(year, context.solarMonth), 'current')}
+        onSolarMonth={month => showCalendar(solarMonthStartDate(context.solarYear, month), 'stage')}
         onMonth={month => showCalendar(new Date(Date.UTC(context.Y, month - 1, 1)), 'stage')} />
     </View>
   </Card>;

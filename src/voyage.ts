@@ -1,7 +1,7 @@
-import { cycleFor, cycleTier, dateKey, residentIndex, type Profile } from './domain';
+import { addDays, cycleFor, cycleTier, dateKey, residentIndex, type Profile } from './domain';
 import questions from './questions.json';
 import residents from './residents.json';
-import { blockScoreOf, OUTER, STAGES, yearScoreOf } from './scoring';
+import { blockScoreOf, ctxFor, OUTER, solarMonthStartDate, SOLAR_MONTH_TERMS, STAGES, yearScoreOf } from './scoring';
 
 export { questions, residents };
 export type Question = typeof questions[number];
@@ -54,36 +54,40 @@ export function periodFor(year: number, type: Profile['t']) {
   return {
     current: OUTER[current.outer],
     level: cycleTier(current.score, cycle.years),
-    blocks: [0, 1, 2].map(block => {
-      const result = blockScoreOf(year, block, type);
-      return { stage: STAGES[result.st], level: cycleTier(result.score, cycle.blocks) };
+    blocks: Array.from({ length: 12 }, (_, solarMonth) => {
+      const result = blockScoreOf(year, solarMonth, type);
+      return { solarMonth, term: SOLAR_MONTH_TERMS[solarMonth], date: solarMonthStartDate(year, solarMonth),
+        stage: STAGES[result.st], level: cycleTier(result.score, cycle.blocks) };
     }),
   };
 }
 
 export function nextTideChange(today: Date) {
-  const year = today.getUTCFullYear();
-  const nextMonth = (Math.floor(today.getUTCMonth() / 4) + 1) * 4;
-  const date = new Date(Date.UTC(year, nextMonth, 1));
-  return { date, days: Math.round((date.getTime() - today.getTime()) / 86_400_000) };
+  const currentMonth = ctxFor(today).solarMonth;
+  for (let days = 1; days <= 35; days++) {
+    const date = addDays(today, days);
+    if (ctxFor(date).solarMonth !== currentMonth) return { date, days };
+  }
+  const date = addDays(today, 30);
+  return { date, days: 30 };
 }
 
 export function revisitQuestion(events: string[], today: Date, saved: SavedQuestion[], records: Reflection[]) {
   const day = dateKey(today);
-  const year = today.getUTCFullYear();
+  const year = ctxFor(today).solarYear;
   if (events.includes('私の出航日')) {
     const previous = saved.find(entry => entry.day.startsWith(String(year - 1)));
     if (previous) return { id: previous.id, title: '出航日 · 去年の問い' };
   }
   if (events.some(event => event.includes('潮替わり'))) {
-    const from = dateKey(new Date(Date.UTC(year, today.getUTCMonth() - 4, 1)));
+    const from = dateKey(addDays(today, -35));
     const previous = saved.find(entry => entry.day >= from && entry.day < day);
     if (previous) return { id: previous.id, title: '潮替わり · 前の海況で残した問い' };
   }
   if (events.includes('帰郷の年')) {
-    const previous = records.find(entry => entry.year === year - 12 && entry.questionId);
+    const previous = records.find(entry => ctxFor(new Date(Date.UTC(entry.year, entry.month - 1, 15))).solarYear === year - 12 && entry.questionId);
     if (previous?.questionId) return { id: previous.questionId, title: '帰郷の年 · 同じ海流の年の問い' };
-    const sameCurrent = saved.find(entry => Number(entry.day.slice(0, 4)) === year - 12);
+    const sameCurrent = saved.find(entry => ctxFor(new Date(entry.day + 'T00:00:00Z')).solarYear === year - 12);
     if (sameCurrent) return { id: sameCurrent.id, title: '帰郷の年 · 同じ海流の年の問い' };
   }
   return saved[0] && { id: saved[0].id, title: '以前残した問い' };

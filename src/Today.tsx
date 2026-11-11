@@ -6,7 +6,7 @@ import { addDays, calendarEvents, content, dateKey, dateLabel, readDay, shortDat
 import { BornSea, NameReadingDetails, TypeTraits } from './NameReading';
 import { SelectedQuestionReading } from './Questions';
 import { TideFlow, TideSummary } from './ResidentCard';
-import { ctxFor, labelOf, OUTER, SEASON, STAGES } from './scoring';
+import { ctxFor, FIVE_PHASES, labelOf, OUTER, SEASON, STAGES } from './scoring';
 import { Meter, SeaGlobe } from './TideCharts';
 import { Button, C, Card, Chip, Chips, S, Section, Tile } from './ui';
 import { findQuestion, nextTideChange, ownResident, revisitQuestion, type Question, type Reflection, type SavedQuestion } from './voyage';
@@ -18,7 +18,7 @@ export function Today({ today, profile, goMyth, openCalendar, create, ranks, onS
   today: Date; profile: Profile | null; goMyth: () => void; openCalendar: (date: Date, mode: 'current' | 'stage') => void;
   create: () => void; ranks: (date: Date) => void; onSave: (day: string) => void;
   questions: SavedQuestion[]; reflections: Reflection[]; openQuestion: (id: string) => void;
-  openQuestions: () => void; openHomecoming: () => void;
+  openQuestions: () => void; openHomecoming: (year: number) => void;
   shareTideCard: () => void;
   selectedQuestion?: { question: Question; saved: boolean; toggle: () => void; compare: () => void };
 }) {
@@ -76,9 +76,9 @@ export function Today({ today, profile, goMyth, openCalendar, create, ranks, onS
       <Text style={[S.kicker, styles.center]}>{offset === 0 ? '今日の海' : shortDate(c) + 'の海'}</Text>
       <Text accessibilityRole="header" style={[S.title, styles.center]}>いま、どんな海にいるか</Text>
       <Text style={[S.body, styles.center]}>{dateLabel(c)}</Text>
-      <Text style={[S.tiny, styles.center]}>{OUTER[c.outer].n}　／　{STAGES[c.stage].n}　／　{c.moon}</Text>
+      <Text style={[S.tiny, styles.center]}>{c.yearPillar}　／　{OUTER[c.outer].n}　／　{c.solarMonthTerm} {STAGES[c.stage].n}　／　{c.dayPillar}・{c.moon}</Text>
       <Text style={[S.body, styles.center, styles.prologue]}>
-        年の海流、四か月の海況、今日の月。生年月日と名前から導いた名札を三つの海に重ね、いまの運勢を読みます。
+        年の海流、節気で移る海況、今日の月。暦の五行と生年月日・名前から導いた名札を重ね、いまの海を読みます。
       </Text>
       <Button onPress={create}>自分の海を占う　›</Button>
       <Button quiet onPress={openQuestions}>名前を入れずに問いを読む</Button>
@@ -86,7 +86,7 @@ export function Today({ today, profile, goMyth, openCalendar, create, ranks, onS
     {reading && profile && <>
       <BornSea profile={profile} />
       <LayeredReading reading={reading} isToday={isToday}>
-        <Text style={S.tiny}>海流 {c.outer + 1}／12　·　海況 {Math.floor(c.stage / 3) + 1}年目／4年</Text>
+        <Text style={S.tiny}>年の干支 {c.yearPillar}　·　節気海況 {c.stage + 1}／12</Text>
         <Text style={S.tiny}>次の潮替わり　{dateKey(next.date)} ／ あと{next.days}日</Text>
       </LayeredReading>
       <TideFlow profile={profile} context={c} showCalendar={openCalendar} />
@@ -104,11 +104,11 @@ export function Today({ today, profile, goMyth, openCalendar, create, ranks, onS
     </Card>}
     {tideChange && <Card>
       <Text style={S.h3}>潮替わり · {STAGES[c.stage].n}</Text>
-      <Text style={S.body}>{STAGES[c.stage].d}。この四か月の初めに、いま気になることを一つ選んでみましょう。</Text>
+      <Text style={S.body}>{c.solarMonthTerm}からの海況です。{STAGES[c.stage].d}。いま気になることを一つ選んでみましょう。</Text>
     </Card>}
     {homecoming && <Card>
       <Text style={S.h3}>帰郷の年</Text>
-      <Text style={S.body}>{c.Y - 12}年と同じ海流が巡っています。</Text>
+      <Text style={S.body}>{c.solarYear - 12}年と同じ海流が巡っています。</Text>
     </Card>}
     {profile && resident && <>
       <Section title={resident.band + 'の考え方・人間関係'} />
@@ -127,7 +127,7 @@ export function Today({ today, profile, goMyth, openCalendar, create, ranks, onS
     {reading && <Button quiet onPress={() => openCalendar(date, 'current')}>運勢の流れを詳しく見る</Button>}
     {revisit && <Button quiet onPress={() => openQuestion(revisit.id)}>問いを読み直す</Button>}
     {tideChange && <Button quiet onPress={openQuestions}>新しい問いを選ぶ</Button>}
-    {homecoming && <Button quiet onPress={openHomecoming}>{(c.Y - 12) + '年の海と記録を見る'}</Button>}
+    {homecoming && <Button quiet onPress={() => openHomecoming(c.solarYear - 12)}>{(c.solarYear - 12) + '年の海と記録を見る'}</Button>}
     {currentQuestion && <Chips>
       <Chip active={currentQuestion.saved} onPress={currentQuestion.toggle}>{currentQuestion.saved ? '今日の保存を取り消す' : '問いを残しておく'}</Chip>
       <Chip onPress={currentQuestion.compare}>あの頃の海と比べる</Chip>
@@ -142,25 +142,25 @@ export function Today({ today, profile, goMyth, openCalendar, create, ranks, onS
     </>}
     <View style={S.row}>
       <Tile source={currents[c.outer]} subtitle="今年の海流" title={OUTER[c.outer].n} onPress={() => openCalendar(date, 'current')} />
-      <Tile source={stages[c.stage]} subtitle="四か月の海況" title={STAGES[c.stage].n} onPress={() => openCalendar(date, 'stage')} />
+      <Tile source={stages[c.stage]} subtitle="節気の海況" title={STAGES[c.stage].n} onPress={() => openCalendar(date, 'stage')} />
     </View>
     <View style={S.row}><Tile source={scenes[0]} subtitle="潮環神話" title="見られなかった海" onPress={goMyth} /></View>
   </View>;
 }
 
 function ReadingReasons({ reading }: { reading: Reading }) {
-  const { context: c, row, personal, personalRank, force } = reading;
+  const { context: c, row, personal, personalRank, force, fivePhase } = reading;
   const { p, t } = row;
   const season = SEASON[t.mod];
   const factors = [
     { title: '海況の基礎点', score: p.base, note: STAGES[c.stage].d },
     { title: '季節 × 月の形', score: p.moon, note: season.n + 'は' + season.moon + 'に力が出ます。今日の月は「' + c.moon + '」。深さが得意な月相を少しずらします。' },
     { title: '深さ × 月の距離', score: p.depth, note: '今日の月は約' + (c.dist / 10000).toFixed(1) + '万km。深い名札は近い月、浅い名札は遠い月の潮に乗りやすくなります。' },
-    { title: '季節の拠点 × 海況', score: p.aff, note: season.n + 'の拠点は「' + STAGES[season.home].n + '」。いまの海況から' + p.ring + '段階離れています。' },
-    { title: '季節 × 年の海流', score: p.comp, note: OUTER[c.outer].n + 'は' + OUTER[c.outer].t + '。' + (t.minus ? '「−」の名札では風向きが反転します。' : '暖流は春・夏に、寒流は秋・冬に追い風となります。') },
+    { title: '季節の拠点 × 節気・五行', score: p.aff, note: season.n + 'の拠点は「' + STAGES[season.home].n + '」。' + c.solarMonthTerm + 'の月令は' + FIVE_PHASES[fivePhase.month].name + 'で、季節の型との関係は「' + fivePhase.monthRelation.kind + '」です。' },
+    { title: '季節 × 年の干支五行', score: p.comp, note: c.yearPillar + '年の年干は' + c.yearPolarity + 'の' + FIVE_PHASES[fivePhase.year].name + '（' + fivePhase.yearRelation.kind + '）、年支は' + FIVE_PHASES[fivePhase.yearBranch].name + '（' + fivePhase.yearBranchRelation.kind + '）。' + (t.minus ? '「−」の名札では関係の向きが反転します。' : '') },
     ...(t.minus ? [{ title: '「−」の向かい風', score: p.hw, note: '向かい風体質にかかる補正です。' }] : []),
     ...(t.A ? [{ title: 'A（渦）× 月の距離', score: p.vor, note: '月が近いほど、渦の力が強く表れます。' }] : []),
-    { title: '名札の日の海', score: p.day, note: '12日で一巡する波。今日の名札の波は「' + STAGES[p.dpos].n + '」。' },
+    { title: '日の干支 × 名札の波', score: p.day, note: c.dayPillar + '日の日干は' + c.dayPolarity + 'の' + FIVE_PHASES[fivePhase.day].name + '。季節の型との関係は「' + fivePhase.dayRelation.kind + '」で、12の地支をめぐる日の波は「' + STAGES[p.dpos].n + '」です。' },
   ];
 
   return <Card>

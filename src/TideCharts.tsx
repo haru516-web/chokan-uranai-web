@@ -2,7 +2,7 @@ import { useId } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, G, Line, Path, Polygon, Polyline, RadialGradient, Stop, Text as SvgText } from './web/svg';
 import { cycleFor, cycleTier, tiers, type Profile } from './domain';
-import { blockScoreOf, labelOf, OUTER, STAGES, yearScoreOf, type SeaContext } from './scoring';
+import { blockScoreOf, labelOf, OUTER, SOLAR_MONTH_TERMS, STAGES, yearScoreOf, type SeaContext } from './scoring';
 import { C, S } from './ui';
 
 const spokes = Array.from({ length: 12 }, (_, index) => index);
@@ -52,12 +52,13 @@ export function SeaGlobe({ context }: { context: SeaContext }) {
 
 const paper = ['#f0db9f', '#d8d5ae', '#b8bec7', '#827367', '#59475b'];
 
-export function TideWheel({ context, profile, onMonth, onYear }: {
+export function TideWheel({ context, profile, onMonth, onSolarMonth, onYear }: {
   context: SeaContext; profile: Profile | null; onMonth: (month: number) => void; onYear: (year: number) => void;
+  onSolarMonth: (solarMonth: number) => void;
 }) {
   const cycle = profile && cycleFor(profile.t);
-  const year = context.Y;
-  const block = Math.floor((context.MO - 1) / 4);
+  const year = context.solarYear;
+  const block = context.solarMonth;
   const years = spokes.map(i => year + (i <= 5 ? i : i - 12));
   const yearTier = profile && cycle ? cycleTier(yearScoreOf(year, profile.t).score, cycle.years) : null;
 
@@ -74,13 +75,13 @@ export function TideWheel({ context, profile, onMonth, onYear }: {
           <SvgText x={x} y={y + 12} textAnchor="middle" fontSize="8" fill={tier < 3 ? '#151925' : '#fff4dc'}>{entry}</SvgText>
         </G>;
       })}
-      {[0, 1, 2].map(i => {
-        const stage = (context.stage - block + i + 12) % 12;
+      {spokes.map(i => {
         const tier = profile && cycle ? cycleTier(blockScoreOf(year, i, profile.t).score, cycle.blocks) : 2;
-        const [x, y] = point(77, i * 120 + 45);
-        return <G key={i} onPress={() => onMonth(i * 4 + 1)}>
-          <Path d={wedge(61, 91, i * 120 - 14.7, i * 120 + 104.7)} fill={paper[tier]} stroke={i === block ? C.gold : '#181c30'} strokeWidth={i === block ? 1.5 : .6} />
-          <SvgText x={x} y={y + 4} textAnchor="middle" fontSize="11" fontWeight="700" fill={tier < 3 ? '#161827' : '#fff4dc'}>{STAGES[stage].n}</SvgText>
+        const [x, y] = point(77, i * 30);
+        return <G key={i} onPress={() => onSolarMonth(i)}>
+          <Path d={wedge(61, 91, i * 30 - 14.7, i * 30 + 14.7)} fill={paper[tier]} stroke={i === block ? C.gold : '#181c30'} strokeWidth={i === block ? 1.5 : .6} />
+          <SvgText x={x} y={y + 2} textAnchor="middle" fontSize="6.6" fontWeight="700" fill={tier < 3 ? '#161827' : '#fff4dc'}>{SOLAR_MONTH_TERMS[i]}</SvgText>
+          <SvgText x={x} y={y + 10} textAnchor="middle" fontSize="6.6" fill={tier < 3 ? '#161827' : '#fff4dc'}>{STAGES[i].n}</SvgText>
         </G>;
       })}
       {spokes.map(i => {
@@ -94,8 +95,9 @@ export function TideWheel({ context, profile, onMonth, onYear }: {
       <Circle cx={center} cy={center} r="52" fill="none" stroke="#594b39" strokeWidth=".6" />
       <Polygon points="150,10 145,2 155,2" fill="#f5d899" />
       <SvgText x={center} y="128" fill="#dfc38d" textAnchor="middle" fontSize="10">{profile ? labelOf(profile.t) : '潮環の輪'}</SvgText>
-      <SvgText x={center} y="151" fill="#f8efd9" textAnchor="middle" fontSize="16" fontWeight="700">{year}年{context.MO}月</SvgText>
-      <SvgText x={center} y="171" fill="#e8cc93" textAnchor="middle" fontSize="10">{yearTier === null ? OUTER[context.outer].n : '年の運勢 · ' + tiers[yearTier]}</SvgText>
+      <SvgText x={center} y="147" fill="#f8efd9" textAnchor="middle" fontSize="14" fontWeight="700">{context.yearPillar}年 · {context.MO}月</SvgText>
+      <SvgText x={center} y="165" fill="#e8cc93" textAnchor="middle" fontSize="9">{yearTier === null ? OUTER[context.outer].n : '年の運勢 · ' + tiers[yearTier]}</SvgText>
+      <SvgText x={center} y="179" fill="#e8cc93" textAnchor="middle" fontSize="8">{context.solarMonthTerm} · {STAGES[context.stage].n}</SvgText>
     </Svg>
   </View>;
 }

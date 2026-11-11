@@ -2,31 +2,31 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { dateKey, tierColors, tiers, type Profile } from './domain';
 import { TideMarks } from './ResidentCard';
-import { ctxFor, labelOf, OUTER, STAGES } from './scoring';
+import { ctxFor, labelOf, OUTER, solarMonthStartDate, SOLAR_MONTH_TERMS, STAGES } from './scoring';
 import { Button, C, Card, Chip, Chips, Heading, S, Section } from './ui';
 import { categories, findQuestion, nextTideChange, ownResident, periodFor, questions, type Reflection, type SavedQuestion } from './voyage';
 
-const months = Array.from({ length: 12 }, (_, i) => i + 1);
-const blockLabels = ['1〜4月', '5〜8月', '9〜12月'];
+const solarMonths = Array.from({ length: 12 }, (_, i) => i);
 
 export function LifeChart({ today, profile, questionId, initialYear, create, calendar, write, showToday, records, edit }: {
   today: Date; profile: Profile | null; questionId?: string; create: () => void; calendar?: () => void;
   write: (year: number, month: number, questionId?: string) => void; showToday: () => void;
   initialYear?: number; records: Reflection[]; edit: (record: Reflection) => void;
 }) {
-  const thisYear = today.getUTCFullYear();
-  const thisMonth = today.getUTCMonth() + 1;
+  const todayContext = ctxFor(today);
+  const thisYear = todayContext.solarYear;
   const [year, setYear] = useState(initialYear ?? (questionId ? thisYear - 1 : thisYear));
   const [month, setMonth] = useState<number | null>(null);
   const years = Array.from({ length: 13 }, (_, i) => initialYear ? thisYear - 12 + i : thisYear - i);
   const question = findQuestion(questionId);
   const period = profile && periodFor(year, profile.t);
   const currentPeriod = profile && periodFor(thisYear, profile.t);
-  const selectedMonth = month ?? 1;
-  const context = ctxFor(new Date(Date.UTC(year, selectedMonth - 1, 1)));
-  const selectedBlock = Math.floor((selectedMonth - 1) / 4);
+  const selectedMonth = month ?? (year === thisYear ? todayContext.solarMonth : 0);
+  const selectedDate = solarMonthStartDate(year, selectedMonth);
+  const context = ctxFor(selectedDate);
   const next = nextTideChange(today);
-  const relevant = records.filter(record => record.year === year && (!questionId || record.questionId === questionId));
+  const relevant = records.filter(record => ctxFor(new Date(Date.UTC(record.year, record.month - 1, 15))).solarYear === year &&
+    (!questionId || record.questionId === questionId));
 
   function chooseYear(nextYear: number) {
     setYear(nextYear);
@@ -35,7 +35,7 @@ export function LifeChart({ today, profile, questionId, initialYear, create, cal
 
   return <View style={S.stack}>
     <Heading tag="人生の海図" title={question ? 'あなたが、その問いを強く感じたのはいつですか。' : '通ってきた海を振り返る'}
-      body="過去12年の海流を、年ごとに選んで読めます。年の下の帯は、四か月ごとに変わる海況です。" />
+      body="過去12年の海流を、年ごとに選んで読めます。年の下には、立春から巡る二十四節気の12の『節』ごとの海況を並べています。" />
     {question && <Card><Text style={S.kicker}>{question.id}　問いを重ねる</Text><Text style={S.h3}>{question.question}</Text></Card>}
     {!profile && <Card><Text style={S.body}>潮札をつくると、同じ時期をあなたの名札で読めます。</Text><Button quiet onPress={create}>私の潮札をひらく</Button></Card>}
     <View style={S.between}>
@@ -45,13 +45,13 @@ export function LifeChart({ today, profile, questionId, initialYear, create, cal
     <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={{ gap: 8, paddingBottom: 8 }}>
       {years.map(y => {
         const tide = profile && periodFor(y, profile.t);
-        const names = blockLabels.map((_, i) => STAGES[ctxFor(new Date(Date.UTC(y, i * 4, 1))).stage].n);
+        const names = solarMonths.map(i => STAGES[i].n);
         return <Pressable key={y} onPress={() => chooseYear(y)} accessibilityRole="button" accessibilityState={{ selected: year === y }}
           accessibilityLabel={`${y}年、${names.join('、')}`} style={[S.card, styles.year, year === y && styles.selected]}>
           <Text style={S.h3}>{y}</Text>
           <Text numberOfLines={1} style={S.tiny}>{OUTER[ctxFor(new Date(Date.UTC(y, 0, 1))).outer].n}</Text>
           <View style={styles.band}>
-            {names.map((name, i) => <View key={name} style={[styles.stripe, { backgroundColor: tide ? tierColors[tide.blocks[i].level] : [C.aqua, C.line, C.gold][i] }]} />)}
+          {names.map((name, i) => <View key={name + i} style={[styles.stripe, { backgroundColor: tide ? tierColors[tide.blocks[i].level] : [C.aqua, C.line, C.gold][i % 3] }]} />)}
           </View>
         </Pressable>;
       })}
@@ -60,29 +60,28 @@ export function LifeChart({ today, profile, questionId, initialYear, create, cal
       <Text style={S.kicker}>{year}年の海流</Text>
       <Text style={S.h2}>{OUTER[context.outer].n}{period ? ' ／ ' + tiers[period.level] : ''}</Text>
       <Text style={S.body}>{OUTER[context.outer].th}の年。{OUTER[context.outer].d}。</Text>
-      {blockLabels.map((label, i) => {
-        const stage = STAGES[ctxFor(new Date(Date.UTC(year, i * 4, 1))).stage];
-        const canSelect = year < thisYear || i * 4 + 1 <= thisMonth;
-        return <Chip key={label} active={month !== null && selectedBlock === i} onPress={canSelect ? () => setMonth(i * 4 + 1) : undefined}>
-          {label + '　' + stage.n + (period ? ' ／ ' + tiers[period.blocks[i].level] : '')}
+      {solarMonths.map(i => {
+        const canSelect = year < thisYear || i <= todayContext.solarMonth;
+        return <Chip key={SOLAR_MONTH_TERMS[i]} active={selectedMonth === i} onPress={canSelect ? () => setMonth(i) : undefined}>
+          {SOLAR_MONTH_TERMS[i] + '　' + STAGES[i].n + (period ? ' ／ ' + tiers[period.blocks[i].level] : '')}
         </Chip>;
       })}
-      {currentPeriod && year !== thisYear && <Text style={S.tiny}>今は {currentPeriod.current.n} ／ {tiers[currentPeriod.level]}。現在の海況は {currentPeriod.blocks[Math.floor(today.getUTCMonth() / 4)].stage.n} です。</Text>}
+      {currentPeriod && year !== thisYear && <Text style={S.tiny}>今は {currentPeriod.current.n} ／ {tiers[currentPeriod.level]}。現在の海況は {currentPeriod.blocks[todayContext.solarMonth].stage.n} です。</Text>}
     </Card>
     <Card>
-      <Text style={S.h3}>その頃の海を読む</Text>
-      <Chips>{months.filter(m => year < thisYear || m <= thisMonth).map(m =>
-        <Chip key={m} active={month === m} onPress={() => setMonth(m)}>{m + '月'}</Chip>,
+      <Text style={S.h3}>節気ごとの海を読む</Text>
+      <Chips>{solarMonths.filter(i => year < thisYear || i <= todayContext.solarMonth).map(i =>
+        <Chip key={i} active={selectedMonth === i} onPress={() => setMonth(i)}>{SOLAR_MONTH_TERMS[i]}</Chip>,
       )}</Chips>
       {month !== null && <>
-        <Text style={S.h2}>{year}年{month}月 · {STAGES[context.stage].n}</Text>
+        <Text style={S.h2}>{context.solarYear}年 · {context.solarMonthTerm} · {STAGES[context.stage].n}</Text>
         <Text style={S.body}>{STAGES[context.stage].d}。</Text>
         {profile && <>
-          <Text style={S.body}>この象徴で読み直すなら、{ownResident(profile).band}（名札 {labelOf(profile.t)}）にとって、年の海は「{tiers[period!.level]}」、この四か月は「{tiers[period!.blocks[selectedBlock].level]}」です。</Text>
+          <Text style={S.body}>この象徴で読み直すなら、{ownResident(profile).band}（名札 {labelOf(profile.t)}）にとって、年の海は「{tiers[period!.level]}」、この節気の海は「{tiers[period!.blocks[selectedMonth].level]}」です。</Text>
           <TideMarks profile={profile} />
         </>}
         <Text style={S.tiny}>海流と海況は、当時の出来事を振り返るための創作占いの象徴です。</Text>
-        <Button onPress={() => write(year, month, questionId)}>この頃の出来事を記録する</Button>
+        <Button onPress={() => write(context.Y, context.MO, questionId)}>この頃の出来事を記録する</Button>
       </>}
     </Card>
     {!!relevant.length && <>

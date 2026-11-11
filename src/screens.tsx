@@ -7,7 +7,7 @@ import { ReflectionCards } from './LifeChart';
 import { GodAnimation } from './GodAnimation';
 import { TypeTraits } from './NameReading';
 import { TideMarks } from './ResidentCard';
-import { ctxFor, dayTable, labelOf, OUTER, SEASON, STAGES, yearScoreOf, blockScoreOf } from './scoring';
+import { ctxFor, dayTable, FIVE_PHASES, labelOf, OUTER, SEASON, solarMonthStartDate, SOLAR_MONTH_TERMS, STAGES, yearScoreOf, blockScoreOf } from './scoring';
 import { TideWheel } from './TideCharts';
 import { Art, Button, C, Card, Chip, Chips, Heading, S, Section, Tile } from './ui';
 import { findQuestion, ownResident, residents, type Reflection, type SavedQuestion } from './voyage';
@@ -30,11 +30,11 @@ export function Calendar({ today, profile, initial }: { today: Date; profile: Pr
   const events = calendarEvents(date, profile);
   const monthStart = new Date(Date.UTC(c.Y, c.MO - 1, 1));
   const dayCount = new Date(Date.UTC(c.Y, c.MO, 0)).getUTCDate();
-  const block = Math.floor((c.MO - 1) / 4);
+  const block = c.solarMonth;
   const cycle = profile && cycleFor(profile.t);
   const year = OUTER[c.outer];
-  const yearLevel = profile && cycle ? cycleTier(yearScoreOf(c.Y, profile.t).score, cycle.years) : null;
-  const blockLevel = profile && cycle ? cycleTier(blockScoreOf(c.Y, block, profile.t).score, cycle.blocks) : null;
+  const yearLevel = profile && cycle ? cycleTier(yearScoreOf(c.solarYear, profile.t).score, cycle.years) : null;
+  const blockLevel = profile && cycle ? cycleTier(blockScoreOf(c.solarYear, block, profile.t).score, cycle.blocks) : null;
 
   function choose(date: Date) {
     setOffset(Math.round((date.getTime() - today.getTime()) / 86_400_000));
@@ -42,21 +42,23 @@ export function Calendar({ today, profile, initial }: { today: Date; profile: Pr
   }
 
   return <View style={S.stack}>
-    <Heading tag="潮の羅針盤" title="運勢の流れ" body="外の輪は十二年の海流。内の輪は一年の月と、四か月ごとの海況です。" />
+    <Heading tag="潮の羅針盤" title="運勢の流れ" body="外の輪は十二支と既存の海流を重ねた年巡り。内の輪は二十四節気のうち、12の『節』から移る海況です。" />
     <TideWheel context={c} profile={profile}
       onMonth={month => choose(new Date(Date.UTC(c.Y, month - 1, 1)))}
-      onYear={year => choose(new Date(Date.UTC(year, c.MO - 1, 1)))} />
+      onSolarMonth={solarMonth => choose(solarMonthStartDate(c.solarYear, solarMonth))}
+      onYear={year => choose(solarMonthStartDate(year, 0))} />
     <View style={S.between}>
-      <Chip onPress={() => choose(new Date(Date.UTC(c.Y - 1, c.MO - 1, 1)))}>‹ 前年</Chip>
+      <Chip onPress={() => choose(solarMonthStartDate(c.solarYear - 1, c.solarMonth))}>‹ 前年</Chip>
       <Chip onPress={() => choose(today)}>現在に戻る</Chip>
-      <Chip onPress={() => choose(new Date(Date.UTC(c.Y + 1, c.MO - 1, 1)))}>翌年 ›</Chip>
+      <Chip onPress={() => choose(solarMonthStartDate(c.solarYear + 1, c.solarMonth))}>翌年 ›</Chip>
     </View>
     <Card>
-      <Text style={S.kicker}>{c.Y}年{profile && c.Y >= profile.Y ? '　／　その年に' + (c.Y - profile.Y) + '歳' : ''}</Text>
+      <Text style={S.kicker}>{c.solarYear}年　·　{c.yearPillar}{profile && c.solarYear >= profile.birthSolarYear ? '　／　その年に' + (c.solarYear - profile.birthSolarYear) + '歳' : ''}</Text>
       <Text style={S.h2}>{year.n}</Text>
       <Text style={S.body}>{year.t}　·　{year.th}の年。{year.d}。</Text>
+      <Text style={S.tiny}>年干 {c.yearStem}（{c.yearPolarity}・{FIVE_PHASES[c.yearElement].name}）· 年支 {c.yearBranch}（{FIVE_PHASES[c.yearBranchElement].name}）　／　節気 {c.solarTerm}・月支 {c.monthBranch}</Text>
       {yearLevel !== null && <Text style={[S.h3, { color: tierColors[yearLevel] }]}>年の運勢　{tiers[yearLevel]}</Text>}
-      <Text style={S.kicker}>{block * 4 + 1}〜{block * 4 + 4}月</Text>
+      <Text style={S.kicker}>{c.solarMonthTerm}からの節気海況</Text>
       <Text style={S.h3}>{STAGES[c.stage].n}{blockLevel !== null ? '　／　' + tiers[blockLevel] : ''}</Text>
       <Text style={S.body}>{STAGES[c.stage].d}。</Text>
     </Card>
@@ -64,19 +66,19 @@ export function Calendar({ today, profile, initial }: { today: Date; profile: Pr
     {showCycle && <Card>
       <Chips>
         <Chip active={cycleMode === 'year'} onPress={() => setCycleMode('year')}>十二年の海流</Chip>
-        <Chip active={cycleMode === 'block'} onPress={() => setCycleMode('block')}>四年分の海況</Chip>
+        <Chip active={cycleMode === 'block'} onPress={() => setCycleMode('block')}>一年分の節気海況</Chip>
       </Chips>
       {Array.from({ length: 12 }, (_, i) => {
         const step = i - 6;
         const isYear = cycleMode === 'year';
-        const b = ((block + step) % 3 + 3) % 3;
-        const y = c.Y + (isYear ? step : Math.floor((block + step) / 3));
-        const item = isYear ? OUTER[(c.outer + step + 12) % 12] : STAGES[(c.stage + step + 12) % 12];
+        const solarMonth = ((block + step) % 12 + 12) % 12;
+        const y = c.solarYear + (isYear ? step : Math.floor((block + step) / 12));
+        const item = isYear ? OUTER[(c.outer + step + 12) % 12] : STAGES[solarMonth];
         const level = profile && cycle ? isYear ? cycleTier(yearScoreOf(y, profile.t).score, cycle.years)
-          : cycleTier(blockScoreOf(y, b, profile.t).score, cycle.blocks) : null;
-        return <Pressable accessibilityRole="button" key={step} onPress={() => choose(new Date(Date.UTC(y, isYear ? c.MO - 1 : b * 4, 1)))}
+          : cycleTier(blockScoreOf(y, solarMonth, profile.t).score, cycle.blocks) : null;
+        return <Pressable accessibilityRole="button" key={step} onPress={() => choose(isYear ? solarMonthStartDate(y, 0) : solarMonthStartDate(y, solarMonth))}
           style={[S.between, { paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }]}>
-          <View style={{ flex: 1 }}><Text style={S.tiny}>{y}年{isYear ? '' : ' ' + (b * 4 + 1) + '〜' + (b * 4 + 4) + '月'}</Text>
+          <View style={{ flex: 1 }}><Text style={S.tiny}>{y}年{isYear ? '' : ' · ' + SOLAR_MONTH_TERMS[solarMonth]}</Text>
             <Text style={S.h3}>{item.n}</Text></View>
           {level !== null && <Text style={[S.tiny, { color: tierColors[level] }]}>{tiers[level]}</Text>}
         </Pressable>;
@@ -126,7 +128,7 @@ export function Calendar({ today, profile, initial }: { today: Date; profile: Pr
         <Text style={[S.tiny, { paddingVertical: 5, textAlign: 'center' }]}>{item.n.replace('の海流', '')}</Text>
       </Pressable>)}
     </View>
-    <Card><Text style={S.h3}>海の行事</Text><Text style={S.body}>元日は新しい海流と潮替わり。5月1日と9月1日も潮替わりです。新月・満月を迎える日は「月を読む日」。生まれた日は「私の出航日」、生まれ年の海流が12年ごとに巡る年は「帰郷の年」です。</Text></Card>
+    <Card><Text style={S.h3}>海の行事</Text><Text style={S.body}>立春に年の海流が替わり、12の節気で海況が巡ります。新月・満月を迎える日は「月を読む日」。生まれた日は「私の出航日」、生まれた年と同じ十二支の海流が巡る年は「帰郷の年」です。</Text></Card>
   </View>;
 }
 
@@ -284,7 +286,7 @@ export function Journal({ profile, notes, edit, pair, create, openNote, showToda
     {notes.map(note => <Pressable accessibilityRole="button" key={note.day} onPress={() => openNote(note.day)} style={[S.card, S.pad]}>
       <Text style={S.kicker}>{note.day}</Text><Text numberOfLines={2} style={S.body}>{note.text}</Text>
     </Pressable>)}
-    <Card><Text style={S.h3}>潮環占いについて</Text><Text style={S.body}>潮環占いは、四季・名前の画数・暦を使って自分の状況を見つめるための創作占いです。人生の予測や性格を測定する方法としては実証されていません。月の形と距離は日本時間の正午を基準に計算しています。年の海流と四か月の海況は、暦に重ねた物語上の象徴です。</Text>
+    <Card><Text style={S.h3}>潮環占いについて</Text><Text style={S.body}>潮環占いは、四季・名前の画数・暦を使って自分の状況を見つめるための創作占いです。人生の予測や性格を測定する方法としては実証されていません。月相と節気の切り替えは日本時間正午の天文値、日の干支は日本時間の日付を基準にしています。十干・十二支・節気・五行の対応を暦上の参照枠にし、十二支と既存の海流の対応、四季型との五行照合、海況への反映は潮環独自の設計です。十二支の五行は一つに簡略化し、月干や時刻は扱いません。</Text>
       <Text style={S.tiny}>漢字の画数　KANJIDIC2 © EDRDG（CC BY-SA 4.0）　／　月の計算　Jean Meeus『Astronomical Algorithms』</Text></Card>
   </View>;
 }

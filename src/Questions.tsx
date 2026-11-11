@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { harbor } from './art';
 import { readDay, tierColors, tiers, type Profile } from './domain';
 import { ResidentSymbol, TideMarks } from './ResidentCard';
-import { OUTER, STAGES } from './scoring';
+import { FIVE_PHASES, OUTER, STAGES } from './scoring';
 import { Button, C, Card, Chip, Chips, Heading, S, Section } from './ui';
 import { categories, featuredQuestions, findQuestion, ownResident, questions, residentLens, type Question } from './voyage';
 
@@ -89,9 +89,9 @@ export function QuestionAnswer({ question, profile, today, personal, saved, togg
       <PersonalQuestionReading question={question} profile={profile} />
       <Card>
         <Text style={S.h2}>いまの海を重ねる</Text>
-        <Text style={[S.body, { color: tierColors[reading.layers.year] }]}>{reading.context.Y}年の海流　{OUTER[reading.context.outer].n} ／ {tiers[reading.layers.year]}</Text>
-        <Text style={[S.body, { color: tierColors[reading.layers.block] }]}>四か月の海況　{STAGES[reading.context.stage].n} ／ {tiers[reading.layers.block]}</Text>
-        <Text style={[S.body, { color: reading.outlook.color }]}>今日の潮　{reading.context.moon} ／ {reading.outlook.title}</Text>
+        <Text style={[S.body, { color: tierColors[reading.layers.year] }]}>{reading.context.yearPillar}年の海流　{OUTER[reading.context.outer].n} · 干支五行 {FIVE_PHASES[reading.context.yearElement].name}・{FIVE_PHASES[reading.context.yearBranchElement].name} ／ {tiers[reading.layers.year]}</Text>
+        <Text style={[S.body, { color: tierColors[reading.layers.block] }]}>{reading.context.solarMonthTerm}の海況　{STAGES[reading.context.stage].n} · 五行 {FIVE_PHASES[reading.context.monthElement].name} ／ {tiers[reading.layers.block]}</Text>
+        <Text style={[S.body, { color: reading.outlook.color }]}>今日の潮　{reading.context.dayPillar}・{FIVE_PHASES[reading.context.dayElement].name}・{reading.context.moon} ／ {reading.outlook.title}</Text>
         <Text style={S.body}>{reading.layers.text}</Text>
       </Card>
       <Section title="その悩みが強かったのは、いつ頃でしたか？" />
