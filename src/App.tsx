@@ -25,6 +25,8 @@ const detailTitles: Record<string, string> = {
   note: '航海帳に記す', rank: '160名札の順位', people: '人の管理・リセット',
 };
 import { Explanation } from './Explanation';
+import { GlossProvider } from './Glossary';
+import { Ritual } from './Ritual';
 import { PeopleManager, PersonSwitcher, type Person } from './People';
 import { SelfHome, SelfQuiz, SelfResultView, SelfWish } from './SelfPurity';
 import { emptySelf, quadOf, quads, score, type Move, type SelfState } from './self';
@@ -55,7 +57,7 @@ const storageKey = 'chokan/v1';
 let pendingSave: Promise<void> = Promise.resolve();
 
 export default function App() {
-  return <SafeAreaProvider><Voyage /></SafeAreaProvider>;
+  return <SafeAreaProvider><GlossProvider><Voyage /></GlossProvider></SafeAreaProvider>;
 }
 
 function Voyage() {
@@ -70,6 +72,7 @@ function Voyage() {
   const [path, setPath] = useState<Detail[]>([]);
   const [todayVisit, setTodayVisit] = useState(0);
   const [selectedQuestionId, setSelectedQuestionId] = useState<string>();
+  const [ritual, setRitual] = useState(false);
   const detail = path[path.length - 1];
   const active = people.find(person => person.id === activeId) ?? null;
   const inputs = active?.inputs ?? null;
@@ -78,6 +81,7 @@ function Voyage() {
   const meProfile = me ? makeProfile(me.inputs) : null;
   const selectedQuestion = findQuestion(selectedQuestionId);
   const day = dateKey(today);
+  const accent = mainTabs.find(item => item.id === tab)?.accent ?? '#eacc8c';
 
   useEffect(() => {
     const page = detail ? detailTitles[detail.kind] : mainTabs.find(item => item.id === tab)?.title;
@@ -199,6 +203,7 @@ function Voyage() {
       commitPeople(people.map(entry => entry.id === active.id ? { ...entry, inputs: next, saved: remember } : entry), active.id);
     }
     setSelectedQuestionId(questionId);
+    setRitual(true);
     setTodayVisit(previous => previous + 1);
     setPath([]);
     setTab('today');
@@ -327,13 +332,17 @@ function Voyage() {
     <StatusBar style="light" />
     {Platform.OS === 'web' && <Image source={harbor} style={[StyleSheet.absoluteFill, { opacity: 0.18 }]} contentFit="cover" />}
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={layout.frame}>
+      <div className="ambient" aria-hidden="true" style={{ '--accent': accent } as React.CSSProperties}>
+        <b /><b /><b />
+        {Array.from({ length: 12 }, (_, i) => <i key={i} style={{ left: (i * 29 + 5) % 100 + '%', fontSize: 8 + (i % 4) * 3, animationDuration: 14 + (i % 5) * 4 + 's', animationDelay: -(i * 2.3) + 's' }}>✦</i>)}
+      </div>
       <View pointerEvents="none" style={[layout.wash, { backgroundImage: `linear-gradient(180deg, ${mainTabs.find(item => item.id === tab)?.accent ?? '#eacc8c'}30 0%, transparent 100%)` } as object]} />
       <View style={layout.header}>
         {detail
           ? <Pressable accessibilityRole="button" accessibilityLabel="前の画面に戻る" onPress={back} style={layout.backBtn}>
             <Text style={layout.backMark}>‹</Text>
           </Pressable>
-          : <Image source={seal} style={{ width: 38, height: 38, borderRadius: 10 }} />}
+          : <View {...({ dataSet: { ui: 'seal' } } as object)} style={{ borderRadius: 10 }}><Image source={seal} style={{ width: 38, height: 38, borderRadius: 10 }} /></View>}
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text accessibilityRole="header" numberOfLines={1} style={layout.pageTitle}>
             {detail ? detailTitles[detail.kind] : mainTabs.find(item => item.id === tab)?.title}
@@ -350,23 +359,24 @@ function Voyage() {
       <TabBar wide={wide} seasonIndex={profile?.t.mod ?? null} activeTab={tab} onSelect={go} />
       {storageError && <Text accessibilityRole="alert" style={[S.tiny, layout.error]}>端末の保存領域にアクセスできませんでした。この画面で続けられます。</Text>}
       {ready ? <>
-        <ScrollView key={`${tab}-${todayVisit}`} style={[layout.scroll, detail && layout.hidden]} contentContainerStyle={layout.content}
+        <ScrollView key={`${tab}-${todayVisit}`} {...({ dataSet: { screen: tab } } as object)} style={[layout.scroll, detail && layout.hidden]} contentContainerStyle={layout.content}
           keyboardShouldPersistTaps="handled">
-          {body}
+          {ritual && profile ? null : body}
         </ScrollView>
-        {path.map((entry, index) => <ScrollView key={entry.kind + index}
+        {path.map((entry, index) => <ScrollView key={entry.kind + index} {...({ dataSet: { screen: entry.kind } } as object)}
           style={[layout.scroll, index !== path.length - 1 && layout.hidden]} contentContainerStyle={entry.kind === 'explanation' ? { backgroundColor: '#f5f7fb', paddingBottom: 50 } : layout.content}
           keyboardShouldPersistTaps="handled">
           {detailBody(entry)}
         </ScrollView>)}
       </> : <View style={[layout.scroll, layout.content]}><Text style={S.body}>海図をひらいています…</Text></View>}
     </KeyboardAvoidingView>
+    {ritual && profile && <Ritual profile={profile} today={today} onDone={() => setRitual(false)} />}
   </SafeAreaView>;
 }
 
 const layout = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.base, alignItems: 'center' },
-  frame: { flex: 1, width: '100%', maxWidth: 780, backgroundColor: C.base, alignSelf: 'center' },
+  frame: { flex: 1, width: '100%', maxWidth: 780, backgroundColor: C.base, alignSelf: 'center', overflow: 'hidden' },
   header: { minHeight: 62, paddingHorizontal: 14, gap: 12, flexDirection: 'row', alignItems: 'center', borderBottomColor: C.line, borderBottomWidth: StyleSheet.hairlineWidth },
   pageTitle: { color: C.ink, fontSize: 19, lineHeight: 26, fontWeight: '800' },
   backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: C.panel, borderWidth: 1, borderColor: C.line },

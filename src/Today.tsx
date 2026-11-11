@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import type { ReactNode } from 'react';
-import { currents, scenes, stages } from './art';
+import { currents, iconArt, scenes, stages } from './art';
+import { Image } from './web/image';
 import { LayeredReading } from './DailyReading';
 import { addDays, calendarEvents, dateKey, dateLabel, readDay, shortDate, tierColors, type Profile } from './domain';
 import { BornSea, NameReadingDetails, TypeTraits } from './NameReading';
@@ -10,6 +11,9 @@ import { TideFlow } from './ResidentCard';
 import { ctxFor, FIVE_PHASES, labelOf, OUTER, SEASON, STAGES } from './scoring';
 import { Meter, SeaGlobe } from './TideCharts';
 import { GodAnimation } from './GodAnimation';
+import { fortuneFor, tomorrowFor } from './fortune';
+import { FortuneAreas, LuckyCard, TomorrowCard } from './FortuneDetail';
+import { Gloss, TermText, useGloss } from './Glossary';
 import { PersonSwitcher, type Person } from './People';
 import { ResultPoster } from './ResultPoster';
 import { Float, glow, Sparkles } from './Visual';
@@ -89,7 +93,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
   const dayNavigation = <View style={S.between}>
     <Chip onPress={() => selectDay(offset - 1)}>‹ 前の日</Chip>
     <Chip active={offset === 0} onPress={() => selectDay(0)}>今日</Chip>
-    <Text style={S.tiny}>明日の結果は、明日のお楽しみ</Text>
+    <Text style={S.tiny}>明日の潮は、この下に ↓</Text>
   </View>;
 
   const moonCard = <View style={S.stack}>
@@ -101,17 +105,21 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
 
   /* ---------- はじめての人：目的別の入口 ---------- */
   if (!reading || !profile) return <View style={S.stack}>
-    <Text accessibilityRole="header" style={styles.welcome}>どちらから{' '}はじめる？</Text>
+    <View style={{ gap: 4 }}>
+      <Text style={S.kicker}>生年月日と名前でひらく、あなただけの海</Text>
+      <Text accessibilityRole="header" style={styles.welcome}>今日のあなたの海は、{'\n'}凪か、荒波か。</Text>
+      <Gloss style={S.body}>潮環占いは、年の海流・月の満ち欠け・あなたの名札を重ねて、今日の運勢を160通りの順位で読む占いです。</Gloss>
+    </View>
     <Door color={C.gold} big badge="まずはこれ" kicker="占い" title="今日の運勢を占う" hint="生年月日と名前だけ・30秒" cta="占ってみる" onPress={create}
       art={<Float><GodAnimation forcePlay index={4} style={{ width: 104 }} /></Float>} />
     <Door color="#9fd8c7" kicker="自己診断" title="自己純度を測る" hint="名前も入力もなし・約1分" cta="診断する" onPress={startQuiz}
-      art={<Float><Text style={styles.doorIcon}>🧭</Text></Float>} />
+      art={<Float>{iconArt.compass ? <Image source={iconArt.compass} style={{ width: 88, height: 88 }} contentFit="contain" accessible={false} /> : <Text style={styles.doorIcon}>🧭</Text>}</Float>} />
     <View style={S.row}>
-      <Pressable accessibilityRole="button" onPress={openQuestions} style={({ pressed }) => [S.card, styles.small, pressed && { opacity: .7 }]}>
-        <Text style={styles.smallIcon}>💭</Text><Text style={S.h3}>悩みから問いを読む</Text><Text style={S.tiny}>入力なし</Text>
+      <Pressable accessibilityRole="button" onPress={openQuestions} {...({ dataSet: { ui: 'tap' } } as object)} style={({ pressed }) => [S.card, styles.small, pressed && { opacity: .7 }]}>
+        {iconArt.question ? <Image source={iconArt.question} style={{ width: 40, height: 40 }} contentFit="contain" accessible={false} /> : <Text style={styles.smallIcon}>💭</Text>}<Text style={S.h3}>悩みから問いを読む</Text><Text style={S.tiny}>入力なし</Text>
       </Pressable>
-      <Pressable accessibilityRole="button" onPress={openExplanation} style={({ pressed }) => [S.card, styles.small, pressed && { opacity: .7 }]}>
-        <Text style={styles.smallIcon}>📖</Text><Text style={S.h3}>仕組みを知る</Text><Text style={S.tiny}>図で説明</Text>
+      <Pressable accessibilityRole="button" onPress={openExplanation} {...({ dataSet: { ui: 'tap' } } as object)} style={({ pressed }) => [S.card, styles.small, pressed && { opacity: .7 }]}>
+        {iconArt.book ? <Image source={iconArt.book} style={{ width: 40, height: 40 }} contentFit="contain" accessible={false} /> : <Text style={styles.smallIcon}>📖</Text>}<Text style={S.h3}>仕組みを知る</Text><Text style={S.tiny}>図で説明</Text>
       </Pressable>
     </View>
     <Fold title="今日の海をのぞく" hint="日付と月だけでわかる、今日の海のようす" open={fold === 'moon'} onToggle={() => toggle('moon')}>
@@ -129,6 +137,10 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
   const pulse = (spread: number) => `0 0 0 1px ${tierColor}66, 0 0 ${spread}px ${tierColor}${spread > 40 ? '99' : '55'}`;
   const events2 = events;
   const activePerson = people.find(person => person.id === activeId);
+  const fortune = fortuneFor(reading, profile);
+  const tomorrow = isToday ? tomorrowFor(today, profile, row.rank) : null;
+  const goStrong = reading.force.go >= .5;
+  const changeStrong = reading.force.change >= .5;
   return <View style={S.stack}>
     <Pressable accessible={false} onPress={() => setSkipKey(playKey)}>
       <ResultPoster key={playKey + (instant ? 'i' : '')} reading={reading} band={resident?.band} dateText={dateLabel(c)} dayWord={dayWord}
@@ -137,12 +149,18 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
     <Chips>
       <Chip onPress={() => setReplay(value => value + 1)}>▶ もう一度見る</Chip>
     </Chips>
+    <Text style={S.tiny}>💡 名札・タイプ名・順位・段階をタップすると、意味が出ます。</Text>
     {dayNavigation}
     <PersonSwitcher people={people} activeId={activeId} onSwitch={onSwitch} onAdd={onAdd} onManage={onManage} />
     <Chips>
       <Chip onPress={() => { void share(); }}>テキストで共有</Chip>
     </Chips>
     {!!shareMessage && <Text selectable accessibilityLiveRegion="polite" style={S.tiny}>{shareMessage}</Text>}
+
+    <Text accessibilityRole="header" style={S.h2}>{dayWord}の詳しい運勢</Text>
+    <FortuneAreas key={'a' + seenKey} fortune={fortune} dayWord={dayWord} />
+    <LuckyCard key={'l' + seenKey} fortune={fortune} dayWord={dayWord} />
+    {tomorrow && <TomorrowCard key={'t' + seenKey} tomorrow={tomorrow} />}
 
     {!!events2.length && <Chips>{events2.map(event => <Chip key={event}>{event}</Chip>)}</Chips>}
     {currentQuestion && <SelectedQuestionReading question={currentQuestion.question} profile={profile} />}
@@ -157,19 +175,23 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
     </Card>}
     {tideChange && <Card>
       <Text style={S.h3}>潮替わり · {STAGES[c.stage].n}</Text>
-      <Text style={S.body}>{c.solarMonthTerm}からの海況です。いま気になることを一つ選んでみましょう。</Text>
+      <Gloss style={S.body}>{c.solarMonthTerm + 'からの海況です。いま気になることを一つ選んでみましょう。'}</Gloss>
       <Button quiet onPress={openQuestions}>新しい問いを選ぶ</Button>
     </Card>}
     {homecoming && <Card>
-      <Text style={S.h3}>帰郷の年</Text>
-      <Text style={S.body}>{c.solarYear - 12}年と同じ海流が巡っています。</Text>
+      <TermText id="帰郷の年" style={S.h3} />
+      <Gloss style={S.body}>{(c.solarYear - 12) + '年と同じ海流が巡っています。'}</Gloss>
       <Button quiet onPress={() => openHomecoming(c.solarYear - 12)}>{(c.solarYear - 12) + '年の海と記録を見る'}</Button>
     </Card>}
 
     <Text style={S.h2}>気になるところをタップ</Text>
     <Fold title="なぜこの結果なの？" hint="2つの力と、点数の理由" open={fold === 'why'} onToggle={() => toggle('why')}>
       <Text style={S.body}>{outlook.detail}</Text>
-      <Text style={S.tiny}>年の海・節気の海・今日の月を重ねて決まります。</Text>
+      <View style={styles.reason}>
+        <TermText id="今日の一手" style={S.kicker}>{dayWord + 'の一手が、これになった理由'}</TermText>
+        <Text style={S.body}>{dayWord}は「自分が進む力」が{goStrong ? '強く' : '控えめで'}、「周りを変える力」が{changeStrong ? '強い' : '控えめな'}日です。{goStrong && changeStrong ? '動くことも、人を巻き込むことも通りやすい' : goStrong ? '自分のことは進むけれど、人を動かすのは難しい' : changeStrong ? '自分で進めるより、人に頼るほうがうまくいく' : '進むよりも、守って休むほうが得をする'}ので、一手は「{outlook.action}」になりました。</Text>
+      </View>
+      <Gloss style={S.tiny}>年の海流・節気ごとの海況・今日の月を重ね、160の名札を相性のよい順に並べて決まります。</Gloss>
       <Button quiet onPress={() => setShowScore(!showScore)}>{showScore ? '点数の内訳を閉じる' : '点数の内訳まで見る'}</Button>
       {showScore && <ReadingReasons reading={reading} />}
     </Fold>
@@ -218,13 +240,13 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
 function Door({ color, big, badge, kicker, title, hint, cta, onPress, art }: {
   color: string; big?: boolean; badge?: string; kicker: string; title: string; hint: string; cta: string; onPress: () => void; art: ReactNode;
 }) {
-  return <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.door, glow(color), { borderColor: color, minHeight: big ? 210 : 150 }, pressed && { opacity: .8 }]}>
+  return <Pressable accessibilityRole="button" onPress={onPress} {...({ dataSet: { ui: 'tap' } } as object)} style={({ pressed }) => [styles.door, glow(color), { borderColor: color, minHeight: big ? 210 : 150 }, pressed && { opacity: .8 }]}>
     <View style={{ flex: 1, gap: 6, justifyContent: 'center' }}>
       {badge && <View style={[styles.badge, { backgroundColor: color }]}><Text style={styles.badgeText}>{badge}</Text></View>}
       <Text style={[S.kicker, { color }]}>{kicker}</Text>
       <Text style={[styles.doorTitle, big && { fontSize: 28, lineHeight: 36 }]}>{title}</Text>
       <Text style={S.body}>{hint}</Text>
-      <View style={[styles.cta, { backgroundColor: color }]}><Text style={styles.ctaText}>{cta}　›</Text></View>
+      <View {...({ dataSet: { ui: 'gold' } } as object)} style={[styles.cta, { backgroundColor: color }]}><Text style={styles.ctaText}>{cta}　›</Text></View>
     </View>
     {art}
   </Pressable>;
@@ -252,7 +274,7 @@ function ReadingReasons({ reading }: { reading: Reading }) {
     <Meter title="周りを変える" value={force.change} color="#a8c4f0" caption={force.change >= .5 ? '届きやすい' : '控えめ'} />
     {factors.map(({ title, score, note }) => <View key={title} style={styles.factor}>
       <View style={S.between}><Text style={S.h3}>{title}</Text><Text style={[S.tiny, { color: score < 0 ? '#efb2b0' : C.gold }]}>{score > 0 ? '+' : ''}{score.toFixed(1)}点</Text></View>
-      <Text style={S.body}>{note}</Text>
+      <Gloss style={S.body}>{note}</Gloss>
     </View>)}
     <Text style={S.h3}>名札 {row.score.toFixed(1)}点　／　全体平均 {reading.mean.toFixed(1)}点</Text>
     <Text style={S.body}>あなた個人の日の海は「{STAGES[personal.pos].n}」。誕生日と総画数から読んだ補正{personal.delta >= 0 ? '+' : ''}{personal.delta.toFixed(1)}点{personal.ret ? '（帰郷の年の加点を含む）' : ''}{t.A ? 'と、Aの渦による振れ幅' : ''}を重ねると、{personalRank}位相当です。</Text>
@@ -289,4 +311,5 @@ const styles = StyleSheet.create({
   action: { gap: 4, padding: 14, borderRadius: 16, backgroundColor: '#0f1830', borderWidth: 1, borderColor: C.line },
   actionText: { color: C.ink, fontSize: 19, lineHeight: 28, fontWeight: '800' },
   factor: { borderTopWidth: 1, borderTopColor: C.line, paddingTop: 8, gap: 3 },
+  reason: { gap: 4, padding: 12, borderRadius: 14, backgroundColor: '#111a31', borderWidth: 1, borderColor: C.line },
 });

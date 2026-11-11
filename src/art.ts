@@ -7,6 +7,15 @@ function find(files: Record<string, string>, name: string) {
   return entry[1];
 }
 
+/** あれば使う画像（Codex に依頼中の追加アート）。無いあいだは undefined で、画面は絵文字や図形で代用する。 */
+const optional = (name: string) => Object.entries(artFiles).find(([path]) => path.endsWith('/' + name))?.[1];
+export const tierArt = Array.from({ length: 5 }, (_, i) => optional('tier-0' + (i + 1) + '.webp'));
+export const ritualBg = optional('ritual-bg.webp');
+export const iconArt = {
+  compass: optional('icon-compass.webp'), question: optional('icon-question.webp'), book: optional('icon-book.webp'),
+  work: optional('icon-work.webp'), love: optional('icon-love.webp'), money: optional('icon-money.webp'), health: optional('icon-health.webp'),
+};
+
 export const harbor = find(artFiles, 'harbor.webp');
 export const seal = find(artFiles, 'app-icon.png');
 export const godSheets = ['winter', 'spring', 'summer', 'autumn', 'origin'].map(name => find(deityFiles, 'sheet-' + name + '.webp'));

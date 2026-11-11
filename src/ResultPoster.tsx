@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { GodAnimation } from './GodAnimation';
-import type { readDay } from './domain';
-import { labelOf } from './scoring';
+import { content, residentIndex, type readDay } from './domain';
+import { useGloss } from './Glossary';
+import { glossary } from './terms';
+import readingText from './reading-text.json';
+import { labelOf, SEASON } from './scoring';
+import { residents } from './voyage';
 import { C, display, rounded, S } from './ui';
 import { imeSegmentsFor } from './kana';
 import { Burst, Float, fx, glow, GlowPulse, ImeText, imeDuration, Reveal, Sparkles, TierStrip, TypeText, Waves } from './Visual';
@@ -61,6 +65,42 @@ export function ResultPoster({ reading, band, personName, dateText, dayWord, ins
   const actionDelay = lineDelay + typeMs + 200;
   const actionIme = imeSegmentsFor(reading.outlook.action);
 
+  // 見た目は変えずに、名札・タイプ名・順位・段階をタップすると意味がポップで出る（演出が終わってから有効）。
+  const explain = useGloss();
+  const t = reading.row.t;
+  const season = SEASON[t.mod];
+  const resident = residents[residentIndex(t)];
+  const depthName = ['浅瀬', '沿岸', '沖合', '深海'][residentIndex(t) % 4];
+  const explainPlate = () => explain({
+    title: labelOf(t), kicker: '名札の読み方', mark: '札', color,
+    body: 'この一行に、季節・印・深さが入っています。生年月日と名前から決まり、一生変わりません。',
+    rows: [
+      { mark: season.n, label: season.n + '＝' + season.act + '力', text: readingText.SEASON_INFO[t.mod].what + '。生年月日で決まります。', color: season.col },
+      ...(t.A ? [{ mark: 'A', label: '渦の印', text: '月が近い日ほど、運勢の振れ幅が大きくなります。' }] : []),
+      ...(t.minus ? [{ mark: '−', label: '向かい風の印', text: '人の追い風が向かい風になりやすい体質。荒れた海では進みやすい日があります。' }] : []),
+      { mark: t.num.toFixed(1), label: '深さ（' + depthName + '）', text: content.depths[t.ni][1] + '。名前の画数で決まります。' },
+    ],
+    more: '名札は全部で160通り。毎日の順位は、この名札と今日の海の相性で決まります。',
+  });
+  const explainBand = () => explain({
+    title: resident.band, kicker: '占いタイプ（16種類のひとつ）', mark: '型', color: season.col,
+    body: resident.subtitle + '。' + resident.summary + '。',
+    rows: [
+      { mark: season.n, label: '季節', text: season.act + 'ことに力が出ます。', color: season.col },
+      { mark: depthName.slice(0, 1), label: '深さ：' + depthName, text: content.depths[t.ni][2] + 'で持ち味が出ます。' },
+    ],
+    more: 'タイプの詳しい性格や人間関係のヒントは、この下の「自分のタイプと人間関係のヒント」と「図鑑」で読めます。',
+  });
+  const explainRank = () => explain({
+    title: rank + '位 / 160', kicker: dayWord + 'の順位', mark: '位', color,
+    body: glossary.順位.body,
+    rows: [['大漁', '1〜16位'], ['順風', '17〜56位'], ['凪', '57〜104位'], ['荒波', '105〜144位'], ['轟沈', '145〜160位']].map(([name, range], index) => ({
+      mark: name, label: range + (index === finalLevel ? '　← ' + dayWord + 'はここ' : ''), text: glossary[name].body.split('。')[0] + '。', color: COLORS[index],
+    })),
+    more: glossary.順位.more,
+  });
+  const explainTier = () => explain({ ...glossary[['大漁', '順風', '凪', '荒波', '轟沈'][finalLevel]], color });
+
   return <View {...(confirm ? fx('confirm') : {})} style={[styles.poster, glow(color), asStyle({
     borderColor: color, boxShadow: `0 0 0 1px ${color}66, 0 0 48px ${color}55`, transitionProperty: 'border-color, box-shadow', transitionDuration: '300ms',
   })]}>
@@ -78,12 +118,12 @@ export function ResultPoster({ reading, band, personName, dateText, dayWord, ins
         <View {...(confirm ? fx('jump') : {})}><Float><GodAnimation forcePlay index={reading.row.t.mod} style={{ width: 84 }} /></Float></View>
       </View>
       {personName && <Text style={S.tiny}>{personName}さんのタイプ</Text>}
-      <View accessible accessibilityRole="header" accessibilityLabel={labelOf(reading.row.t)} style={{ flexDirection: 'row' }}>
+      <Pressable disabled={!done} onPress={explainPlate} accessibilityRole="button" accessibilityLabel={labelOf(reading.row.t) + '。タップで名札の読み方'} style={{ flexDirection: 'row' }}>
         {plate.map((char, index) => <Reveal key={index} kind="pop" delay={260 + o + index * 90} instant={instant}>
           <View {...punch(index * 70)}><Text style={styles.plate}>{char}</Text></View>
         </Reveal>)}
-      </View>
-      <Reveal kind="up" delay={760 + o} instant={instant}><Text style={styles.typeName}>{band}</Text></Reveal>
+      </Pressable>
+      <Reveal kind="up" delay={760 + o} instant={instant}><Pressable disabled={!done} onPress={explainBand} accessibilityRole="button" accessibilityLabel={band + '。タップでタイプの説明'}><Text style={styles.typeName}>{band}</Text></Pressable></Reveal>
     </View>
     <Reveal kind="fade" delay={1000 + o} instant={instant}>
       <View style={styles.todayHead}>
@@ -93,14 +133,14 @@ export function ResultPoster({ reading, band, personName, dateText, dayWord, ins
       </View>
     </Reveal>
     <Reveal kind="fade" delay={1100 + o} instant={instant} style={{ alignItems: 'center' }}>
-      <View {...punch(150)}>
+      <Pressable disabled={!done} onPress={explainRank} accessibilityRole="button"><View {...punch(150)}>
         <Text accessibilityLabel={`${dayWord}は160タイプ中${rank}位`} style={styles.rankLine}>
           <Text style={[styles.rankNum, { color }]}>{value}</Text> 位 / 160
         </Text>
-      </View>
+      </View></Pressable>
     </Reveal>
     <Reveal kind="up" delay={1200 + o} instant={instant}>
-      <View {...punch(250)}><TierStrip level={level} /></View>
+      <Pressable disabled={!done} onPress={explainTier} accessibilityRole="button"><View {...punch(250)}><TierStrip level={level} /></View></Pressable>
     </Reveal>
     {ime
       ? <ImeText segments={ime} delay={lineDelay} instant={instant} style={styles.line} />

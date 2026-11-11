@@ -5,7 +5,7 @@ import { harbor } from './art';
 import { readDay, tierColors, tiers, type Profile } from './domain';
 import { ResidentSymbol, TideMarks } from './ResidentCard';
 import { FIVE_PHASES, OUTER, STAGES } from './scoring';
-import { Button, C, Card, Chip, Chips, Heading, S, Section } from './ui';
+import { Button, C, Card, Chip, Chips, Heading, S, Section, tapFx } from './ui';
 import { categories, featuredQuestions, findQuestion, ownResident, questions, residentLens, type Question } from './voyage';
 
 export function QuestionSea({ open, create }: { open: (id: string) => void; create?: () => void }) {
@@ -26,7 +26,7 @@ export function QuestionSea({ open, create }: { open: (id: string) => void; crea
     {browse && <Chips>{categories.map(item =>
       <Chip key={item.id} active={category === item.id} onPress={() => setCategory(item.id)}>{item.name}</Chip>,
     )}</Chips>}
-    {entries.map(question => <Pressable key={question.id} accessibilityRole="button" onPress={() => open(question.id)}
+    {entries.map(question => <Pressable {...tapFx} key={question.id} accessibilityRole="button" onPress={() => open(question.id)}
       style={({ pressed }) => [S.card, S.pad, pressed && { opacity: .7 }]}>
       <View style={S.between}>
         <Text style={S.kicker}>{question.id}　{categories.find(item => item.id === question.category)?.name}</Text>

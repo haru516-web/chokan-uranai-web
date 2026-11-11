@@ -6,7 +6,7 @@ import {
   changedCount, choices, optionColors, sceneIcons, dones, highlights, learns, quadOf, quads, reasons, residentAsk, scenes, tideGuide, wants, whys, wishIdeas,
   type Move, type SelfResult, type SelfState,
 } from './self';
-import { Button, C, Card, Chip, Chips, S } from './ui';
+import { Button, C, Card, Chip, Chips, S, tapFx } from './ui';
 import { Float, glow, Pop, QuadMap, Sparkles } from './Visual';
 
 const GOLD = C.gold;
@@ -36,7 +36,7 @@ function useIn(key: unknown) {
 }
 
 function Big({ children, mark, onPress, selected, sub, dot }: { children: string; mark?: string; onPress: () => void; selected?: boolean; sub?: string; dot?: string }) {
-  return <Pressable accessibilityRole="button" accessibilityState={{ selected: !!selected }} onPress={onPress}
+  return <Pressable {...tapFx} accessibilityRole="button" accessibilityState={{ selected: !!selected }} onPress={onPress}
     style={({ pressed }) => [st.big, selected && st.bigOn, pressed && { opacity: .7, transform: [{ scale: .98 }] }]}>
     {dot && <View style={[st.dotMark, { backgroundColor: selected ? C.dark : dot }]} />}
     {mark && <Text style={st.bigMark}>{mark}</Text>}
@@ -83,7 +83,7 @@ export function SelfHome({ state, profile, today, start, openResult, openWish, s
   const quad = last && quads[quadOf(last.p, last.s)];
 
   return <View style={S.stack}>
-    <Pressable accessibilityRole="button" onPress={goToday} style={({ pressed }) => [st.banner, pressed && { opacity: .8 }]}>
+    <Pressable {...tapFx} accessibilityRole="button" onPress={goToday} style={({ pressed }) => [st.banner, pressed && { opacity: .8 }]}>
       <Text style={{ fontSize: 28 }}>☾</Text>
       <View style={{ flex: 1 }}>
         <Text style={S.kicker}>占い</Text>
@@ -99,7 +99,7 @@ export function SelfHome({ state, profile, today, start, openResult, openWish, s
       <Text style={S.tiny}>名前も生年月日も要りません。正解はありません。</Text>
     </View>}
 
-    {last && quad && <Pressable accessibilityRole="button" onPress={() => openResult(last.id)} style={({ pressed }) => [S.card, S.pad, pressed && { opacity: .75 }]}>
+    {last && quad && <Pressable {...tapFx} accessibilityRole="button" onPress={() => openResult(last.id)} style={({ pressed }) => [S.card, S.pad, pressed && { opacity: .75 }]}>
       <View style={S.between}>
         <Text style={S.kicker}>いまの目安 · {last.day.slice(5).replace('-', '/')}</Text>
         <Text style={S.tiny}>くわしく ›</Text>

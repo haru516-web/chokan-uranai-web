@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { shortDate, tierColors, tiers, type readDay } from './domain';
 import { FIVE_PHASES, OUTER, STAGES } from './scoring';
+import { Gloss } from './Glossary';
 import { Card, S } from './ui';
 import type { ReactNode } from 'react';
 
@@ -39,7 +40,7 @@ export function LayeredReading({ reading, isToday = true, children }: ReadingCar
       </View>)}
     </View>
     <Text style={S.tiny}>潮環の季節型 {FIVE_PHASES[fivePhase.personal].name} × 年干 {FIVE_PHASES[fivePhase.year].name}（{fivePhase.yearRelation.kind}）・年支 {FIVE_PHASES[fivePhase.yearBranch].name}（{fivePhase.yearBranchRelation.kind}）× 月 {FIVE_PHASES[fivePhase.month].name}（{fivePhase.monthRelation.kind}）× 日 {FIVE_PHASES[fivePhase.day].name}（{fivePhase.dayRelation.kind}）</Text>
-    <Text style={S.body}>{layers.text}</Text>
+    <Gloss style={S.body}>{layers.text}</Gloss>
     {children}
   </Card>;
 }

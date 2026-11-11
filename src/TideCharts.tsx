@@ -105,7 +105,7 @@ export function TideWheel({ context, profile, onMonth, onSolarMonth, onYear }: {
 export function Meter({ title, value, color = C.gold, caption }: { title: string; value: number; color?: string; caption?: string }) {
   return <View style={styles.meter}>
     <View style={S.between}><Text style={S.body}>{title}</Text>{caption && <Text style={[S.tiny, { color }]}>{caption}</Text>}</View>
-    <View style={styles.track}><View style={{ width: (Math.max(0, Math.min(1, value)) * 100) + '%', height: '100%', backgroundColor: color }} /></View>
+    <View style={styles.track}><View {...({ dataSet: { ui: 'meter' } } as object)} style={{ width: (Math.max(0, Math.min(1, value)) * 100) + '%', height: '100%', backgroundColor: color }} /></View>
   </View>;
 }
 

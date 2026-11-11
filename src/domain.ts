@@ -110,8 +110,10 @@ export function readDay(date: Date, profile: Profile) {
   const force = axes(context, row);
   const axis = force.go >= .5 ? (force.change >= .5 ? '11' : '10') : (force.change >= .5 ? '01' : '00');
   const seed = context.seed + row.t.key;
-  const [line, detail] = readingText.MSG[axis][seed % readingText.MSG[axis].length];
-  const action = readingText.HAND[axis][(seed + 1) % readingText.HAND[axis].length].replace(/^今日の一手：/, '');
+  // 日付と名札から、毎日ばらけるように文言を選ぶ（同じ人・同じ日なら必ず同じ）。
+  const pick = (salt: number, length: number) => (Math.imul(seed ^ (seed >>> 13), 0x9e3779b1 + salt * 2) >>> 8) % length;
+  const [line, detail] = readingText.MSG[axis][pick(1, readingText.MSG[axis].length)];
+  const action = readingText.HAND[axis][pick(7, readingText.HAND[axis].length)].replace(/^今日の一手：/, '');
   const outlook = { title: tiers[level], color: tierColors[level], line, detail, action };
   const cycle = cycleFor(profile.t);
   const year = cycleTier(yearScoreOf(context.solarYear, profile.t).score, cycle.years);

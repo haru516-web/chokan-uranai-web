@@ -5,11 +5,12 @@ import { currents, residentArt, scenes, stages } from './art';
 import { addDays, calendarEvents, content, cycleFor, cycleTier, dateLabel, lifeFields, residentIndex, shortDate, tierColors, tiers, type Profile } from './domain';
 import { ReflectionCards } from './LifeChart';
 import { GodAnimation } from './GodAnimation';
+import { Gloss } from './Glossary';
 import { TypeTraits } from './NameReading';
 import { TideMarks } from './ResidentCard';
 import { ctxFor, dayTable, FIVE_PHASES, labelOf, OUTER, SEASON, solarMonthStartDate, SOLAR_MONTH_TERMS, STAGES, yearScoreOf, blockScoreOf } from './scoring';
 import { TideWheel } from './TideCharts';
-import { Art, Button, C, Card, Chip, Chips, Fold, Heading, NextLinks, S, Section, Tile } from './ui';
+import { Art, Button, C, Card, Chip, Chips, Fold, Heading, NextLinks, S, Section, Tile, tapFx } from './ui';
 import { findQuestion, ownResident, residents, type Reflection, type SavedQuestion } from './voyage';
 
 export type Note = { day: string; text: string };
@@ -76,7 +77,7 @@ export function Calendar({ today, profile, initial }: { today: Date; profile: Pr
         const item = isYear ? OUTER[(c.outer + step + 12) % 12] : STAGES[solarMonth];
         const level = profile && cycle ? isYear ? cycleTier(yearScoreOf(y, profile.t).score, cycle.years)
           : cycleTier(blockScoreOf(y, solarMonth, profile.t).score, cycle.blocks) : null;
-        return <Pressable accessibilityRole="button" key={step} onPress={() => choose(isYear ? solarMonthStartDate(y, 0) : solarMonthStartDate(y, solarMonth))}
+        return <Pressable {...tapFx} accessibilityRole="button" key={step} onPress={() => choose(isYear ? solarMonthStartDate(y, 0) : solarMonthStartDate(y, solarMonth))}
           style={[S.between, { paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }]}>
           <View style={{ flex: 1 }}><Text style={S.tiny}>{y}年{isYear ? '' : ' · ' + SOLAR_MONTH_TERMS[solarMonth]}</Text>
             <Text style={S.h3}>{item.n}</Text></View>
@@ -97,7 +98,7 @@ export function Calendar({ today, profile, initial }: { today: Date; profile: Pr
         {Array.from({ length: dayCount }, (_, i) => {
           const day = addDays(monthStart, i);
           const hasEvent = calendarEvents(day, profile).some(event => event !== '帰郷の年');
-          return <Pressable key={i} accessibilityRole="button" accessibilityLabel={shortDate(ctxFor(day)) + (hasEvent ? ' 行事あり' : '')}
+          return <Pressable {...tapFx} key={i} accessibilityRole="button" accessibilityLabel={shortDate(ctxFor(day)) + (hasEvent ? ' 行事あり' : '')}
             accessibilityState={{ selected: i + 1 === c.DA }} onPress={() => choose(day)}
             style={{ width: '14.285%', minHeight: 43, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: i + 1 === c.DA ? C.raised : undefined }}>
             <Text style={{ color: i + 1 === c.DA ? C.gold : C.ink, fontWeight: '700' }}>{i + 1}</Text>
@@ -123,12 +124,12 @@ export function Calendar({ today, profile, initial }: { today: Date; profile: Pr
       </View>
     </View>
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 8 }}>
-      {list.map((item, i) => <Pressable key={item.n} onPress={() => setSelected(i)} accessibilityRole="button" accessibilityState={{ selected: index === i }} style={[S.card, { width: '23.5%', borderColor: index === i ? C.gold : C.line }]}>
+      {list.map((item, i) => <Pressable {...tapFx} key={item.n} onPress={() => setSelected(i)} accessibilityRole="button" accessibilityState={{ selected: index === i }} style={[S.card, { width: '23.5%', borderColor: index === i ? C.gold : C.line }]}>
         <Art source={images[i]} height={60} />
         <Text style={[S.tiny, { paddingVertical: 5, textAlign: 'center' }]}>{item.n.replace('の海流', '')}</Text>
       </Pressable>)}
     </View>
-    <Card><Text style={S.h3}>海の行事</Text><Text style={S.body}>立春に年の海流が替わり、12の節気で海況が巡ります。新月・満月を迎える日は「月を読む日」。生まれた日は「私の出航日」、生まれた年と同じ十二支の海流が巡る年は「帰郷の年」です。</Text></Card>
+    <Card><Text style={S.h3}>海の行事</Text><Gloss style={S.body}>立春に年の海流が替わり、12の節気で海況が巡ります。新月・満月を迎える日は「月を読む日」。生まれた日は「私の出航日」、生まれた年と同じ十二支の海流が巡る年は「帰郷の年」です。</Gloss></Card>
   </View>;
 }
 
@@ -160,7 +161,7 @@ export function Atlas({ profile, favorites, open, myth, pair, create }: {
     </Chips>
     <Text style={S.tiny}>{visible.length} / 16　·　お気に入り {favorites.length}件</Text>
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 }}>
-      {visible.map(resident => <Pressable key={resident.id} accessibilityRole="button" onPress={() => open(resident.index)}
+      {visible.map(resident => <Pressable {...tapFx} key={resident.id} accessibilityRole="button" onPress={() => open(resident.index)}
         accessibilityLabel={[resident.band, resident.subtitle, resident.index === own ? 'あなたのタイプ' : ''].filter(Boolean).join('、')}
         style={[S.card, { width: '48.5%' }]}>
         <View style={{ padding: 11, gap: 3 }}>
@@ -218,7 +219,7 @@ export function Myth({ open, read }: { open: (index: number) => void; read: numb
     <Heading tag="THE UNSEEN SEA" title="見られなかった海" body="潮環の世界を描いた創作神話。海が消えたとされる夜から、物語が始まります。" />
     <View style={S.card}><Art source={scenes[0]} height={214} /></View>
     <Section title="物語を読む" note={'全' + content.chapters.length + '章　·　読了 ' + read.length + '章'} />
-    {content.chapters.map((chapter, index) => <Pressable key={chapter.title} onPress={() => open(index)} accessibilityRole="button" style={[S.card, S.row]}>
+    {content.chapters.map((chapter, index) => <Pressable {...tapFx} key={chapter.title} onPress={() => open(index)} accessibilityRole="button" style={[S.card, S.row]}>
       <Image source={scenes[chapterArt[index]]} style={{ width: 74, height: 62 }} />
       <Text style={[S.h3, { flex: 1 }]}>{chapter.title}</Text><Text style={[S.tiny, { paddingRight: 12 }]}>{read.includes(index) ? '読了' : '›'}</Text>
     </Pressable>)}
@@ -276,7 +277,7 @@ export function Journal({ profile, notes, edit, pair, create, openNote, showToda
     ]} />
     {notes.length > 0 && <>
       <Section title="日記" />
-      {notes.map(note => <Pressable accessibilityRole="button" key={note.day} onPress={() => openNote(note.day)} style={[S.card, S.pad]}>
+      {notes.map(note => <Pressable {...tapFx} accessibilityRole="button" key={note.day} onPress={() => openNote(note.day)} style={[S.card, S.pad]}>
         <Text style={S.kicker}>{note.day}</Text><Text numberOfLines={2} style={S.body}>{note.text}</Text>
       </Pressable>)}
     </>}
@@ -284,7 +285,7 @@ export function Journal({ profile, notes, edit, pair, create, openNote, showToda
       <Section title="残した問い" note="タップすると、残した日と出来事を読み返せます。" />
       {trails.map(id => {
         const question = findQuestion(id);
-        return question && <Pressable accessibilityRole="button" key={id} onPress={() => openTrail(id)} style={[S.card, S.pad]}>
+        return question && <Pressable {...tapFx} accessibilityRole="button" key={id} onPress={() => openTrail(id)} style={[S.card, S.pad]}>
           <Text style={S.kicker}>{id}　{question.title}</Text><Text style={S.h3}>{question.question}</Text>
         </Pressable>;
       })}
@@ -299,7 +300,7 @@ export function Journal({ profile, notes, edit, pair, create, openNote, showToda
       <Button quiet onPress={pair}>二人の海をみる</Button>
     </Fold>
     <Fold title="潮環占いについて" hint="占いの位置づけ・出典" open={fold === 'about'} onToggle={() => setFold(fold === 'about' ? null : 'about')}>
-      <Text style={S.body}>潮環占いは、四季・名前の画数・暦を使って自分の状況を見つめるための創作占いです。人生の予測や性格を測定する方法としては実証されていません。月相と節気の切り替えは日本時間正午の天文値、日の干支は日本時間の日付を基準にしています。十干・十二支・節気・五行の対応を暦上の参照枠にし、十二支と既存の海流の対応、四季型との五行照合、海況への反映は潮環独自の設計です。十二支の五行は一つに簡略化し、月干や時刻は扱いません。</Text>
+      <Gloss style={S.body}>潮環占いは、四季・名前の画数・暦を使って自分の状況を見つめるための創作占いです。人生の予測や性格を測定する方法としては実証されていません。月相と節気の切り替えは日本時間正午の天文値、日の干支は日本時間の日付を基準にしています。十干・十二支・節気・五行の対応を暦上の参照枠にし、十二支と既存の海流の対応、四季型との五行照合、海況への反映は潮環独自の設計です。十二支の五行は一つに簡略化し、月干や時刻は扱いません。</Gloss>
       <Text style={S.tiny}>漢字の画数　KANJIDIC2 © EDRDG（CC BY-SA 4.0）　／　月の計算　Jean Meeus『Astronomical Algorithms』</Text>
     </Fold>
   </View>;

@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { dateKey, tierColors, tiers, type Profile } from './domain';
 import { TideMarks } from './ResidentCard';
 import { ctxFor, labelOf, OUTER, solarMonthStartDate, SOLAR_MONTH_TERMS, STAGES } from './scoring';
-import { Button, C, Card, Chip, Chips, Heading, S, Section } from './ui';
+import { Button, C, Card, Chip, Chips, Heading, S, Section, tapFx } from './ui';
 import { categories, findQuestion, nextTideChange, ownResident, periodFor, questions, type Reflection, type SavedQuestion } from './voyage';
 
 const solarMonths = Array.from({ length: 12 }, (_, i) => i);
@@ -46,7 +46,7 @@ export function LifeChart({ today, profile, questionId, initialYear, create, cal
       {years.map(y => {
         const tide = profile && periodFor(y, profile.t);
         const names = solarMonths.map(i => STAGES[i].n);
-        return <Pressable key={y} onPress={() => chooseYear(y)} accessibilityRole="button" accessibilityState={{ selected: year === y }}
+        return <Pressable {...tapFx} key={y} onPress={() => chooseYear(y)} accessibilityRole="button" accessibilityState={{ selected: year === y }}
           accessibilityLabel={`${y}年、${names.join('、')}`} style={[S.card, styles.year, year === y && styles.selected]}>
           <Text style={S.h3}>{y}</Text>
           <Text numberOfLines={1} style={S.tiny}>{OUTER[ctxFor(new Date(Date.UTC(y, 0, 1))).outer].n}</Text>

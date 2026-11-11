@@ -1,0 +1,113 @@
+/* ===== 追加の演出（用語ポップ・儀式・タップの魔法・画面の登場） ===== */
+@keyframes fx-star { 0% { opacity: 0; transform: scale(.2) rotate(-70deg); } 60% { opacity: 1; transform: scale(1.45) rotate(8deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
+@keyframes fx-orb { 0%, 100% { transform: translateY(0) scale(1); filter: brightness(1); } 50% { transform: translateY(-5px) scale(1.06); filter: brightness(1.18); } }
+@keyframes fx-nudge { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(3px, -3px); } }
+@keyframes fx-spin { to { transform: rotate(360deg); } }
+@keyframes fx-shimmer { 0% { transform: translateX(-130%) skewX(-18deg); } 55%, 100% { transform: translateX(360%) skewX(-18deg); } }
+@keyframes fx-breathe { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.16); } }
+@keyframes fx-kenburns { 0% { transform: scale(1) translate(0, 0); } 100% { transform: scale(1.12) translate(-2%, -2%); } }
+@keyframes fx-drift { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(6%, -5%) scale(1.15); } 100% { transform: translate(0, 0) scale(1); } }
+@keyframes fx-rise { 0% { transform: translateY(0); opacity: 0; } 12% { opacity: .9; } 100% { transform: translateY(-105vh); opacity: 0; } }
+@keyframes fx-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+[data-fx="star"] { animation: fx-star .5s cubic-bezier(.3,1.5,.5,1) both !important; }
+[data-fx="orb"] { animation: fx-orb 3.4s ease-in-out infinite !important; }
+[data-fx="nudge"] { display: inline-block; animation: fx-nudge 1.4s ease-in-out infinite !important; }
+[data-fx="spin"] { animation: fx-spin 26s linear infinite !important; }
+[data-fx="breathe"] { animation: fx-breathe 3.2s ease-in-out infinite !important; }
+
+/* 画面を切り替えたとき、上から順にふわっと現れる */
+[data-screen] > div > div > * { animation: fx-up .55s cubic-bezier(.2,.8,.2,1) backwards; }
+[data-screen] > div > div > *:nth-child(2) { animation-delay: 60ms; }
+[data-screen] > div > div > *:nth-child(3) { animation-delay: 120ms; }
+[data-screen] > div > div > *:nth-child(4) { animation-delay: 180ms; }
+[data-screen] > div > div > *:nth-child(5) { animation-delay: 240ms; }
+[data-screen] > div > div > *:nth-child(6) { animation-delay: 300ms; }
+[data-screen] > div > div > *:nth-child(7) { animation-delay: 360ms; }
+[data-screen] > div > div > *:nth-child(n+8) { animation-delay: 420ms; }
+
+/* ボタン・カードの手ざわり */
+[data-ui="gold"] { position: relative; overflow: hidden; transition: transform .16s ease, box-shadow .2s ease; box-shadow: 0 6px 22px rgba(234,204,140,.22); }
+[data-ui="gold"]::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 38%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent); animation: fx-shimmer 3.6s ease-in-out infinite; pointer-events: none; }
+[data-ui="gold"]:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(234,204,140,.4); }
+[data-ui="gold"]:active, [data-ui="quiet"]:active, [data-ui="chip"]:active, [data-ui="tap"]:active { transform: scale(.96); }
+[data-ui="quiet"], [data-ui="chip"], [data-ui="tap"] { transition: transform .16s ease, border-color .2s ease, box-shadow .2s ease, background-color .2s ease; }
+[data-ui="quiet"]:hover, [data-ui="chip"]:hover, [data-ui="tap"]:hover { border-color: #eacc8c; box-shadow: 0 0 22px rgba(234,204,140,.2); transform: translateY(-2px); }
+[data-ui="fold-body"] { animation: fx-up .42s cubic-bezier(.2,.8,.2,1) both; }
+[data-ui="fold-mark"] { transition: transform .3s cubic-bezier(.3,1.4,.5,1); }
+[data-ui="fold-mark"][data-open="true"] { transform: rotate(180deg); }
+[data-ui="art"] { overflow: hidden; }
+[data-ui="art"] > * { animation: fx-kenburns 16s ease-in-out infinite alternate; }
+[data-ui="tab"] { position: relative; }
+[data-ui="tab"][data-active="true"]::after { content: ""; position: absolute; left: 16%; right: 16%; bottom: -3px; height: 3px; border-radius: 3px; background: var(--accent); box-shadow: 0 0 14px 2px var(--accent); animation: fx-pop .4s cubic-bezier(.2,.8,.2,1) both; }
+[data-ui="tab"][data-active="true"] [data-ui="tab-mark"] { animation: fx-jump .55s cubic-bezier(.3,1.4,.5,1); text-shadow: 0 0 12px var(--accent); }
+[data-ui="meter"] { transform-origin: left center; animation: fx-grow 1s cubic-bezier(.2,.8,.2,1) both; }
+[data-ui="field"] { transition: border-color .2s ease, box-shadow .25s ease; }
+[data-ui="field"]:focus { border-color: #eacc8c !important; box-shadow: 0 0 0 3px rgba(234,204,140,.18), 0 0 26px rgba(234,204,140,.22); outline: none; }
+[data-ui="field"][data-ok="true"] { border-color: #9fd8c7 !important; }
+[data-ui="seal"] { animation: fx-breathe 3.2s ease-in-out infinite; box-shadow: 0 0 18px rgba(234,204,140,.35); }
+
+/* 背景：ゆっくり漂う光と、立ちのぼる星くず */
+.ambient { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.ambient b { position: absolute; width: 60%; aspect-ratio: 1; border-radius: 50%; filter: blur(70px); opacity: .2; background: var(--accent, #eacc8c); transition: background-color 1.2s ease; animation: fx-drift 22s ease-in-out infinite; }
+.ambient b:nth-child(1) { left: -22%; top: -12%; }
+.ambient b:nth-child(2) { right: -26%; top: 34%; opacity: .12; animation-duration: 30s; animation-direction: reverse; background: #6f8fe0; }
+.ambient b:nth-child(3) { left: 8%; bottom: -30%; opacity: .13; animation-duration: 26s; }
+.ambient i { position: absolute; bottom: -20px; font-style: normal; color: var(--accent, #eacc8c); opacity: 0; animation: fx-rise linear infinite; transition: color 1.2s ease; }
+
+/* タップした場所から散る光 */
+.magic-layer { position: fixed; inset: 0; z-index: 3000; pointer-events: none; overflow: hidden; }
+.magic-ring { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border: 2px solid #eacc8c; border-radius: 50%; animation: magic-ring .7s ease-out both; }
+.magic-spark { position: absolute; margin: -8px 0 0 -6px; color: #fbf3e0; text-shadow: 0 0 8px #eacc8c; animation: magic-spark .7s cubic-bezier(.1,.8,.3,1) both; }
+@keyframes magic-ring { from { transform: scale(.3); opacity: .9; } to { transform: scale(4.2); opacity: 0; } }
+@keyframes magic-spark { from { transform: translate(0, 0) scale(1.2); opacity: 1; } to { transform: translate(var(--mx), var(--my)) scale(.3) rotate(120deg); opacity: 0; } }
+
+/* 用語ポップ */
+.gloss-layer { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: flex-end; justify-content: center; }
+.gloss-scrim { position: absolute; inset: 0; border: 0; padding: 0; background: rgba(5, 9, 19, .62); backdrop-filter: blur(5px); animation: fx-fade .25s both; cursor: pointer; }
+.gloss-sheet { position: relative; width: 100%; max-width: 520px; max-height: 82dvh; overflow-y: auto; margin: 0 10px calc(10px + env(safe-area-inset-bottom)); padding: 12px 20px 18px; border: 1.5px solid var(--gloss); border-radius: 26px; color: #fbf3e0;
+  background: linear-gradient(165deg, color-mix(in srgb, var(--gloss) 22%, #17213a) 0%, #141e37 55%); box-shadow: 0 -8px 60px color-mix(in srgb, var(--gloss) 30%, transparent), 0 20px 50px rgba(0,0,0,.6);
+  animation: gloss-in .42s cubic-bezier(.2,.9,.25,1.08) both; font-family: "Zen Maru Gothic", "Yu Gothic UI", sans-serif; }
+.gloss-layer[data-closing="true"] .gloss-sheet { animation: gloss-out .22s ease-in both; }
+.gloss-layer[data-closing="true"] .gloss-scrim { animation: fx-fade .22s reverse both; }
+@keyframes gloss-in { from { transform: translateY(60%) scale(.94); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+@keyframes gloss-out { to { transform: translateY(40%); opacity: 0; } }
+.gloss-grip { display: block; width: 44px; height: 4px; margin: 0 auto 12px; border-radius: 2px; background: #5a6788; }
+.gloss-head { display: flex; align-items: center; gap: 14px; }
+.gloss-mark { position: relative; display: grid; place-items: center; flex: none; width: 58px; height: 58px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--gloss) 60%, #fff) 0, var(--gloss) 45%, color-mix(in srgb, var(--gloss) 50%, #10172a) 100%); color: #1b2436; animation: fx-pop .5s .08s cubic-bezier(.3,1.5,.5,1) both; }
+.gloss-mark b { font: 400 26px/1 "Dela Gothic One", "Zen Maru Gothic", sans-serif; }
+.gloss-ring { position: absolute; inset: -7px; border: 1px dashed var(--gloss); border-radius: 50%; animation: fx-spin 14s linear infinite; }
+.gloss-kicker { margin: 0; color: var(--gloss); font-size: 12px; font-weight: 800; letter-spacing: 2px; }
+.gloss-title { margin: 0; font-size: 24px; line-height: 1.35; font-weight: 900; }
+.gloss-body { margin: 14px 0 0; font-size: 16px; line-height: 1.8; animation: fx-up .45s .12s both; }
+.gloss-more { margin: 12px 0 0; padding: 10px 12px; border-radius: 14px; background: rgba(13, 19, 36, .7); border: 1px solid #414e6a; color: #bac6dd; font-size: 14px; line-height: 1.7; animation: fx-up .45s .22s both; }
+.gloss-rows { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+.gloss-rows li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--row) 55%, #414e6a); background: color-mix(in srgb, var(--row) 10%, #111a31); font-size: 14px; line-height: 1.6; color: #bac6dd; animation: fx-up .45s both; }
+.gloss-rows li b { display: block; color: #fbf3e0; font-size: 15px; }
+.gloss-row-mark { flex: none; min-width: 52px; text-align: center; color: var(--row); font: 400 24px/1.2 "Dela Gothic One", "Zen Maru Gothic", sans-serif; }
+.gloss-close { display: block; width: 100%; min-height: 50px; margin-top: 16px; border: 1px solid var(--gloss); border-radius: 14px; background: transparent; color: var(--gloss); font-size: 16px; font-weight: 800; cursor: pointer; transition: background-color .2s, color .2s; }
+.gloss-close:hover, .gloss-close:focus-visible { background: var(--gloss); color: #1b2436; outline: none; }
+
+/* 鑑定の儀式 */
+.ritual { position: fixed; inset: 0; z-index: 2500; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; padding: 24px; color: #fbf3e0; cursor: pointer;
+  background: radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--tint) 26%, #10172a) 0, #0b1020 62%, #070a15 100%); animation: fx-fade .4s both; font-family: "Zen Maru Gothic", "Yu Gothic UI", sans-serif; }
+.ritual[data-leaving="true"] { animation: ritual-out .52s ease-in both; }
+@keyframes ritual-out { 0% { opacity: 1; filter: brightness(1); } 40% { filter: brightness(2.4); } 100% { opacity: 0; filter: brightness(3); transform: scale(1.08); } }
+.ritual-stars i { position: absolute; font-style: normal; color: var(--tint); animation: fx-twinkle 2.4s ease-in-out infinite; }
+.ritual-core { position: relative; width: min(62vw, 250px); aspect-ratio: 1; display: grid; place-items: center; }
+.ritual-ring { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--tint); }
+.ritual-ring-a { animation: fx-spin 18s linear infinite; opacity: .7; }
+.ritual-ring-b { animation: fx-spin 11s linear infinite reverse; opacity: .85; color: #eacc8c; }
+.ritual-ring-c { transform: rotate(-90deg); color: #fbf3e0; filter: drop-shadow(0 0 8px var(--tint)); }
+.ritual-god { animation: fx-float 3.2s ease-in-out infinite; filter: drop-shadow(0 0 22px var(--tint)); }
+.ritual-steps { list-style: none; margin: 0; padding: 0; width: 100%; max-width: 360px; display: grid; gap: 8px; }
+.ritual-steps li { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-radius: 14px; border: 1px solid #2c3854; background: rgba(20, 30, 55, .6); transition: opacity .4s, border-color .4s, transform .4s; }
+.ritual-steps li[data-state="wait"] { opacity: .32; }
+.ritual-steps li[data-state="now"] { border-color: var(--tint); transform: scale(1.03); box-shadow: 0 0 24px color-mix(in srgb, var(--tint) 35%, transparent); }
+.ritual-steps li[data-state="done"] { border-color: #56637f; }
+.ritual-dot { width: 22px; text-align: center; color: var(--tint); font-weight: 900; }
+.ritual-steps li[data-state="now"] .ritual-dot { animation: fx-spin 1.2s linear infinite; }
+.ritual-label { flex: 1; font-size: 15px; font-weight: 800; }
+.ritual-label small { display: block; color: #bac6dd; font-size: 12px; font-weight: 500; }
+.ritual-result { color: #eacc8c; font-size: 15px; }
+.ritual-steps li[data-state="done"] .ritual-result { animation: fx-pop .45s cubic-bezier(.3,1.5,.5,1) both; }
+.ritual-skip { margin: 0; color: #7f8cab; font-size: 13px; animation: fx-pulse 2.2s ease-in-out infinite; }

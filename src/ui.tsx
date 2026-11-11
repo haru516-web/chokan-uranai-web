@@ -1,6 +1,7 @@
 import { Image } from './web/image';
 import type { ReactNode } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Gloss } from './Glossary';
 
 export const C = {
   base: '#10172a', panel: '#1a243c', raised: '#273450', line: '#414e6a',
@@ -11,6 +12,12 @@ export const C = {
 export const rounded = Platform.select({ ios: 'Hiragino Maru Gothic ProN', web: '"Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Yu Gothic UI", sans-serif', default: 'sans-serif' });
 export const display = Platform.select({ ios: 'Hiragino Sans', web: '"Dela Gothic One", "Zen Maru Gothic", sans-serif', default: 'sans-serif' });
 const serif = rounded;
+/** CSS（magic.css）の演出を当てるための data 属性。 */
+export const ui = (name: string, extra?: object) => ({ dataSet: { ui: name, ...extra } }) as object;
+
+/** カード型の押せる要素に、浮き上がる・光る手ざわりをつける。 */
+export const tapFx = { dataSet: { ui: 'tap' } } as object;
+
 export const S = StyleSheet.create({
   body: { color: C.muted, fontSize: 16, lineHeight: 27 },
   title: { color: C.ink, fontSize: 30, lineHeight: 42, fontFamily: serif, fontWeight: '700' },
@@ -27,14 +34,16 @@ export const S = StyleSheet.create({
 });
 
 export function Art({ source, height, label }: { source: string | number; height: number; label?: string }) {
-  return <Image source={source} style={{ width: '100%', height }} contentFit="cover" accessibilityLabel={label} accessible={!!label} />;
+  return <View {...ui('art')} style={{ width: '100%', height, overflow: 'hidden' }}>
+    <Image source={source} style={{ width: '100%', height }} contentFit="cover" accessibilityLabel={label} accessible={!!label} />
+  </View>;
 }
 
 export function Button({ children, onPress, quiet = false, disabled = false }: {
   children: string; onPress: () => void; quiet?: boolean; disabled?: boolean;
 }) {
   return (
-    <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress}
+    <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} {...ui(quiet ? 'quiet' : 'gold')}
       style={({ pressed }) => [b.button, quiet && b.quiet, (pressed || disabled) && b.dim]}>
       <Text style={[b.text, quiet && { color: C.aqua }]}>{children}</Text>
     </Pressable>
@@ -45,7 +54,7 @@ export function Chip({ children, active, onPress }: { children: string; active?:
   const style = [b.chip, active && b.chipActive];
   const text = <Text style={[b.chipText, active && { color: C.dark }]}>{children}</Text>;
   return onPress
-    ? <Pressable style={style} onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: !!active }}>{text}</Pressable>
+    ? <Pressable {...ui('chip')} style={style} onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: !!active }}>{text}</Pressable>
     : <View style={style}>{text}</View>;
 }
 
@@ -54,11 +63,11 @@ export function Chips({ children }: { children: ReactNode }) {
 }
 
 export function Heading({ tag, title, body }: { tag: string; title: string; body?: string }) {
-  return <View style={{ gap: 3 }}><Text style={S.kicker}>{tag}</Text><Text accessibilityRole="header" style={S.title}>{title}</Text>{body && <Text style={S.body}>{body}</Text>}</View>;
+  return <View style={{ gap: 3 }}><Text style={S.kicker}>{tag}</Text><Text accessibilityRole="header" style={S.title}>{title}</Text>{body && <Gloss style={S.body}>{body}</Gloss>}</View>;
 }
 
 export function Section({ title, note }: { title: string; note?: string }) {
-  return <View style={{ gap: 3 }}><Text accessibilityRole="header" style={S.h2}>{title}</Text>{note && <Text style={S.tiny}>{note}</Text>}</View>;
+  return <View style={{ gap: 3 }}><Text accessibilityRole="header" style={S.h2}>{title}</Text>{note && <Gloss style={S.tiny}>{note}</Gloss>}</View>;
 }
 
 export function Card({ children }: { children: ReactNode }) {
@@ -76,16 +85,16 @@ export function Fold({ title, hint, children, open, onToggle }: {
         <Text style={S.h3}>{title}</Text>
         {hint && !open && <Text style={S.tiny}>{hint}</Text>}
       </View>
-      <Text style={[S.h2, { color: C.gold }]}>{open ? '−' : '＋'}</Text>
+      <Text {...ui('fold-mark', { open })} style={[S.h2, { color: C.gold }]}>{open ? '−' : '＋'}</Text>
     </Pressable>
-    {open && <View style={b.foldBody}>{children}</View>}
+    {open && <View {...ui('fold-body')} style={b.foldBody}>{children}</View>}
   </View>;
 }
 
 // 次に進む先を、行き先が分かる文言で並べる。
 export function NextLinks({ items }: { items: { icon?: string; label: string; hint?: string; onPress: () => void }[] }) {
   return <View style={{ gap: 8 }}>
-    {items.map(item => <Pressable key={item.label} accessibilityRole="button" onPress={item.onPress}
+    {items.map(item => <Pressable key={item.label} accessibilityRole="button" onPress={item.onPress} {...ui('tap')}
       style={({ pressed }) => [S.card, b.link, pressed && b.dim]}>
       {item.icon && <View style={b.icon}><Text style={{ fontSize: 22 }}>{item.icon}</Text></View>}
       <View style={{ flex: 1, gap: 2 }}>
@@ -98,7 +107,7 @@ export function NextLinks({ items }: { items: { icon?: string; label: string; hi
 }
 
 export function Tile({ source, title, subtitle, onPress }: { source: string | number; title: string; subtitle: string; onPress: () => void }) {
-  return <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [S.card, { flex: 1 }, pressed && b.dim]}>
+  return <Pressable accessibilityRole="button" onPress={onPress} {...ui('tap')} style={({ pressed }) => [S.card, { flex: 1 }, pressed && b.dim]}>
     <Art source={source} height={132} />
     <View style={{ padding: 12, gap: 2 }}><Text style={S.kicker}>{subtitle}</Text><Text style={S.h3}>{title}</Text></View>
   </Pressable>;

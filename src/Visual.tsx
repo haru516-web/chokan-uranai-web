@@ -65,7 +65,7 @@ const g = StyleSheet.create({
   fill: { height: '100%', borderRadius: 6, opacity: 0.85 },
   knob: { position: 'absolute', width: 20, height: 20, marginLeft: -10, borderRadius: 10, backgroundColor: '#fbf3e0', borderWidth: 3 },
   scale: { flexDirection: 'row', justifyContent: 'space-between' },
-  tick: { color: '#7f8cab', fontSize: 11 },
+  tick: { color: '#7f8cab', fontSize: 12 },
 });
 
 type MapQuad = { name: string; color: string };
@@ -113,7 +113,7 @@ export function TierStrip({ level }: { level: number }) {
     {tierNames.map((name, index) => {
       const active = index === level;
       return <View key={name} style={{ flex: active ? 2.4 : 1, gap: 4, alignItems: 'center' }}>
-        <Text style={{ fontSize: active ? 32 : 11, lineHeight: active ? 48 : 15, paddingTop: active ? 4 : 0, marginBottom: active ? 4 : 0, fontWeight: active ? '400' : '800', color: active ? tierCols[index] : '#6c7896', fontFamily: active ? displayFont : undefined }}>{name}</Text>
+        <Text style={{ fontSize: active ? 32 : 12, lineHeight: active ? 48 : 16, paddingTop: active ? 4 : 0, marginBottom: active ? 4 : 0, fontWeight: active ? '400' : '800', color: active ? tierCols[index] : '#6c7896', fontFamily: active ? displayFont : undefined }}>{name}</Text>
         <View style={{ height: active ? 12 : 7, alignSelf: 'stretch', borderRadius: 6, backgroundColor: tierCols[index], opacity: active ? 1 : 0.3 }} />
       </View>;
     })}
