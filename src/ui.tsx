@@ -8,7 +8,9 @@ export const C = {
   dark: '#1b2436', error: '#ffc4ac',
 };
 
-const serif = Platform.select({ ios: 'Hiragino Mincho ProN', web: '"Yu Mincho", "Hiragino Mincho ProN", serif', default: 'serif' });
+export const rounded = Platform.select({ ios: 'Hiragino Maru Gothic ProN', web: '"Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Yu Gothic UI", sans-serif', default: 'sans-serif' });
+export const display = Platform.select({ ios: 'Hiragino Sans', web: '"Dela Gothic One", "Zen Maru Gothic", sans-serif', default: 'sans-serif' });
+const serif = rounded;
 export const S = StyleSheet.create({
   body: { color: C.muted, fontSize: 16, lineHeight: 27 },
   title: { color: C.ink, fontSize: 30, lineHeight: 42, fontFamily: serif, fontWeight: '700' },

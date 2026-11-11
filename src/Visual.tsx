@@ -114,3 +114,15 @@ export function QuadMap({ p, s, prev, quads }: {
     <circle cx={px(p)} cy={py(s)} r="8" fill="#eacc8c" stroke="#10172a" strokeWidth="2.5" />
   </svg>;
 }
+
+const tierNames = ['大漁', '順風', '凪', '荒波', '轟沈'];
+const tierCols = ['#efd393', '#b6dfc4', '#c1d2ef', '#e3af92', '#e0a5b3'];
+/** 5段階のどこにいるかを、色つきの帯で見せる。今日の段階だけ強調。 */
+export function TierStrip({ level }: { level: number }) {
+  return <View style={{ flexDirection: 'row', gap: 5 }} accessible accessibilityLabel={'今日は5段階中、' + tierNames[level]}>
+    {tierNames.map((name, index) => <View key={name} style={{ flex: index === level ? 1.6 : 1, gap: 4, alignItems: 'center' }}>
+      <View style={{ height: index === level ? 12 : 7, alignSelf: 'stretch', borderRadius: 6, backgroundColor: tierCols[index], opacity: index === level ? 1 : 0.3 }} />
+      <Text style={{ fontSize: 11, fontWeight: '800', color: index === level ? tierCols[index] : '#6c7896' }}>{name}</Text>
+    </View>)}
+  </View>;
+}

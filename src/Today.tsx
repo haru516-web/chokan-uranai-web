@@ -11,8 +11,8 @@ import { ctxFor, FIVE_PHASES, labelOf, OUTER, SEASON, STAGES } from './scoring';
 import { Meter, SeaGlobe } from './TideCharts';
 import { GodAnimation } from './GodAnimation';
 import { PersonSwitcher, type Person } from './People';
-import { Float, glow, Pop, RankGauge, Sparkles } from './Visual';
-import { Button, C, Card, Chip, Chips, Fold, NextLinks, S, Tile } from './ui';
+import { Float, glow, Pop, Sparkles, TierStrip } from './Visual';
+import { Button, C, Card, Chip, Chips, Fold, NextLinks, S, Tile, display, rounded } from './ui';
 import { findQuestion, nextTideChange, ownResident, revisitQuestion, type Question, type Reflection, type SavedQuestion } from './voyage';
 
 type Reading = ReturnType<typeof readDay>;
@@ -93,7 +93,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
   if (!reading || !profile) return <View style={S.stack}>
     <Text accessibilityRole="header" style={styles.welcome}>どちらから{' '}はじめる？</Text>
     <Door color={C.gold} big badge="まずはこれ" kicker="占い" title="今日の運勢を占う" hint="生年月日と名前だけ・30秒" cta="占ってみる" onPress={create}
-      art={<Float><GodAnimation index={4} style={{ width: 104 }} /></Float>} />
+      art={<Float><GodAnimation forcePlay index={4} style={{ width: 104 }} /></Float>} />
     <Door color="#9fd8c7" kicker="自己診断" title="自己純度を測る" hint="名前も入力もなし・約1分" cta="診断する" onPress={startQuiz}
       art={<Float><Text style={styles.doorIcon}>🧭</Text></Float>} />
     <View style={S.row}>
@@ -117,43 +117,32 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
   const events2 = events;
   const activePerson = people.find(person => person.id === activeId);
   return <View style={S.stack}>
-    <PersonSwitcher people={people} activeId={activeId} onSwitch={onSwitch} onAdd={onAdd} onManage={onManage} />
-    <View style={[styles.hero, glow(tierColor), { borderColor: tierColor, overflow: 'hidden' }]}>
-      {reading.layers.day <= 1 && <Sparkles color={tierColor} />}
+    <View style={[styles.poster, glow(tierColor), { borderColor: tierColor, boxShadow: '0 0 0 1px ' + tierColor + '66, 0 0 48px ' + tierColor + '55' } as object]}>
+      <Sparkles color={tierColor} />
       <View style={S.between}>
         <Text style={S.kicker}>{dateLabel(c)}</Text>
-        <Text style={S.tiny}>{(activePerson && !activePerson.me ? activePerson.inputs.name + 'さん · ' : '') + (resident?.band ?? '')}</Text>
+        <Text style={[S.kicker, { color: C.ink, opacity: .7 }]}>潮環占い</Text>
       </View>
-      <View style={S.between}>
-        <View style={{ flex: 1, gap: 2 }}>
-          <Pop><Text style={styles.tierIcon}>{tierIcons[reading.layers.day]}</Text></Pop>
-          <Pop delay={120}><Text accessibilityRole="header" style={[styles.tier, { color: tierColor }]}>{outlook.title}</Text></Pop>
-          <Text style={S.body}>{dayWord}は {row.rank}位 / 160</Text>
-        </View>
-        <Float><GodAnimation index={profile.t.mod} style={{ width: 112 }} /></Float>
+      <Text style={S.tiny}>{(activePerson && !activePerson.me ? activePerson.inputs.name + 'さん · ' : '') + (resident?.band ?? '')}</Text>
+      <View style={{ alignItems: 'center', gap: 2 }}>
+        <Float><GodAnimation forcePlay index={profile.t.mod} style={{ width: 112 }} /></Float>
+        <Pop delay={120}><Text accessibilityRole="header" style={[styles.tier, { color: tierColor }]}>{tierIcons[reading.layers.day]} {outlook.title}</Text></Pop>
+        <Pop delay={240}><Text style={styles.rankLine}><Text style={[styles.rankNum, { color: tierColor }]}>{row.rank}</Text> 位 / 160</Text></Pop>
       </View>
-      <RankGauge rank={row.rank} color={tierColor} />
-      <Text style={S.h2}>{outlook.line}</Text>
+      <TierStrip level={reading.layers.day} />
+      <Text style={styles.line}>{outlook.line}</Text>
       <View style={styles.action}>
         <Text style={S.kicker}>{dayWord}の一手</Text>
         <Text style={styles.actionText}>{outlook.action}</Text>
       </View>
-      <Chips>
-        <Chip onPress={() => onSave(dateKey(date))}>記録する</Chip>
-        <Chip onPress={() => { void share(); }}>共有</Chip>
-      </Chips>
-      {!!shareMessage && <Text selectable accessibilityLiveRegion="polite" style={S.tiny}>{shareMessage}</Text>}
-      {dayNavigation}
     </View>
-
-    <Pressable accessibilityRole="button" onPress={selfLast ? goSelf : startQuiz} style={({ pressed }) => [styles.banner, pressed && { opacity: .8 }]}>
-      <Text style={{ fontSize: 30 }}>{selfLast ? selfLast.mark : '🧭'}</Text>
-      <View style={{ flex: 1 }}>
-        <Text style={[S.kicker, { color: '#9fd8c7' }]}>自己診断</Text>
-        <Text style={S.h3}>{selfLast ? '前回は「' + selfLast.name + '」。変化を見る' : '次は、自分の判断を見つめよう（約1分）'}</Text>
-      </View>
-      <Text style={[S.h2, { color: '#9fd8c7' }]}>›</Text>
-    </Pressable>
+    {dayNavigation}
+    <PersonSwitcher people={people} activeId={activeId} onSwitch={onSwitch} onAdd={onAdd} onManage={onManage} />
+    <Chips>
+      <Chip onPress={() => onSave(dateKey(date))}>記録する</Chip>
+      <Chip onPress={() => { void share(); }}>テキストで共有</Chip>
+    </Chips>
+    {!!shareMessage && <Text selectable accessibilityLiveRegion="polite" style={S.tiny}>{shareMessage}</Text>}
 
     {!!events2.length && <Chips>{events2.map(event => <Chip key={event}>{event}</Chip>)}</Chips>}
     {currentQuestion && <SelectedQuestionReading question={currentQuestion.question} profile={profile} />}
@@ -201,6 +190,15 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
     <Fold title="今日の月と潮" hint={c.moon + '・' + c.phaseTide} open={fold === 'moon'} onToggle={() => toggle('moon')}>
       {moonCard}
     </Fold>
+
+    <Pressable accessibilityRole="button" onPress={selfLast ? goSelf : startQuiz} style={({ pressed }) => [styles.banner, pressed && { opacity: .8 }]}>
+      <Text style={{ fontSize: 30 }}>{selfLast ? selfLast.mark : '🧭'}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={[S.kicker, { color: '#9fd8c7' }]}>自己診断</Text>
+        <Text style={S.h3}>{selfLast ? '前回は「' + selfLast.name + '」。変化を見る' : 'あなたは自分で選べてる？（約1分）'}</Text>
+      </View>
+      <Text style={[S.h2, { color: '#9fd8c7' }]}>›</Text>
+    </Pressable>
 
     <Text style={S.h2}>次はどうする？</Text>
     <NextLinks items={[
@@ -275,7 +273,11 @@ const styles = StyleSheet.create({
   smallIcon: { fontSize: 26 },
   hero: { borderWidth: 1, borderColor: '#4c5271', borderRadius: 22, padding: 18, gap: 12, backgroundColor: '#141e37' },
   welcome: { color: C.ink, fontSize: 32, lineHeight: 44, fontWeight: '800' },
-  tier: { fontSize: 54, lineHeight: 62, fontWeight: '800' },
+  poster: { borderWidth: 3, borderRadius: 28, padding: 18, gap: 10, overflow: 'hidden', backgroundColor: '#141e37' },
+  tier: { fontSize: 60, lineHeight: 70, fontFamily: display },
+  rankLine: { color: C.muted, fontSize: 18, fontWeight: '800' },
+  rankNum: { fontSize: 40, fontWeight: '800' },
+  line: { color: C.ink, fontSize: 21, lineHeight: 32, fontFamily: rounded, fontWeight: '700', textAlign: 'center' },
   tierIcon: { fontSize: 34, lineHeight: 42 },
   action: { gap: 4, padding: 14, borderRadius: 16, backgroundColor: '#0f1830', borderWidth: 1, borderColor: C.line },
   actionText: { color: C.ink, fontSize: 19, lineHeight: 28, fontWeight: '800' },
