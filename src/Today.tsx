@@ -61,7 +61,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
 
   async function share() {
     if (!reading) return;
-    const message = ['潮環占い｜' + dateLabel(c), labelOf(reading.row.t) + '　' + reading.row.rank + '位／160種 · ' + reading.outlook.title,
+    const message = ['潮環占い｜' + dateLabel(c), (resident ? resident.band + '（' + resident.subtitle + '）' : labelOf(reading.row.t)) + '　' + reading.row.rank + '位／160 · ' + reading.outlook.title,
       reading.outlook.line, '今日の一手　' + reading.outlook.action].join('\n');
     try {
       if (Platform.OS === 'web') {
@@ -123,9 +123,11 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
         <Text style={S.kicker}>{dateLabel(c)}</Text>
         <Text style={[S.kicker, { color: C.ink, opacity: .7 }]}>潮環占い</Text>
       </View>
-      <Text style={S.tiny}>{(activePerson && !activePerson.me ? activePerson.inputs.name + 'さん · ' : '') + (resident?.band ?? '')}</Text>
       <View style={{ alignItems: 'center', gap: 2 }}>
-        <Float><GodAnimation forcePlay index={profile.t.mod} style={{ width: 112 }} /></Float>
+        <Float><GodAnimation forcePlay index={profile.t.mod} style={{ width: 96 }} /></Float>
+        {activePerson && !activePerson.me && <Text style={S.tiny}>{activePerson.inputs.name}さんのタイプ</Text>}
+        <Text style={styles.typeName}>{resident?.band}</Text>
+        <Text style={[S.tiny, { color: tierColor }]}>{resident?.subtitle}</Text>
         <Pop delay={120}><Text accessibilityRole="header" style={[styles.tier, { color: tierColor }]}>{tierIcons[reading.layers.day]} {outlook.title}</Text></Pop>
         <Pop delay={240}><Text style={styles.rankLine}><Text style={[styles.rankNum, { color: tierColor }]}>{row.rank}</Text> 位 / 160</Text></Pop>
       </View>
@@ -273,7 +275,8 @@ const styles = StyleSheet.create({
   hero: { borderWidth: 1, borderColor: '#4c5271', borderRadius: 22, padding: 18, gap: 12, backgroundColor: '#141e37' },
   welcome: { color: C.ink, fontSize: 32, lineHeight: 44, fontWeight: '800' },
   poster: { borderWidth: 3, borderRadius: 28, padding: 18, gap: 10, overflow: 'hidden', backgroundColor: '#141e37' },
-  tier: { fontSize: 60, lineHeight: 70, fontFamily: display },
+  typeName: { color: C.ink, fontSize: 26, lineHeight: 34, fontFamily: rounded, fontWeight: '900' },
+  tier: { fontSize: 54, lineHeight: 62, fontFamily: display },
   rankLine: { color: C.muted, fontSize: 18, fontWeight: '800' },
   rankNum: { fontSize: 40, fontWeight: '800' },
   line: { color: C.ink, fontSize: 21, lineHeight: 32, fontFamily: rounded, fontWeight: '700', textAlign: 'center' },
