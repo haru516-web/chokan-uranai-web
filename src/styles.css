@@ -225,3 +225,5 @@ button, input, textarea, select { font: inherit; }
   100% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0); }
 }
 [data-fx="peek"] { animation-name: fx-peek !important; animation-duration: 2.3s !important; animation-timing-function: ease-in-out !important; animation-fill-mode: both !important; position: relative; z-index: 20; }
+
+@keyframes fx-heave { 0%, 100% { transform: translateY(8px); } 50% { transform: translateY(-14px); } }

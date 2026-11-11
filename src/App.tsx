@@ -25,6 +25,7 @@ const detailTitles: Record<string, string> = {
   note: '航海帳に記す', rank: '160名札の順位', people: '人の管理・リセット',
 };
 import { Explanation } from './Explanation';
+import { WanderingGod } from './WanderingGod';
 import { PeopleManager, PersonSwitcher, type Person } from './People';
 import { SelfHome, SelfQuiz, SelfResultView, SelfWish } from './SelfPurity';
 import { emptySelf, quadOf, quads, score, type Move, type SelfState } from './self';
@@ -361,6 +362,7 @@ function Voyage() {
         </ScrollView>)}
       </> : <View style={[layout.scroll, layout.content]}><Text style={S.body}>海図をひらいています…</Text></View>}
     </KeyboardAvoidingView>
+    {Platform.OS === 'web' && <WanderingGod index={profile?.t.mod ?? 4} />}
   </SafeAreaView>;
 }
 

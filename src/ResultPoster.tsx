@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
-import { GodAnimation } from './GodAnimation';
+import { callGod } from './WanderingGod';
 import type { readDay } from './domain';
 import { labelOf } from './scoring';
 import { C, display, rounded, S } from './ui';
 import { imeSegmentsFor } from './kana';
-import { Burst, Float, fx, glow, GlowPulse, ImeText, imeDuration, Reveal, Sparkles, TierStrip, TypeText, Waves } from './Visual';
+import { Burst, fx, glow, GlowPulse, ImeText, imeDuration, Reveal, Sparkles, TierStrip, TypeText, Waves } from './Visual';
 
 type Reading = ReturnType<typeof readDay>;
 
@@ -13,7 +13,7 @@ type Reading = ReturnType<typeof readDay>;
 const COLORS = ['#efd393', '#b6dfc4', '#c1d2ef', '#ff5a4d', '#e0245e'];
 const levelOfRank = (rank: number) => rank <= 16 ? 0 : rank <= 56 ? 1 : rank <= 104 ? 2 : rank <= 144 ? 3 : 4;
 
-const INTRO = 1500; // 神様が近くから覗いて、離れていくまで
+const INTRO = 1700; // 神様が画面の真ん中から覗いて、離れていくまで
 const COUNT_START = 1300 + INTRO;
 const COUNT_MS = 2200;
 const DONE_AT = COUNT_START + COUNT_MS;
@@ -48,6 +48,10 @@ export function ResultPoster({ reading, band, personName, dateText, dayWord, ins
     return () => cancelAnimationFrame(frame);
   }, [rank, instant]);
 
+  // 神様は画面全体を漂う存在。結果が出るとき画面の真ん中から覗き、確定の瞬間に跳ねる。
+  useEffect(() => { if (!instant) callGod('peek'); }, [instant]);
+  useEffect(() => { if (done && !instant) callGod('jump'); }, [done, instant]);
+
   const level = done ? finalLevel : levelOfRank(value);
   const color = COLORS[level];
   const danger = done && finalLevel >= 3;
@@ -64,7 +68,7 @@ export function ResultPoster({ reading, band, personName, dateText, dayWord, ins
   return <View {...(confirm ? fx('confirm') : {})} style={[styles.poster, glow(color), asStyle({
     borderColor: color, boxShadow: `0 0 0 1px ${color}66, 0 0 48px ${color}55`, transitionProperty: 'border-color, box-shadow', transitionDuration: '300ms',
   })]}>
-    <Waves color={color} amp={[5, 7, 9, 15, 20][level]} />
+    <Waves color={color} level={level} />
     {danger && <GlowPulse color={color} />}
     <Sparkles color={color} />
     {confirm && <Burst color={color} />}
@@ -73,9 +77,6 @@ export function ResultPoster({ reading, band, personName, dateText, dayWord, ins
       <Text style={[S.kicker, { color: C.ink, opacity: .7 }]}>潮環占い</Text>
     </View>
     <View style={{ alignItems: 'center', gap: 2 }}>
-      <View {...(instant ? {} : fx('peek'))}>
-        <View {...(confirm ? fx('jump') : {})}><Float><GodAnimation forcePlay index={reading.row.t.mod} style={{ width: 84 }} /></Float></View>
-      </View>
       {personName && <Text style={S.tiny}>{personName}さんのタイプ</Text>}
       <View accessible accessibilityRole="header" accessibilityLabel={labelOf(reading.row.t)} style={{ flexDirection: 'row' }}>
         {plate.map((char, index) => <Reveal key={index} kind="pop" delay={260 + o + index * 90} instant={instant}>
@@ -116,7 +117,7 @@ export function ResultPoster({ reading, band, personName, dateText, dayWord, ins
 }
 
 const styles = StyleSheet.create({
-  poster: { borderWidth: 3, borderRadius: 28, padding: 18, gap: 12, overflow: 'hidden', backgroundColor: '#141e37' },
+  poster: { borderWidth: 3, borderRadius: 28, padding: 18, paddingBottom: 64, gap: 12, overflow: 'hidden', backgroundColor: '#141e37' },
   plate: { color: C.ink, fontSize: 58, lineHeight: 66, fontFamily: display, textAlign: 'center' },
   typeName: { color: C.ink, fontSize: 20, lineHeight: 28, textAlign: 'center', fontFamily: rounded, fontWeight: '900' },
   todayHead: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 2 },
@@ -125,6 +126,6 @@ const styles = StyleSheet.create({
   rankLine: { color: C.muted, fontSize: 18, fontWeight: '800', textAlign: 'center' },
   rankNum: { fontSize: 44, fontWeight: '800', fontVariant: ['tabular-nums'] },
   line: { color: C.ink, fontSize: 20, lineHeight: 31, fontFamily: rounded, fontWeight: '700', textAlign: 'center' },
-  action: { gap: 4, padding: 14, borderRadius: 16, backgroundColor: '#0f1830', borderWidth: 1, borderColor: C.line },
+  action: { gap: 4, padding: 14, borderRadius: 16, backgroundColor: 'rgba(15,24,48,.72)', borderWidth: 1, borderColor: C.line },
   actionText: { color: C.ink, fontSize: 19, lineHeight: 28, fontWeight: '800' },
 });

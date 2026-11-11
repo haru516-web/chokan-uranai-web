@@ -177,19 +177,45 @@ export function TypeText({ text, delay = 0, speed = 30, instant, style }: {
   </Text>;
 }
 
-function wavePath(amp: number, phase: number) {
+// 段階ごとの海の表情。荒れるほど波が高く・速く・尖り、白波が立つ。
+// cycles は 400 ユニット（画面の半分）に入る波の数。端が継ぎ目なく繋がるよう整数にしてある。
+const SEAS = [
+  { height: 70, amp: 6, cycles: 2, speeds: [18, 26], layers: 2, sharp: 0, heave: 0, foam: false, op: 0.3 },     // 大漁：ゆったり
+  { height: 80, amp: 10, cycles: 2, speeds: [13, 19], layers: 2, sharp: 0.1, heave: 0, foam: false, op: 0.32 }, // 順風：軽やか
+  { height: 56, amp: 3, cycles: 1, speeds: [24, 34], layers: 2, sharp: 0, heave: 0, foam: false, op: 0.26 },    // 凪：ほぼ平ら
+  { height: 150, amp: 28, cycles: 3, speeds: [6, 9, 12], layers: 3, sharp: 0.45, heave: 3.2, foam: true, op: 0.42 },   // 荒波：高く尖る・白波
+  { height: 220, amp: 42, cycles: 4, speeds: [4.4, 6.6, 9], layers: 3, sharp: 0.7, heave: 2.2, foam: true, op: 0.5 }, // 轟沈：うねり狂う
+];
+
+function wavePath(amp: number, cycles: number, phase: number, sharp: number, base: number, height: number, closed = true) {
   const points: string[] = [];
-  for (let x = 0; x <= 800; x += 10) points.push((x === 0 ? 'M' : 'L') + x + ' ' + (34 + amp * Math.sin(2 * Math.PI * x / 200 + phase)).toFixed(1));
-  return points.join(' ') + ' L800 80 L0 80 Z';
+  for (let x = 0; x <= 800; x += 8) {
+    const theta = 2 * Math.PI * cycles * x / 400 + phase;
+    // 2倍波を重ねると、波頭が尖って谷が広い「荒れた波」の形になる
+    const y = base - amp * (Math.sin(theta) + sharp * Math.sin(2 * theta + 0.9));
+    points.push((x === 0 ? 'M' : 'L') + x + ' ' + y.toFixed(1));
+  }
+  return points.join(' ') + (closed ? ' L800 ' + height + ' L0 ' + height + ' Z' : '');
 }
-/** 下から寄せる波。荒れる日ほど波が高い。 */
-export function Waves({ color, amp = 8 }: { color: string; amp?: number }) {
-  return <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 64, overflow: 'hidden', opacity: 0.32 }}>
-    <div className="fx-wave-a" style={{ position: 'absolute', bottom: 0, left: 0, width: '200%', height: 64 }}>
-      <svg viewBox="0 0 800 80" preserveAspectRatio="none" width="100%" height="64"><path d={wavePath(amp, 0)} fill={color} opacity=".8" /></svg>
-    </div>
-    <div className="fx-wave-b" style={{ position: 'absolute', bottom: 0, left: 0, width: '200%', height: 64 }}>
-      <svg viewBox="0 0 800 80" preserveAspectRatio="none" width="100%" height="64"><path d={wavePath(amp * 0.7, 2)} fill={color} opacity=".6" /></svg>
+
+/** 下から寄せる波。段階に応じて高さ・速さ・形が変わり、荒波以上では白波が立ち、全体が上下にうねる。 */
+export function Waves({ color, level }: { color: string; level: number }) {
+  const sea = SEAS[level];
+  const h = sea.height;
+  const unit = 100; // viewBox の高さ
+  return <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: h, overflow: 'hidden', opacity: sea.op + 0.1 }}>
+    <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: h, ...(sea.heave ? { animation: `fx-heave ${sea.heave}s ease-in-out infinite` } : {}) }}>
+      {Array.from({ length: sea.layers }, (_, layer) => {
+        const front = layer === sea.layers - 1;
+        const amp = sea.amp * (1 - layer * 0.22) * (unit / h) * (h / 100);
+        const base = unit * (0.32 + layer * 0.2);
+        return <div key={layer} style={{ position: 'absolute', bottom: 0, left: 0, width: '200%', height: h, animation: `fx-wave ${sea.speeds[layer]}s linear infinite ${layer % 2 ? 'reverse' : 'normal'}` }}>
+          <svg viewBox={`0 0 800 ${unit}`} preserveAspectRatio="none" width="100%" height={h}>
+            <path d={wavePath(amp, sea.cycles, layer * 1.7, sea.sharp, base, unit)} fill={color} opacity={0.5 + layer * 0.18} />
+            {sea.foam && front && <path d={wavePath(amp, sea.cycles, layer * 1.7, sea.sharp, base, unit, false)} fill="none" stroke="#ffffff" strokeWidth="3" strokeLinejoin="round" opacity=".85" />}
+          </svg>
+        </div>;
+      })}
     </div>
   </View>;
 }
