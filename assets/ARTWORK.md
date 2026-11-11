@@ -21,3 +21,42 @@ Use case illustration-story. Single square 4x4 contact sheet for a polished Japa
 ### 海況と神話
 
 Use case illustration-story. Single square 4x4 contact sheet for a polished Japanese coastal mythology game, 16 separate scenes, 4 rows 4 columns EXACT even grid, no gaps margins or grid outlines, compositions centered per cell, no overlaps, no text. Rich indigo watercolor washi paper, gold and mint flecks, refined Japanese picture book. Row 1 wind fills a sail, scattered choppy waves, long rolling ocean swell, lightning storm on black sea. Row 2 a clear eye in a storm, thin rainbow after rain, receding tide on sand, still sea under purple twilight. Row 3 the missing sea at midnight, two ancient lighthouses facing away, faded hand painted sea chart, mysterious whirlpool in navy. Row 4 old moon over harbor, boat tilted into wind, golden celestial empty ring over water, turquoise moonlit tide pool.
+
+## 追加アート（2026-11）
+
+15点を組み込み ImageGen で個別生成し、指定サイズに変換した。各プロンプトに共通して次のスタイル指定を使った。
+
+> Use case: illustration-story. Asset type: Japanese coastal mythology website/app artwork matching the tactile handcrafted world of the existing harbor artwork. Layered washi paper, watercolor washes, delicate cut-paper edges and subtle paper grain; deep indigo #10172a to #1a243c, turquoise sea, pale aged gold #eacc8c accents, refined picture-book painting, quiet and mysterious. No people, no letters, no text, no logo, no frame, no UI, no watermark.
+
+### 5段階の海
+
+横長4:3、1200×900。各段階を個別に生成。
+
+- `tier-01.webp` — A bountiful sea at dawn: calm open water filled with subtle schools of fish silhouettes beneath the surface; expansive warm sunrise glow and pale gold light spreading across the water, celebratory but serene. Make this the brightest tier, with golden apricot dawn and touches of young mint green over the established indigo and turquoise palette. No boats.
+- `tier-02.webp` — A small traditional Japanese sailing boat with full white sail glides lightly across a bright clear blue-green sea in a favorable breeze; soft young green and turquoise highlights, pale gold sunlight on the sail and wavelets. Open optimistic sky, energetic but gentle. Brighter than the next three tiers.
+- `tier-03.webp` — A mirror-still pale indigo sea at twilight, reflecting a softly luminous moon and a few quiet clouds; generous uncluttered negative space, delicate ripples and restrained pale gold glimmer. Balanced calm, muted cool blue and turquoise, neither stormy nor celebratory. No boat.
+- `tier-04.webp` — A darkening sea with lively whitecaps and wind-shaped waves; one small traditional sailing boat leans into the wind, safely navigating through the swell. Add restrained vermilion-coral undertones in distant clouds and foam, dramatic but not frightening, readable silhouettes, no wreckage.
+- `tier-05.webp` — A near-black midnight storm sea in deep indigo, with layered cut-paper waves and muted deep-crimson undertones. Distant cloud and subdued far-off lightning glow, very dark overall and visually darker than the rough-sea tier. At the far edge, a simple shadowed harbor quay shelters exactly one small moored boat, with exactly one tiny warm pale-gold lantern as the only visible point of light. No lighthouse, buildings, second boat, stars, or other lights. The sheltered boat feels reassuring and conveys permission to rest.
+
+### 儀式の背景
+
+縦長9:16、1080×1920。
+
+- `ritual-bg.webp` — Vertical full-bleed midnight ocean seen straight on. A large pale-gold moon hangs above the sea in the upper quarter; broad concentric tidal rings radiate gently across the sky and water. Keep the central band around 35–45% image height dark, calm, and uncluttered for a deity overlay, with ring highlights curving around rather than crossing that center. Keep the entire lower half very dark indigo with only faint turquoise texture, quiet enough for readable overlay text. Deep ocean, soft mist, restrained golden moonlight, no figures or boats.
+
+### アイコン
+
+正方形512×512、透過背景WebP。淡い金の線、藍の面、少ない要素で小さくても形を読める構成。
+
+- `icon-compass.webp` — One isolated centered Japanese-style mariner's compass: a simple elegant four-point compass rose in pale aged-gold linework over a small deep-indigo circular enamel/washi-paper face, a few turquoise accents, bold silhouette legible at tiny size. Generous transparent padding.
+- `icon-question.webp` — One isolated centered symbol: a single luminous turquoise water bubble hovering over a small dark-indigo ripple, with one delicate pale-gold highlight suggesting a question without any punctuation or letters. Minimal bold silhouette legible at tiny size. Generous transparent padding.
+- `icon-book.webp` — One isolated centered open Japanese stab-bound book, two deep-indigo washi pages gently opening, a few pale-gold thread stitches visible along the central spine and a fine turquoise page accent. No writing or marks on pages. Simple bold silhouette legible at tiny size. Generous transparent padding.
+- `icon-work.webp` — One isolated centered sturdy traditional anchor, deep-indigo body with a clean pale aged-gold outline and a tiny turquoise rope loop. Simple iconic silhouette, balanced and legible at tiny size. Generous transparent padding.
+- `icon-love.webp` — One isolated centered pair of small seashells leaning gently together, deep-indigo shells with pale aged-gold edges and a subtle turquoise shared glimmer; tender but understated, no hearts. Simple bold silhouette legible at tiny size. Generous transparent padding.
+- `icon-money.webp` — One isolated centered deep-indigo scallop shell gently holding one round luminous pale-gold pearl, with a restrained turquoise accent at the base. Simple bold silhouette clearly legible at tiny size. Generous transparent padding.
+- `icon-health.webp` — One isolated centered fresh young sea-green leaf with one turquoise dew drop, pale aged-gold contour accents, calm and restorative. Simple bold silhouette clearly legible at tiny size. Generous transparent padding.
+
+### 共有画像とfavicon
+
+- `og.png` — Wide 1200×630 social-sharing illustration. Reserve the entire left half as calm dark indigo open sky and sea for later typography. On the right, show a luminous pale-gold moon above broad concentric turquoise and gold tide rings, with one small traditional Japanese sailing boat. Same quiet harbor world, no lighthouse or other focal objects.
+- `favicon.png` — Square 256×256 browser icon simplifying the existing app icon's 空白の環: one thick incomplete pale-gold tidal ring with an opening at the bottom, deep-indigo inner disk, and one tiny turquoise wave inside the lower edge. Strong silhouette, generous padding, restrained washi grain, legible at 16 pixels.
