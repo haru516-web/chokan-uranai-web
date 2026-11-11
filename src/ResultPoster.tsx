@@ -4,7 +4,8 @@ import { GodAnimation } from './GodAnimation';
 import type { readDay } from './domain';
 import { labelOf } from './scoring';
 import { C, display, rounded, S } from './ui';
-import { Burst, Float, fx, glow, GlowPulse, Reveal, Sparkles, TierStrip, TypeText, Waves } from './Visual';
+import { imeSegmentsFor } from './kana';
+import { Burst, Float, fx, glow, GlowPulse, ImeText, imeDuration, Reveal, Sparkles, TierStrip, TypeText, Waves } from './Visual';
 
 type Reading = ReturnType<typeof readDay>;
 
@@ -53,6 +54,8 @@ export function ResultPoster({ reading, band, personName, dateText, dayWord, ins
   const punch = (delay = 0) => confirm ? { ...fx('punch'), style: asStyle({ animationDelay: delay + 'ms' }) } : {};
   const plate = [...labelOf(reading.row.t)];
   const lineDelay = instant ? 0 : DONE_AT + 500;
+  const ime = imeSegmentsFor(reading.outlook.line);
+  const typeMs = ime ? imeDuration(ime) : reading.outlook.line.length * 26;
 
   return <View {...(confirm ? fx('confirm') : {})} style={[styles.poster, glow(color), asStyle({
     borderColor: color, boxShadow: `0 0 0 1px ${color}66, 0 0 48px ${color}55`, transitionProperty: 'border-color, box-shadow', transitionDuration: '300ms',
@@ -94,8 +97,10 @@ export function ResultPoster({ reading, band, personName, dateText, dayWord, ins
     <Reveal kind="up" delay={1200} instant={instant}>
       <View {...punch(250)}><TierStrip level={level} /></View>
     </Reveal>
-    <TypeText text={reading.outlook.line} delay={lineDelay} speed={26} instant={instant} style={styles.line} />
-    <Reveal kind="up" delay={lineDelay + reading.outlook.line.length * 26 + 200} instant={instant}>
+    {ime
+      ? <ImeText segments={ime} delay={lineDelay} instant={instant} style={styles.line} />
+      : <TypeText text={reading.outlook.line} delay={lineDelay} speed={26} instant={instant} style={styles.line} />}
+    <Reveal kind="up" delay={lineDelay + typeMs + 200} instant={instant}>
       <View style={styles.action}>
         <Text style={S.kicker}>{dayWord}の一手</Text>
         <Text style={styles.actionText}>{reading.outlook.action}</Text>

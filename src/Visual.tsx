@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { C, display as displayFont } from './ui';
+import type { ImeSegment } from './kana';
 
 const anim = (style: object) => style as unknown as ViewStyle;
 /** CSS 側（styles.css）で定義したアニメーションを data 属性で当てる。 */
@@ -190,5 +191,62 @@ export function Waves({ color, amp = 8 }: { color: string; amp?: number }) {
     <div className="fx-wave-b" style={{ position: 'absolute', bottom: 0, left: 0, width: '200%', height: 64 }}>
       <svg viewBox="0 0 800 80" preserveAspectRatio="none" width="100%" height="64"><path d={wavePath(amp * 0.7, 2)} fill={color} opacity=".6" /></svg>
     </div>
+  </View>;
+}
+
+const TYPE_MS = 48;      // 1文字打つ間隔
+const CONVERT_MS = 280;  // 打ち終えてから変換キーを押すまで
+const COMMIT_MS = 90;    // そのまま確定する（かな→同じ表記）
+
+type ImeEvent = { done: number; composing: string; gap: number; flash: boolean };
+function imeEvents(segments: ImeSegment[]) {
+  const events: ImeEvent[] = [];
+  segments.forEach(([kana, text], index) => {
+    for (let k = 1; k <= kana.length; k++) events.push({ done: index, composing: kana.slice(0, k), gap: TYPE_MS, flash: false });
+    events.push({ done: index + 1, composing: '', gap: kana === text ? COMMIT_MS : CONVERT_MS, flash: kana !== text });
+  });
+  events.push({ done: segments.length, composing: '', gap: 380, flash: false }); // 最後の変換の強調を消す
+  return events;
+}
+/** IME で打って変換していく所要時間(ms)。後続の表示タイミングの計算用。 */
+export function imeDuration(segments: ImeSegment[]) {
+  return imeEvents(segments).reduce((sum, event) => sum + event.gap, 0) + 400;
+}
+
+/**
+ * キーボードでひらがなを打ち（下線つき）、変換キーで漢字に変わっていく表示。
+ * 最初から全文ぶんの場所を確保するので、レイアウトは揺れない。
+ */
+export function ImeText({ segments, delay = 0, instant, style }: {
+  segments: ImeSegment[]; delay?: number; instant?: boolean; style?: StyleProp<import('react-native').TextStyle>;
+}) {
+  const full = segments.map(segment => segment[1]).join('');
+  const [view, setView] = useState<ImeEvent | null>(instant ? { done: segments.length, composing: '', gap: 0, flash: false } : null);
+  useEffect(() => {
+    if (instant) { setView({ done: segments.length, composing: '', gap: 0, flash: false }); return; }
+    setView(null);
+    const events = imeEvents(segments);
+    let index = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const step = () => {
+      setView(events[index]);
+      index += 1;
+      if (index < events.length) timer = setTimeout(step, events[index].gap);
+    };
+    timer = setTimeout(step, delay);
+    return () => clearTimeout(timer);
+  }, [segments, delay, instant]);
+
+  const doneSegments = view ? segments.slice(0, view.done) : [];
+  const lastIndex = doneSegments.length - 1;
+  const committedBefore = doneSegments.slice(0, view?.flash ? lastIndex : doneSegments.length).map(segment => segment[1]).join('');
+  const flashText = view?.flash && lastIndex >= 0 ? doneSegments[lastIndex][1] : '';
+  return <View accessible accessibilityLabel={full}>
+    <Text style={[style, { opacity: 0 }]}>{full}</Text>
+    <Text style={[style, StyleSheet.absoluteFill]}>
+      <Text>{committedBefore}</Text>
+      {!!flashText && <Text style={{ color: C.gold }}>{flashText}</Text>}
+      {!!view?.composing && <Text style={{ textDecorationLine: 'underline', backgroundColor: 'rgba(234,204,140,.22)' }}>{view.composing}</Text>}
+    </Text>
   </View>;
 }
