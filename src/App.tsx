@@ -3,7 +3,7 @@ import AsyncStorage from './web/storage';
 import * as Haptics from './web/haptics';
 import { Image } from './web/image';
 import { StatusBar } from './web/status-bar';
-import { AppState, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppState, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from './web/safe-area';
 import { harbor, seal } from './art';
 import { blankInputs, dateKey, jstToday, makeProfile, validate, type Inputs } from './domain';
@@ -57,6 +57,7 @@ export default function App() {
 }
 
 function Voyage() {
+  const wide = useWindowDimensions().width >= 720;
   const [ready, setReady] = useState(false);
   const [storageError, setStorageError] = useState(false);
   const [stored, setStored] = useState<Saved>(empty);
@@ -297,6 +298,7 @@ function Voyage() {
           <Text style={{ color: C.aqua, fontWeight: '800' }}>? 解説</Text>
         </Pressable>}
       </View>
+      {wide && <TabBar wide seasonIndex={profile?.t.mod ?? null} activeTab={tab} onSelect={go} />}
       {storageError && <Text accessibilityRole="alert" style={[S.tiny, layout.error]}>端末の保存領域にアクセスできませんでした。この画面で続けられます。</Text>}
       {ready ? <>
         <ScrollView key={`${tab}-${todayVisit}`} style={[layout.scroll, detail && layout.hidden]} contentContainerStyle={layout.content}
@@ -309,7 +311,7 @@ function Voyage() {
           {detailBody(entry)}
         </ScrollView>)}
       </> : <View style={[layout.scroll, layout.content]}><Text style={S.body}>海図をひらいています…</Text></View>}
-      <TabBar seasonIndex={profile?.t.mod ?? null} activeTab={tab} onSelect={go} />
+      {!wide && <TabBar seasonIndex={profile?.t.mod ?? null} activeTab={tab} onSelect={go} />}
     </KeyboardAvoidingView>
   </SafeAreaView>;
 }
