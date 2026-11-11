@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Platform, Share, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import type { ReactNode } from 'react';
 import { currents, scenes, stages } from './art';
 import { LayeredReading } from './DailyReading';
 import { addDays, calendarEvents, dateKey, dateLabel, readDay, shortDate, tierColors, type Profile } from './domain';
@@ -18,12 +19,13 @@ const tierIcons = ['🎣', '⛵', '🌙', '⚡', '🌀'];
 type FoldId = 'why' | 'me' | 'layers' | 'flow' | 'moon';
 
 export function Today({ today, profile, goMyth, openCalendar, create, ranks, onSave, questions, reflections, openQuestion, openQuestions, openHomecoming,
-  shareTideCard, openSelf, goSelf, openExplanation, startQuiz, selectedQuestion }: {
+  shareTideCard, openSelf, goSelf, openExplanation, startQuiz, selfLast, selectedQuestion }: {
   today: Date; profile: Profile | null; goMyth: () => void; openCalendar: (date: Date, mode: 'current' | 'stage') => void;
   create: () => void; ranks: (date: Date) => void; onSave: (day: string) => void;
   questions: SavedQuestion[]; reflections: Reflection[]; openQuestion: (id: string) => void;
   openQuestions: () => void; openHomecoming: (year: number) => void;
   shareTideCard: () => void; openSelf: () => void; goSelf: () => void; openExplanation: () => void; startQuiz: () => void;
+  selfLast: { name: string; mark: string; color: string } | null;
   selectedQuestion?: { question: Question; saved: boolean; toggle: () => void; compare: () => void };
 }) {
   const [offset, setOffset] = useState(0);
@@ -87,24 +89,19 @@ export function Today({ today, profile, goMyth, openCalendar, create, ranks, onS
 
   /* ---------- はじめての人：目的別の入口 ---------- */
   if (!reading || !profile) return <View style={S.stack}>
-    <View style={[styles.hero, glow(C.gold), { borderColor: C.gold, overflow: 'hidden' }]}>
-      <Sparkles />
-      <View style={S.between}>
-        <View style={{ flex: 1, gap: 8 }}>
-          <Text style={S.kicker}>潮環占い</Text>
-          <Pop><Text accessibilityRole="header" style={styles.welcome}>今日の自分の{'\n'}流れを読もう</Text></Pop>
-          <Text style={S.body}>{dateLabel(c)}　{c.moon}</Text>
-        </View>
-        <Float><GodAnimation index={4} style={{ width: 96 }} /></Float>
-      </View>
+    <Text accessibilityRole="header" style={styles.welcome}>どちらから{' '}はじめる？</Text>
+    <Door color={C.gold} big badge="まずはこれ" kicker="占い" title="今日の運勢を占う" hint="生年月日と名前だけ・30秒" cta="占ってみる" onPress={create}
+      art={<Float><GodAnimation index={4} style={{ width: 104 }} /></Float>} />
+    <Door color="#9fd8c7" kicker="自己診断" title="自己純度を測る" hint="名前も入力もなし・約1分" cta="診断する" onPress={startQuiz}
+      art={<Float><Text style={styles.doorIcon}>🧭</Text></Float>} />
+    <View style={S.row}>
+      <Pressable accessibilityRole="button" onPress={openQuestions} style={({ pressed }) => [S.card, styles.small, pressed && { opacity: .7 }]}>
+        <Text style={styles.smallIcon}>💭</Text><Text style={S.h3}>悩みから問いを読む</Text><Text style={S.tiny}>入力なし</Text>
+      </Pressable>
+      <Pressable accessibilityRole="button" onPress={openExplanation} style={({ pressed }) => [S.card, styles.small, pressed && { opacity: .7 }]}>
+        <Text style={styles.smallIcon}>📖</Text><Text style={S.h3}>仕組みを知る</Text><Text style={S.tiny}>図で説明</Text>
+      </Pressable>
     </View>
-    <Text style={S.h2}>どれからにする？</Text>
-    <NextLinks items={[
-      { icon: '✨', label: '今日の運勢を見る', hint: '生年月日と名前だけ・約30秒', onPress: create },
-      { icon: '🧭', label: '自分を見つめる 1分診断', hint: '名前も生年月日も要りません', onPress: startQuiz },
-      { icon: '💭', label: '今のモヤモヤから問いを読む', hint: '入力なしで読めます', onPress: openQuestions },
-      { icon: '📖', label: 'まず仕組みを知りたい', hint: '占いの考え方を図で説明', onPress: openExplanation },
-    ]} />
     <Fold title="今日の海をのぞく" hint="日付と月だけでわかる、今日の海のようす" open={fold === 'moon'} onToggle={() => toggle('moon')}>
       <Text style={S.tiny}>{c.yearPillar}　／　{OUTER[c.outer].n}　／　{c.solarMonthTerm} {STAGES[c.stage].n}</Text>
       {moonCard}
@@ -145,6 +142,15 @@ export function Today({ today, profile, goMyth, openCalendar, create, ranks, onS
       {!!shareMessage && <Text selectable accessibilityLiveRegion="polite" style={S.tiny}>{shareMessage}</Text>}
       {dayNavigation}
     </View>
+
+    <Pressable accessibilityRole="button" onPress={selfLast ? goSelf : startQuiz} style={({ pressed }) => [styles.banner, pressed && { opacity: .8 }]}>
+      <Text style={{ fontSize: 30 }}>{selfLast ? selfLast.mark : '🧭'}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={[S.kicker, { color: '#9fd8c7' }]}>自己診断</Text>
+        <Text style={S.h3}>{selfLast ? '前回は「' + selfLast.name + '」。変化を見る' : '次は、自分の判断を見つめよう（約1分）'}</Text>
+      </View>
+      <Text style={[S.h2, { color: '#9fd8c7' }]}>›</Text>
+    </Pressable>
 
     {!!events2.length && <Chips>{events2.map(event => <Chip key={event}>{event}</Chip>)}</Chips>}
     {currentQuestion && <SelectedQuestionReading question={currentQuestion.question} profile={profile} />}
@@ -208,6 +214,21 @@ export function Today({ today, profile, goMyth, openCalendar, create, ranks, onS
   </View>;
 }
 
+function Door({ color, big, badge, kicker, title, hint, cta, onPress, art }: {
+  color: string; big?: boolean; badge?: string; kicker: string; title: string; hint: string; cta: string; onPress: () => void; art: ReactNode;
+}) {
+  return <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.door, glow(color), { borderColor: color, minHeight: big ? 210 : 150 }, pressed && { opacity: .8 }]}>
+    <View style={{ flex: 1, gap: 6, justifyContent: 'center' }}>
+      {badge && <View style={[styles.badge, { backgroundColor: color }]}><Text style={styles.badgeText}>{badge}</Text></View>}
+      <Text style={[S.kicker, { color }]}>{kicker}</Text>
+      <Text style={[styles.doorTitle, big && { fontSize: 28, lineHeight: 36 }]}>{title}</Text>
+      <Text style={S.body}>{hint}</Text>
+      <View style={[styles.cta, { backgroundColor: color }]}><Text style={styles.ctaText}>{cta}　›</Text></View>
+    </View>
+    {art}
+  </Pressable>;
+}
+
 function ReadingReasons({ reading }: { reading: Reading }) {
   const { context: c, row, personal, personalRank, force, fivePhase } = reading;
   const { p, t } = row;
@@ -239,6 +260,16 @@ function ReadingReasons({ reading }: { reading: Reading }) {
 
 
 const styles = StyleSheet.create({
+  door: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderRadius: 24, padding: 18, overflow: 'hidden' },
+  doorTitle: { color: C.ink, fontSize: 22, lineHeight: 30, fontWeight: '800' },
+  doorIcon: { fontSize: 64, lineHeight: 76 },
+  badge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },
+  badgeText: { color: C.dark, fontSize: 12, fontWeight: '800' },
+  cta: { alignSelf: 'flex-start', paddingHorizontal: 18, paddingVertical: 11, borderRadius: 14, marginTop: 4 },
+  ctaText: { color: C.dark, fontSize: 16, fontWeight: '800' },
+  banner: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 18, borderWidth: 1.5, borderColor: '#9fd8c7', backgroundColor: '#12303a' },
+  small: { flex: 1, padding: 14, gap: 4, minHeight: 100 },
+  smallIcon: { fontSize: 26 },
   hero: { borderWidth: 1, borderColor: '#4c5271', borderRadius: 22, padding: 18, gap: 12, backgroundColor: '#141e37' },
   welcome: { color: C.ink, fontSize: 32, lineHeight: 44, fontWeight: '800' },
   tier: { fontSize: 54, lineHeight: 62, fontWeight: '800' },

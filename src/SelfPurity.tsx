@@ -83,6 +83,14 @@ export function SelfHome({ state, profile, today, start, openResult, openWish, s
   const quad = last && quads[quadOf(last.p, last.s)];
 
   return <View style={S.stack}>
+    <Pressable accessibilityRole="button" onPress={goToday} style={({ pressed }) => [st.banner, pressed && { opacity: .8 }]}>
+      <Text style={{ fontSize: 28 }}>☾</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={S.kicker}>占い</Text>
+        <Text style={S.h3}>今日の運勢を見る</Text>
+      </View>
+      <Text style={[S.h2, { color: C.gold }]}>›</Text>
+    </Pressable>
     {!last && <View style={st.hero}>
       <Text style={S.kicker}>自己純度</Text>
       <Text accessibilityRole="header" style={st.heroTitle}>今の自分は、{'\n'}自分で選べてる？</Text>
@@ -131,7 +139,6 @@ export function SelfHome({ state, profile, today, start, openResult, openWish, s
       : <Card><Text style={S.h3}>変化のグラフ</Text><Text style={S.body}>{last ? 'もう1回測ると、ここに変化が出ます。' : '測ると、ここに変化が出ます。'}</Text></Card>}
 
     {profile && <ResidentAsk profile={profile} />}
-    <Button quiet onPress={goToday}>今日の潮を読む</Button>
     <Text style={[S.tiny, { textAlign: 'center' }]}>点数は心理テストではなく「いまの目安」。人の優劣や運命を決めるものではありません。</Text>
   </View>;
 }
@@ -359,6 +366,7 @@ const st = StyleSheet.create({
   heroTitle: { color: C.ink, fontSize: 30, lineHeight: 41, fontWeight: '800' },
   huge: { fontSize: 44, lineHeight: 52 },
   scene: { color: C.ink, fontSize: 24, lineHeight: 34, fontWeight: '800' },
+  banner: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 18, borderWidth: 1.5, borderColor: C.gold, backgroundColor: '#2a2a2e' },
   sceneCard: { alignItems: 'center', gap: 8, padding: 18, borderRadius: 22, backgroundColor: '#17223d', borderWidth: 1, borderColor: C.line },
   sceneIcon: { fontSize: 52, lineHeight: 64 },
   resultMark: { fontSize: 64, lineHeight: 76 },

@@ -26,7 +26,7 @@ const detailTitles: Record<string, string> = {
 };
 import { Explanation } from './Explanation';
 import { SelfHome, SelfQuiz, SelfResultView, SelfWish } from './SelfPurity';
-import { emptySelf, score, type Move, type SelfState } from './self';
+import { emptySelf, quadOf, quads, score, type Move, type SelfState } from './self';
 type Detail =
   | { kind: 'explanation' }
   | { kind: 'selfQuiz' }
@@ -175,6 +175,7 @@ function Voyage() {
       openQuestion={id => openQuestion(id, true)} openQuestions={() => go('questions')}
       shareTideCard={() => open({ kind: 'share' })} openSelf={openWish} goSelf={() => go('self')}
       openExplanation={() => open({ kind: 'explanation' })} startQuiz={startQuiz}
+      selfLast={self.results[0] ? { name: quads[quadOf(self.results[0].p, self.results[0].s)].name, mark: quads[quadOf(self.results[0].p, self.results[0].s)].mark, color: quads[quadOf(self.results[0].p, self.results[0].s)].color } : null}
       selectedQuestion={selectedQuestion ? {
         question: selectedQuestion,
         saved: stored.questions.some(entry => entry.id === selectedQuestion.id && entry.day === day),
