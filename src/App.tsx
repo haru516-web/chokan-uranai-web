@@ -16,7 +16,14 @@ import { Today } from './Today';
 import { Atlas, Calendar, Chapter, Journal, Myth, NoteEditor, Ranking, Resident, type Note } from './screens';
 import { C, S } from './ui';
 import { findQuestion, type Reflection, type SavedQuestion } from './voyage';
-import { PetNavigation, type MainTab } from './PetNavigation';
+import { mainTabs, TabBar, type MainTab } from './PetNavigation';
+
+const detailTitles: Record<string, string> = {
+  explanation: '仕組みの解説', selfQuiz: '診断', selfResult: '診断の結果', selfWish: '意志を潮に乗せる', profile: '自分の海をひらく',
+  question: '問いを読む', compare: 'あの頃の海と比べる', homecoming: '帰郷の年', reflection: '振り返りを書く', trail: '問いの記録',
+  share: '潮札を共有', calendar: '運勢の流れ', myth: '潮環神話', pair: '相性を見る', resident: '住人の紹介', chapter: '神話を読む',
+  note: '航海帳に記す', rank: '160名札の順位',
+};
 import { Explanation } from './Explanation';
 import { SelfHome, SelfQuiz, SelfResultView, SelfWish } from './SelfPurity';
 import { emptySelf, score, type Move, type SelfState } from './self';
@@ -273,17 +280,22 @@ function Voyage() {
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={layout.frame}>
       <View style={layout.header}>
         {detail
-          ? <Pressable accessibilityRole="button" accessibilityLabel="前の画面に戻る" onPress={back} style={layout.back}>
-            <Text style={layout.brand}>‹ 戻る</Text>
+          ? <Pressable accessibilityRole="button" accessibilityLabel="前の画面に戻る" onPress={back} style={layout.backBtn}>
+            <Text style={layout.backMark}>‹</Text>
           </Pressable>
-          : <View style={S.row}>
-            <Image source={seal} style={{ width: 35, height: 35, borderRadius: 10 }} />
-            <Text style={layout.brand}>潮環占い</Text>
-          </View>}
-        <Pressable accessibilityRole="button" accessibilityLabel="仕組みの解説を開く" onPress={() => { if (detail?.kind !== 'explanation') open({ kind: 'explanation' }); }}
-          style={{ paddingHorizontal: 15, paddingVertical: 10, borderRadius: 8, backgroundColor: '#245bdf' }}>
-          <Text style={{ color: '#fff', fontWeight: '800' }}>解説</Text>
-        </Pressable>
+          : <Image source={seal} style={{ width: 38, height: 38, borderRadius: 10 }} />}
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text accessibilityRole="header" numberOfLines={1} style={layout.pageTitle}>
+            {detail ? detailTitles[detail.kind] : mainTabs.find(item => item.id === tab)?.title}
+          </Text>
+          <Text numberOfLines={1} style={S.tiny}>
+            {detail ? (mainTabs.find(item => item.id === tab)?.title ?? '') + ' › ' + detailTitles[detail.kind] : '潮環占い'}
+          </Text>
+        </View>
+        {detail?.kind !== 'explanation' && <Pressable accessibilityRole="button" accessibilityLabel="仕組みの解説を開く" onPress={() => open({ kind: 'explanation' })}
+          style={layout.help}>
+          <Text style={{ color: C.aqua, fontWeight: '800' }}>? 解説</Text>
+        </Pressable>}
       </View>
       {storageError && <Text accessibilityRole="alert" style={[S.tiny, layout.error]}>端末の保存領域にアクセスできませんでした。この画面で続けられます。</Text>}
       {ready ? <>
@@ -297,20 +309,22 @@ function Voyage() {
           {detailBody(entry)}
         </ScrollView>)}
       </> : <View style={[layout.scroll, layout.content]}><Text style={S.body}>海図をひらいています…</Text></View>}
+      <TabBar seasonIndex={profile?.t.mod ?? null} activeTab={tab} onSelect={go} />
     </KeyboardAvoidingView>
-    {detail?.kind !== 'explanation' && <PetNavigation seasonIndex={profile?.t.mod ?? null} activeTab={tab} onSelect={go} />}
   </SafeAreaView>;
 }
 
 const layout = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.base, alignItems: 'center' },
   frame: { flex: 1, width: '100%', maxWidth: 780, backgroundColor: C.base, alignSelf: 'center' },
-  header: { minHeight: 60, paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomColor: C.line, borderBottomWidth: StyleSheet.hairlineWidth },
-  brand: { color: C.ink, fontSize: 19, fontWeight: '800', letterSpacing: 2 },
-  back: { minHeight: 44, justifyContent: 'center', paddingRight: 14 },
+  header: { minHeight: 62, paddingHorizontal: 14, gap: 12, flexDirection: 'row', alignItems: 'center', borderBottomColor: C.line, borderBottomWidth: StyleSheet.hairlineWidth },
+  pageTitle: { color: C.ink, fontSize: 19, lineHeight: 26, fontWeight: '800' },
+  backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: C.panel, borderWidth: 1, borderColor: C.line },
+  backMark: { color: C.ink, fontSize: 28, lineHeight: 30, fontWeight: '700' },
+  help: { paddingHorizontal: 12, minHeight: 40, justifyContent: 'center', borderRadius: 20, borderWidth: 1, borderColor: '#4c6aa8' },
   scroll: { flex: 1 },
   hidden: { display: 'none' },
-  content: { padding: 16, paddingBottom: 116 },
+  content: { padding: 16, paddingBottom: 32 },
   error: { backgroundColor: '#4b2c29', padding: 8, color: C.error },
 });
 
