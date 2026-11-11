@@ -139,7 +139,6 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
     {dayNavigation}
     <PersonSwitcher people={people} activeId={activeId} onSwitch={onSwitch} onAdd={onAdd} onManage={onManage} />
     <Chips>
-      <Chip onPress={() => onSave(dateKey(date))}>記録する</Chip>
       <Chip onPress={() => { void share(); }}>テキストで共有</Chip>
     </Chips>
     {!!shareMessage && <Text selectable accessibilityLiveRegion="polite" style={S.tiny}>{shareMessage}</Text>}
