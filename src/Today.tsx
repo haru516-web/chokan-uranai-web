@@ -124,12 +124,19 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
         <Text style={[S.kicker, { color: C.ink, opacity: .7 }]}>潮環占い</Text>
       </View>
       <View style={{ alignItems: 'center', gap: 2 }}>
-        <Float><GodAnimation forcePlay index={profile.t.mod} style={{ width: 96 }} /></Float>
+        <Float><GodAnimation forcePlay index={profile.t.mod} style={{ width: 84 }} /></Float>
         {activePerson && !activePerson.me && <Text style={S.tiny}>{activePerson.inputs.name}さんのタイプ</Text>}
-        <Text style={styles.typeName}>{resident?.band}</Text>
-        <Text style={[S.tiny, { color: tierColor }]}>{resident?.subtitle}</Text>
-        <View style={[styles.tag, { borderColor: tierColor }]}><Text style={styles.tagText}>名札　{labelOf(profile.t)}{profile.t.minus ? '　− 向かい風' : ''}{profile.t.A ? '　A 渦' : ''}</Text></View>
-        <Pop delay={120}><Text accessibilityRole="header" style={[styles.tier, { color: tierColor }]}>{tierIcons[reading.layers.day]} {outlook.title}</Text></Pop>
+        <Text accessibilityRole="header" style={styles.plate}>{labelOf(profile.t)}</Text>
+        <Text style={styles.typeName}>{resident?.band}<Text style={[S.tiny, { color: C.muted }]}>　{resident?.subtitle}</Text></Text>
+        {(profile.t.minus || profile.t.A) && <Text style={S.tiny}>{profile.t.minus ? '− 向かい風' : ''}{profile.t.minus && profile.t.A ? '　' : ''}{profile.t.A ? 'A 渦' : ''}</Text>}
+      </View>
+      <View style={styles.todayHead}>
+        <View style={[styles.rule, { backgroundColor: tierColor }]} />
+        <Text style={[styles.todayLabel, { color: tierColor }]}>{dayWord}の運勢</Text>
+        <View style={[styles.rule, { backgroundColor: tierColor }]} />
+      </View>
+      <View style={{ alignItems: 'center', gap: 0 }}>
+        <Pop delay={120}><Text style={[styles.tier, { color: tierColor }]}>{tierIcons[reading.layers.day]} {outlook.title}</Text></Pop>
         <Pop delay={240}><Text style={styles.rankLine}><Text style={[styles.rankNum, { color: tierColor }]}>{row.rank}</Text> 位 / 160</Text></Pop>
       </View>
       <TierStrip level={reading.layers.day} />
@@ -276,12 +283,16 @@ const styles = StyleSheet.create({
   hero: { borderWidth: 1, borderColor: '#4c5271', borderRadius: 22, padding: 18, gap: 12, backgroundColor: '#141e37' },
   welcome: { color: C.ink, fontSize: 32, lineHeight: 44, fontWeight: '800' },
   poster: { borderWidth: 3, borderRadius: 28, padding: 18, gap: 10, overflow: 'hidden', backgroundColor: '#141e37' },
+  plate: { color: C.ink, fontSize: 58, lineHeight: 66, fontFamily: display, textAlign: 'center' },
+  todayHead: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 2 },
+  rule: { flex: 1, height: 2, borderRadius: 1, opacity: 0.6 },
+  todayLabel: { fontSize: 14, fontWeight: '900', letterSpacing: 1 },
   tag: { marginTop: 4, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 14, borderWidth: 1, backgroundColor: '#0f1830' },
   tagText: { color: C.ink, fontSize: 13, fontWeight: '800' },
-  typeName: { color: C.ink, fontSize: 26, lineHeight: 34, fontFamily: rounded, fontWeight: '900' },
-  tier: { fontSize: 54, lineHeight: 62, fontFamily: display },
+  typeName: { color: C.ink, fontSize: 20, lineHeight: 28, textAlign: 'center', fontFamily: rounded, fontWeight: '900' },
+  tier: { fontSize: 40, lineHeight: 48, fontFamily: display },
   rankLine: { color: C.muted, fontSize: 18, fontWeight: '800' },
-  rankNum: { fontSize: 40, fontWeight: '800' },
+  rankNum: { fontSize: 30, fontWeight: '800' },
   line: { color: C.ink, fontSize: 21, lineHeight: 32, fontFamily: rounded, fontWeight: '700', textAlign: 'center' },
   tierIcon: { fontSize: 34, lineHeight: 42 },
   action: { gap: 4, padding: 14, borderRadius: 16, backgroundColor: '#0f1830', borderWidth: 1, borderColor: C.line },
