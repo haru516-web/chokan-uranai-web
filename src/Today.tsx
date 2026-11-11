@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import type { ReactNode } from 'react';
-import { currents, iconArt, scenes, stages } from './art';
+import { currents, iconArt, scenes, stages, tierArt } from './art';
 import { Image } from './web/image';
 import { LayeredReading } from './DailyReading';
 import { addDays, calendarEvents, dateKey, dateLabel, readDay, shortDate, tierColors, tiers, type Profile } from './domain';
@@ -18,7 +18,7 @@ import { Gloss, TermText, useGloss } from './Glossary';
 import { PersonSwitcher, type Person } from './People';
 import { ResultPoster } from './ResultPoster';
 import { Float, glow, Sparkles } from './Visual';
-import { Button, C, Card, Chip, Chips, Fold, NextLinks, S, Tile, display, rounded } from './ui';
+import { Art, Button, C, Card, Chip, Chips, Fold, NextLinks, S, Tile, display, rounded } from './ui';
 import { findQuestion, nextTideChange, ownResident, revisitQuestion, type Question, type Reflection, type SavedQuestion } from './voyage';
 
 type Reading = ReturnType<typeof readDay>;
@@ -190,6 +190,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
 
     <View key={'story' + seenKey}>
       <Scene index={0} color={tierColor} kicker={dayWord + 'の海'} title={outlook.title + 'の日'} lead={fortune.sea} next="四つの運勢">
+        {tierArt[reading.layers.day] && <View style={[S.card, { borderColor: tierColor + '88' }]}><Art source={tierArt[reading.layers.day]!} height={190} label={outlook.title + 'の海'} /></View>}
         <Text style={styles.detail}>{outlook.detail}</Text>
         <Meter title="自分が進む力" value={reading.force.go} color={tierColor} caption={goStrong ? '強い' : '控えめ'} />
         <Meter title="周りを変える力" value={reading.force.change} color="#a8c4f0" caption={changeStrong ? '強い' : '控えめ'} />

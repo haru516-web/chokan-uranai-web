@@ -106,7 +106,10 @@ export function TomorrowCard({ tomorrow }: { tomorrow: ReturnType<typeof tomorro
   const open = useGloss();
   const color = TIER_COLORS[tomorrow.level];
   const arrow = tomorrow.trend === 'up' ? '↗' : tomorrow.trend === 'down' ? '↘' : '→';
-  return <Appear style={[S.card, styles.tomorrow, asStyle({ borderColor: color + '99', backgroundImage: `linear-gradient(160deg, ${color}2e 0%, #141e37 62%)` })]}>
+  const art = tierArt[tomorrow.level];
+  return <Appear style={[S.card, styles.tomorrow, asStyle({ borderColor: color + '99', backgroundImage: art
+    ? `linear-gradient(180deg, rgba(20,30,55,.55) 0%, #141e37 58%), url(${art})`
+    : `linear-gradient(160deg, ${color}2e 0%, #141e37 62%)`, backgroundSize: '100% auto', backgroundRepeat: 'no-repeat', backgroundPosition: 'top center' })]}>
     <Waves color={color} level={Math.min(tomorrow.level, 1)} />
     <View style={S.between}>
       <Text style={S.kicker}>明日の潮　{tomorrow.month}月{tomorrow.day}日（{tomorrow.weekday}）</Text>
