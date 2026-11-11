@@ -9,7 +9,7 @@ import { TypeTraits } from './NameReading';
 import { TideMarks } from './ResidentCard';
 import { ctxFor, dayTable, FIVE_PHASES, labelOf, OUTER, SEASON, solarMonthStartDate, SOLAR_MONTH_TERMS, STAGES, yearScoreOf, blockScoreOf } from './scoring';
 import { TideWheel } from './TideCharts';
-import { Art, Button, C, Card, Chip, Chips, Heading, S, Section, Tile } from './ui';
+import { Art, Button, C, Card, Chip, Chips, Fold, Heading, NextLinks, S, Section, Tile } from './ui';
 import { findQuestion, ownResident, residents, type Reflection, type SavedQuestion } from './voyage';
 
 export type Note = { day: string; text: string };
@@ -42,7 +42,7 @@ export function Calendar({ today, profile, initial }: { today: Date; profile: Pr
   }
 
   return <View style={S.stack}>
-    <Heading tag="潮の羅針盤" title="運勢の流れ" body="外の輪は十二支と既存の海流を重ねた年巡り。内の輪は二十四節気のうち、12の『節』から移る海況です。" />
+    <Heading tag="運勢カレンダー" title="運勢の流れ" body="輪や日付をタップすると、その時期に切り替わります。" />
     <TideWheel context={c} profile={profile}
       onMonth={month => choose(new Date(Date.UTC(c.Y, month - 1, 1)))}
       onSolarMonth={solarMonth => choose(solarMonthStartDate(c.solarYear, solarMonth))}
@@ -132,8 +132,8 @@ export function Calendar({ today, profile, initial }: { today: Date; profile: Pr
   </View>;
 }
 
-export function Atlas({ profile, favorites, open, myth, pair }: {
-  profile: Profile | null; favorites: number[]; open: OpenResident; myth: () => void; pair: () => void;
+export function Atlas({ profile, favorites, open, myth, pair, create }: {
+  profile: Profile | null; favorites: number[]; open: OpenResident; myth: () => void; pair: () => void; create: () => void;
 }) {
   const [season, setSeason] = useState<number | null>(null);
   const [depth, setDepth] = useState<number | null>(null);
@@ -146,7 +146,8 @@ export function Atlas({ profile, favorites, open, myth, pair }: {
       [resident.band, resident.subtitle].some(text => text.includes(query.trim()));
   });
   return <View style={S.stack}>
-    <Heading tag="図鑑" title="潮環占いの16タイプ" body="生年月日で決まる季節と、名前の画数で決まる深さを組み合わせた占いタイプです。気になるタイプを選ぶと、考え方や人との関わり方を読めます。" />
+    <Heading tag="16タイプ" title="あなたはどのタイプ？" body="気になるタイプをタップ。考え方や人との関わり方が読めます。" />
+    {profile ? <Button onPress={() => open(own)}>自分のタイプを見る　›</Button> : <Button onPress={create}>自分のタイプを調べる（約30秒）　›</Button>}
     <TextInput accessibilityLabel="占いタイプを検索" value={query} onChangeText={setQuery}
       style={S.field} placeholder="例：冬の深海、番人" placeholderTextColor={C.muted} />
     <Chips>
@@ -244,50 +245,69 @@ export function Chapter({ index, read, done, open }: { index: number; read: bool
   </View>;
 }
 
-export function Journal({ profile, notes, edit, pair, create, openNote, showToday, onForget, questions, reflections, openTrail, editReflection, openChart }: {
+export function Journal({ profile, notes, edit, pair, create, openNote, showToday, onForget, questions, reflections, openTrail, editReflection, openChart, goSelf, selfCount }: {
   profile: Profile | null; notes: Note[]; edit: () => void; pair: () => void; create: () => void;
   openNote: (day: string) => void; showToday: () => void; onForget: () => void;
   questions: SavedQuestion[]; reflections: Reflection[]; openTrail: (id: string) => void;
-  editReflection: (record: Reflection) => void; openChart: () => void;
+  editReflection: (record: Reflection) => void; openChart: () => void; goSelf: () => void; selfCount: number;
 }) {
   const [confirm, setConfirm] = useState(false);
+  const [fold, setFold] = useState<'data' | 'about' | null>(null);
   const resident = profile && ownResident(profile);
   const trails = [...new Set([...questions.map(entry => entry.id), ...reflections.flatMap(record => record.questionId ? [record.questionId] : [])])];
+  const empty = !notes.length && !trails.length && !reflections.length && !selfCount;
   return <View style={S.stack}>
-    <Heading tag="THE LOGBOOK" title="航海帳" body="自分の潮札と、海を見て考えたことを残す場所。" />
-    <View style={S.card}><Art source={scenes[2]} height={140} /></View>
-    <Card>
+    <Heading tag="記録" title="あなたの記録" body="考えたこと・残した問い・自己純度の変化が、ここに集まります。" />
+    <Button onPress={create}>今日のことを書く　›</Button>
+    <Chips>
+      <Chip active={notes.length > 0}>{`日記 ${notes.length}`}</Chip>
+      <Chip active={trails.length > 0}>{`問い ${trails.length}`}</Chip>
+      <Chip active={reflections.length > 0}>{`振り返り ${reflections.length}`}</Chip>
+      <Chip active={selfCount > 0}>{`自己純度 ${selfCount}回`}</Chip>
+    </Chips>
+    {empty && <Card>
+      <Text style={S.h3}>まだ何も残っていません</Text>
+      <Text style={S.body}>占いや診断のあとに「記録する」を押すと、ここに並びます。</Text>
+    </Card>}
+    <NextLinks items={[
+      { label: '自己純度の変化を見る', hint: selfCount ? selfCount + '回分の記録' : '1分の診断からはじめる', onPress: goSelf },
+      { label: '今日の占いを見る', onPress: showToday },
+      { label: '過去の年を振り返って記録する', hint: '人生の流れから、あの頃の出来事を残せます', onPress: openChart },
+    ]} />
+    {notes.length > 0 && <>
+      <Section title="日記" />
+      {notes.map(note => <Pressable accessibilityRole="button" key={note.day} onPress={() => openNote(note.day)} style={[S.card, S.pad]}>
+        <Text style={S.kicker}>{note.day}</Text><Text numberOfLines={2} style={S.body}>{note.text}</Text>
+      </Pressable>)}
+    </>}
+    {trails.length > 0 && <>
+      <Section title="残した問い" note="タップすると、残した日と出来事を読み返せます。" />
+      {trails.map(id => {
+        const question = findQuestion(id);
+        return question && <Pressable accessibilityRole="button" key={id} onPress={() => openTrail(id)} style={[S.card, S.pad]}>
+          <Text style={S.kicker}>{id}　{question.title}</Text><Text style={S.h3}>{question.question}</Text>
+        </Pressable>;
+      })}
+    </>}
+    {reflections.length > 0 && <>
+      <Section title="あの頃の振り返り" />
+      <ReflectionCards records={reflections} edit={editReflection} />
+    </>}
+    <Fold title="私の潮札・データの管理" hint={resident ? resident.band + '・端末に保存中' : '未作成'} open={fold === 'data'} onToggle={() => setFold(fold === 'data' ? null : 'data')}>
       {profile && resident ? <>
-        <Text style={S.kicker}>MY TIDE CARD</Text><Text style={S.h2}>{resident.band}</Text>
-        <Text style={S.body}>{resident.subtitle}</Text>
-        <Text style={S.tiny}>正確な名札 {labelOf(profile.t)}</Text>
-        <Button onPress={showToday}>私の占い結果を見る</Button>
+        <Text style={S.h3}>{resident.band}</Text>
+        <Text style={S.body}>{resident.subtitle}　名札 {labelOf(profile.t)}</Text>
         <Button quiet onPress={edit}>入力内容を変更</Button>
         {confirm ? <View style={S.stack}><Text style={S.body}>この端末の潮札と入力内容を削除しますか？</Text>
           <Chips><Chip onPress={() => setConfirm(false)}>キャンセル</Chip><Chip active onPress={() => { onForget(); setConfirm(false); }}>潮札を削除</Chip></Chips>
         </View> : <Chip onPress={() => setConfirm(true)}>潮札を削除する</Chip>}
-      </> : <><Text style={S.h3}>私の潮札</Text><Button onPress={edit}>潮札をつくる</Button></>}
-    </Card>
-    <Button quiet onPress={pair}>二人の海をみる</Button>
-    <Section title="同じ問いの航跡" note="残した日と、問いにつながる出来事を読み直せます。" />
-    {trails.length === 0 && <Text style={S.body}>まだ残した問いはありません。</Text>}
-    {trails.map(id => {
-      const question = findQuestion(id);
-      return question && <Pressable accessibilityRole="button" key={id} onPress={() => openTrail(id)} style={[S.card, S.pad]}>
-        <Text style={S.kicker}>{id}　{question.title}</Text><Text style={S.h3}>{question.question}</Text>
-      </Pressable>;
-    })}
-    <Section title="あの頃の海の記録" note="出来事、当時の受け取り方、今の受け取り方を並べて読めます。" />
-    <ReflectionCards records={reflections} edit={editReflection} />
-    <Button quiet onPress={openChart}>人生の海図から記録する</Button>
-    <Section title="私の記録" note="航海帳・お気に入り・読了の記録は、この端末に保存されます。" />
-    <Button quiet onPress={create}>今日の記録を書く</Button>
-    {notes.length === 0 && <Text style={S.body}>まだ記録がありません。</Text>}
-    {notes.map(note => <Pressable accessibilityRole="button" key={note.day} onPress={() => openNote(note.day)} style={[S.card, S.pad]}>
-      <Text style={S.kicker}>{note.day}</Text><Text numberOfLines={2} style={S.body}>{note.text}</Text>
-    </Pressable>)}
-    <Card><Text style={S.h3}>潮環占いについて</Text><Text style={S.body}>潮環占いは、四季・名前の画数・暦を使って自分の状況を見つめるための創作占いです。人生の予測や性格を測定する方法としては実証されていません。月相と節気の切り替えは日本時間正午の天文値、日の干支は日本時間の日付を基準にしています。十干・十二支・節気・五行の対応を暦上の参照枠にし、十二支と既存の海流の対応、四季型との五行照合、海況への反映は潮環独自の設計です。十二支の五行は一つに簡略化し、月干や時刻は扱いません。</Text>
-      <Text style={S.tiny}>漢字の画数　KANJIDIC2 © EDRDG（CC BY-SA 4.0）　／　月の計算　Jean Meeus『Astronomical Algorithms』</Text></Card>
+      </> : <Button onPress={edit}>潮札をつくる</Button>}
+      <Button quiet onPress={pair}>二人の海をみる</Button>
+    </Fold>
+    <Fold title="潮環占いについて" hint="占いの位置づけ・出典" open={fold === 'about'} onToggle={() => setFold(fold === 'about' ? null : 'about')}>
+      <Text style={S.body}>潮環占いは、四季・名前の画数・暦を使って自分の状況を見つめるための創作占いです。人生の予測や性格を測定する方法としては実証されていません。月相と節気の切り替えは日本時間正午の天文値、日の干支は日本時間の日付を基準にしています。十干・十二支・節気・五行の対応を暦上の参照枠にし、十二支と既存の海流の対応、四季型との五行照合、海況への反映は潮環独自の設計です。十二支の五行は一つに簡略化し、月干や時刻は扱いません。</Text>
+      <Text style={S.tiny}>漢字の画数　KANJIDIC2 © EDRDG（CC BY-SA 4.0）　／　月の計算　Jean Meeus『Astronomical Algorithms』</Text>
+    </Fold>
   </View>;
 }
 

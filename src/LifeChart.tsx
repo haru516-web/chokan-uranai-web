@@ -34,8 +34,8 @@ export function LifeChart({ today, profile, questionId, initialYear, create, cal
   }
 
   return <View style={S.stack}>
-    <Heading tag="人生の海図" title={question ? 'あなたが、その問いを強く感じたのはいつですか。' : '通ってきた海を振り返る'}
-      body="過去12年の海流を、年ごとに選んで読めます。年の下には、立春から巡る二十四節気の12の『節』ごとの海況を並べています。" />
+    <Heading tag="人生の流れ" title={question ? 'その問いを強く感じたのは、いつ頃？' : '過去の年を、今の目で読み返す'}
+      body="① 年をタップ　② 月をタップ　③ その頃の出来事を記録" />
     {question && <Card><Text style={S.kicker}>{question.id}　問いを重ねる</Text><Text style={S.h3}>{question.question}</Text></Card>}
     {!profile && <Card><Text style={S.body}>潮札をつくると、同じ時期をあなたの名札で読めます。</Text><Button quiet onPress={create}>私の潮札をひらく</Button></Card>}
     <View style={S.between}>

@@ -184,10 +184,10 @@ function Voyage() {
     questions: <QuestionSea open={openQuestion} create={profile ? undefined : editProfile} />,
     chart: <LifeChart today={today} profile={profile} create={editProfile} calendar={() => openCalendar()}
       write={writeReflection} showToday={() => go('today')} records={stored.reflections} edit={editReflection} />,
-    atlas: <Atlas profile={profile} favorites={stored.favorites} open={openResident} myth={openMyth} pair={() => open({ kind: 'pair' })} />,
+    atlas: <Atlas create={editProfile} profile={profile} favorites={stored.favorites} open={openResident} myth={openMyth} pair={() => open({ kind: 'pair' })} />,
     journal: <Journal profile={profile} notes={stored.notes} edit={editProfile} pair={() => open({ kind: 'pair' })} showToday={() => go('today')}
       questions={stored.questions} reflections={stored.reflections} openTrail={openTrail} editReflection={editReflection} openChart={() => go('chart')}
-      create={() => openNote(dateKey(today))} openNote={openNote}
+      create={() => openNote(dateKey(today))} openNote={openNote} goSelf={() => go('self')} selfCount={self.results.length}
       onForget={() => { setInputs(null); setSelectedQuestionId(undefined); setStored(previous => ({ ...previous, inputs: null })); }} />,
   }[tab];
 

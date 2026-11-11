@@ -38,7 +38,7 @@ export function ProfileForm({ initial, persist, onSubmit, title, submitLabel }: 
       <View style={[StyleSheet.absoluteFill, styles.shade]} />
       <View style={styles.intro}>
         <Heading tag="YOUR TIDE CARD" title={title ?? '潮札をつくる'} />
-        <Text style={[S.body, styles.introText]}>生年月日と下の名前から、あなたの占いタイプと今日の運勢を読みます。</Text>
+        <Text style={[S.body, styles.introText]}>入力は2つだけ。生年月日と下の名前から、今日の運勢を読みます。</Text>
       </View>
       <GodAnimation index={4} style={styles.guide} />
     </View>
@@ -66,8 +66,7 @@ export function ProfileForm({ initial, persist, onSubmit, title, submitLabel }: 
       <Text style={[S.h3, styles.nameLabel]}>下の名前</Text>
       <TextInput accessibilityLabel="下の名前" placeholder="例　汐里" placeholderTextColor={C.muted} value={name}
         maxLength={60} onChangeText={setName} autoCorrect={false} autoCapitalize="none" style={S.field} />
-      <Text style={S.tiny}>普段使う漢字・かな・アルファベットの表記で入力してください。</Text>
-      <Text style={S.tiny}>「高」と「髙」など、異体字は普段の表記で入力してください。辞書にない文字は画数を指定できます。</Text>
+      <Text style={S.tiny}>普段の表記でOK。辞書にない文字は、あとで画数を聞きます。</Text>
       {unknownChars(name).map(char => <View key={char} style={S.between}>
         <Text style={S.body}>{char} の画数</Text>
         <TextInput accessibilityLabel={char + 'の画数'} placeholder="画数" placeholderTextColor={C.muted}
