@@ -2,7 +2,7 @@ name: Deploy Web
 
 on:
   push:
-    branches: [main, codex/web-initial]
+    branches: [main, claude/self-purity-integration]
   workflow_dispatch:
 
 permissions:
