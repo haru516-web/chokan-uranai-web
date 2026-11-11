@@ -298,7 +298,7 @@ function Voyage() {
           <Text style={{ color: C.aqua, fontWeight: '800' }}>? 解説</Text>
         </Pressable>}
       </View>
-      {wide && <TabBar wide seasonIndex={profile?.t.mod ?? null} activeTab={tab} onSelect={go} />}
+      <TabBar wide={wide} seasonIndex={profile?.t.mod ?? null} activeTab={tab} onSelect={go} />
       {storageError && <Text accessibilityRole="alert" style={[S.tiny, layout.error]}>端末の保存領域にアクセスできませんでした。この画面で続けられます。</Text>}
       {ready ? <>
         <ScrollView key={`${tab}-${todayVisit}`} style={[layout.scroll, detail && layout.hidden]} contentContainerStyle={layout.content}
@@ -311,7 +311,6 @@ function Voyage() {
           {detailBody(entry)}
         </ScrollView>)}
       </> : <View style={[layout.scroll, layout.content]}><Text style={S.body}>海図をひらいています…</Text></View>}
-      {!wide && <TabBar seasonIndex={profile?.t.mod ?? null} activeTab={tab} onSelect={go} />}
     </KeyboardAvoidingView>
   </SafeAreaView>;
 }

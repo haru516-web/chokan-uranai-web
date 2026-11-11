@@ -1,8 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { SEASON } from './scoring';
 import { C } from './ui';
 
-// 常に見える下タブ。いまいる場所を強調し、どこに何があるかを一目で示す。
+// ヘッダー直下のグローバルナビ。いまいる場所を強調し、どこに何があるかを一目で示す。
 export const mainTabs = [
   { id: 'today', label: '今日', title: '今日の占い', mark: '☾' },
   { id: 'self', label: '自分', title: '自己純度', mark: '◇' },
@@ -18,37 +18,22 @@ export function TabBar({ seasonIndex, activeTab, onSelect, wide }: {
   seasonIndex: number | null; activeTab: MainTab; onSelect: (tab: MainTab) => void; wide?: boolean;
 }) {
   const tint = seasonIndex !== null && seasonIndex >= 0 && seasonIndex < SEASON.length ? SEASON[seasonIndex].col : C.gold;
-  // PC・タブレット幅：ヘッダー直下の横ナビ（ページ名つき、現在地に下線）
-  if (wide) return <View accessibilityRole="tablist" style={s.top}>
+  // 一般的なウェブサイトと同じ、ヘッダー直下のグローバルナビ。現在地に下線。狭い画面では横スクロール。
+  return <ScrollView horizontal showsHorizontalScrollIndicator={false} accessibilityRole="tablist" style={s.top}
+    contentContainerStyle={wide ? s.topWide : undefined}>
     {mainTabs.map(item => {
       const active = item.id === activeTab;
       return <Pressable key={item.id} accessibilityRole="tab" accessibilityState={{ selected: active }} onPress={() => onSelect(item.id)}
-        style={({ pressed }) => [s.topTab, active && { borderBottomColor: tint }, pressed && { opacity: .6 }]}>
-        <Text style={[s.topLabel, active && { color: C.ink }]}>{item.mark}  {item.title.replace('（記録）', '')}</Text>
+        style={({ pressed }) => [s.topTab, wide && { flex: 1 }, active && { borderBottomColor: tint }, pressed && { opacity: .6 }]}>
+        <Text style={[s.topLabel, active && { color: C.ink }]}>{wide ? item.title.replace('（記録）', '') : item.label}</Text>
       </Pressable>;
     })}
-  </View>;
-  return <View accessibilityRole="tablist" style={s.bar}>
-    {mainTabs.map(item => {
-      const active = item.id === activeTab;
-      return <Pressable key={item.id} accessibilityRole="tab" accessibilityState={{ selected: active }} accessibilityLabel={item.title}
-        onPress={() => onSelect(item.id)} style={({ pressed }) => [s.tab, pressed && { opacity: .6 }]}>
-        <View style={[s.pill, active && { backgroundColor: tint }]}>
-          <Text style={[s.mark, active && { color: C.dark }]}>{item.mark}</Text>
-        </View>
-        <Text style={[s.label, active && { color: C.ink }]}>{item.label}</Text>
-      </Pressable>;
-    })}
-  </View>;
+  </ScrollView>;
 }
 
 const s = StyleSheet.create({
-  top: { flexDirection: 'row', backgroundColor: '#0d1324', borderBottomWidth: 1, borderBottomColor: C.line },
-  topTab: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 3, borderBottomColor: 'transparent' },
+  top: { flexGrow: 0, flexShrink: 0, backgroundColor: '#0d1324', borderBottomWidth: 1, borderBottomColor: C.line },
+  topWide: { flexGrow: 1 },
+  topTab: { paddingHorizontal: 16, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 3, borderBottomColor: 'transparent' },
   topLabel: { fontSize: 14, fontWeight: '800', color: C.muted },
-  bar: { flexDirection: 'row', backgroundColor: '#0d1324', borderTopWidth: 1, borderTopColor: C.line, paddingTop: 6, paddingBottom: 8 },
-  tab: { flex: 1, alignItems: 'center', gap: 2, minHeight: 52 },
-  pill: { width: 46, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  mark: { fontSize: 18, color: C.muted },
-  label: { fontSize: 11, fontWeight: '800', color: C.muted },
 });
