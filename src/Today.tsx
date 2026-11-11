@@ -127,8 +127,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
         <Float><GodAnimation forcePlay index={profile.t.mod} style={{ width: 84 }} /></Float>
         {activePerson && !activePerson.me && <Text style={S.tiny}>{activePerson.inputs.name}さんのタイプ</Text>}
         <Text accessibilityRole="header" style={styles.plate}>{labelOf(profile.t)}</Text>
-        <Text style={styles.typeName}>{resident?.band}<Text style={[S.tiny, { color: C.muted }]}>　{resident?.subtitle}</Text></Text>
-        {(profile.t.minus || profile.t.A) && <Text style={S.tiny}>{profile.t.minus ? '− 向かい風' : ''}{profile.t.minus && profile.t.A ? '　' : ''}{profile.t.A ? 'A 渦' : ''}</Text>}
+        <Text style={styles.typeName}>{resident?.band}</Text>
       </View>
       <View style={styles.todayHead}>
         <View style={[styles.rule, { backgroundColor: tierColor }]} />
