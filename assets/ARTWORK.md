@@ -1,6 +1,6 @@
 # 潮環占いの画像
 
-`assets/art/` に55点を収録。ホーム背景1点、住人16体、海流12点、海況12点、神話と航海帳の挿絵8点、既存素材から切り出した神々5点、アプリアイコン1点。
+`assets/art/` には潮環占いの各種画像を収録。ホーム背景、住人、海流・海況、神話と航海帳の挿絵、神々、アプリアイコンに加え、ワンオラクル用の大アルカナ22枚がある。
 
 組み込みの ImageGen でホーム背景と3枚の絵素材シートを作成。各マスをWebPに書き出して画面に配置し、神話の「空白の環」をアイコンにも使用した。神々の絵は既存の `img/sheet-*.webp` の先頭フレーム。
 
@@ -27,6 +27,37 @@ Use case illustration-story. Single square 4x4 contact sheet for a polished Japa
 15点を組み込み ImageGen で個別生成し、指定サイズに変換した。各プロンプトに共通して次のスタイル指定を使った。
 
 > Use case: illustration-story. Asset type: Japanese coastal mythology website/app artwork matching the tactile handcrafted world of the existing harbor artwork. Layered washi paper, watercolor washes, delicate cut-paper edges and subtle paper grain; deep indigo #10172a to #1a243c, turquoise sea, pale aged gold #eacc8c accents, refined picture-book painting, quiet and mysterious. No people, no letters, no text, no logo, no frame, no UI, no watermark.
+
+### ワンオラクルカード
+
+大アルカナ0〜21の表面を1枚ずつ個別に生成した。共通プロンプトとカード別プロンプトは [`TAROT_PROMPTS.md`](TAROT_PROMPTS.md) に記載。全カードは縦2:3、1024×1536、WebP。`tarot-21-the-world.webp` を枠・画風・神様の描き方の見本にし、カードごとの季節の神様イラストをキャラクター参照に使った。図鑑の住人と既存タロット試作は使っていない。
+
+表面はクリーム色の角丸和紙余白、細い二重の金枠、四隅の金白の波文様、上下中央の小さな環の紋で統一。和紙の粒子感、水彩の濃淡、切り紙の縁、藍・青緑・古金の色調を揃えた。神様は顔のないフードと季節のマント姿を保ち、足や体の一部が裾から見えないようにした。裾の内側が見える場合は、世界カードを基準にした墨色の水彩陰影とし、単色の黒塗りにしない。
+
+| 番号 | カード | ファイル | 神様 |
+|---:|---|---|---|
+| 00 | 愚者 | `tarot-00-the-fool.webp` | 潮祖 |
+| 01 | 魔術師 | `tarot-01-the-magician.webp` | 夏 |
+| 02 | 女教皇 | `tarot-02-the-high-priestess.webp` | 冬 |
+| 03 | 女帝 | `tarot-03-the-empress.webp` | 春 |
+| 04 | 皇帝 | `tarot-04-the-emperor.webp` | 秋 |
+| 05 | 教皇 | `tarot-05-the-hierophant.webp` | 秋 |
+| 06 | 恋人 | `tarot-06-the-lovers.webp` | 春 |
+| 07 | 戦車 | `tarot-07-the-chariot.webp` | 夏 |
+| 08 | 力 | `tarot-08-strength.webp` | 春 |
+| 09 | 隠者 | `tarot-09-the-hermit.webp` | 冬 |
+| 10 | 運命の輪 | `tarot-10-wheel-of-fortune.webp` | 潮祖 |
+| 11 | 正義 | `tarot-11-justice.webp` | 秋 |
+| 12 | 吊るされた男 | `tarot-12-the-hanged-man.webp` | 冬 |
+| 13 | 死神 | `tarot-13-death.webp` | 秋 |
+| 14 | 節制 | `tarot-14-temperance.webp` | 春 |
+| 15 | 悪魔 | `tarot-15-the-devil.webp` | 夏 |
+| 16 | 塔 | `tarot-16-the-tower.webp` | 夏 |
+| 17 | 星 | `tarot-17-the-star.webp` | 春 |
+| 18 | 月 | `tarot-18-the-moon.webp` | 冬 |
+| 19 | 太陽 | `tarot-19-the-sun.webp` | 夏 |
+| 20 | 審判 | `tarot-20-judgement.webp` | 潮祖 |
+| 21 | 世界 | `tarot-21-the-world.webp` | 潮祖 |
 
 ### 5段階の海
 
