@@ -46,6 +46,20 @@
 [data-ui="field"][data-ok="true"] { border-color: #9fd8c7 !important; }
 [data-ui="seal"] { animation: fx-breathe 3.2s ease-in-out infinite; box-shadow: 0 0 18px rgba(234,204,140,.35); }
 
+/* 鑑定書の章をつなぐ糸 */
+@keyframes fx-thread { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+[data-fx="thread"] { transform-origin: top; animation: fx-thread 1.4s .3s cubic-bezier(.2,.8,.2,1) both !important; }
+
+/* 人生の波 */
+@keyframes wave-draw { from { stroke-dashoffset: 1400; } to { stroke-dashoffset: 0; } }
+@keyframes wave-pulse { 0%, 100% { opacity: .9; transform: scale(.8); } 50% { opacity: .2; transform: scale(1.35); } }
+@keyframes fx-grow-up { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.wave-draw { stroke-dasharray: 1400; animation: wave-draw 1.8s cubic-bezier(.4,0,.2,1) both; }
+.wave-area { animation: fx-fade 1.2s .8s both; }
+.wave-dot { animation: fx-pop .5s cubic-bezier(.3,1.5,.5,1) both; transform-box: fill-box; transform-origin: center; }
+.wave-pulse { animation: wave-pulse 2.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+[data-fx="grow-up"] { transform-origin: bottom; animation: fx-grow-up .6s cubic-bezier(.2,.8,.2,1) both !important; }
+
 /* 背景：ゆっくり漂う光と、立ちのぼる星くず */
 .ambient { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .ambient b { position: absolute; width: 60%; aspect-ratio: 1; border-radius: 50%; filter: blur(70px); opacity: .2; background: var(--accent, #eacc8c); transition: background-color 1.2s ease; animation: fx-drift 22s ease-in-out infinite; }

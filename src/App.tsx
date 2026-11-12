@@ -7,7 +7,8 @@ import { AppState, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleS
 import { SafeAreaProvider, SafeAreaView } from './web/safe-area';
 import { harbor, seal } from './art';
 import { blankInputs, dateKey, jstToday, makeProfile, validate, type Inputs } from './domain';
-import { LifeChart, QuestionTrail, ReflectionEditor } from './LifeChart';
+import { QuestionTrail, ReflectionEditor } from './LifeChart';
+import { LifeWave } from './LifeWave';
 import { ProfileForm } from './ProfileForm';
 import { PairReading } from './PairReading';
 import { QuestionAnswer, QuestionSea } from './Questions';
@@ -24,7 +25,7 @@ const detailTitles: Record<string, string> = {
   explanation: '仕組みの解説', selfQuiz: '診断', selfResult: '診断の結果', selfWish: '意志を潮に乗せる', profile: '自分の海をひらく',
   question: '問いを読む', compare: 'あの頃の海と比べる', homecoming: '帰郷の年', reflection: '振り返りを書く', trail: '問いの記録',
   share: '潮札を共有', calendar: '運勢の流れ', myth: '潮環神話', pair: '相性を見る', resident: '住人の紹介', chapter: '神話を読む',
-  note: '航海帳に記す', rank: '160名札の順位', people: '人の管理・リセット',
+  note: '航海帳に記す', journal: '記録・設定', rank: '160名札の順位', people: '人の管理・リセット',
 };
 import { Explanation } from './Explanation';
 import { GlossProvider } from './Glossary';
@@ -39,6 +40,7 @@ type Detail =
   | { kind: 'selfWish' }
   | { kind: 'profile'; questionId?: string; add?: boolean }
   | { kind: 'people' }
+  | { kind: 'journal' }
   | { kind: 'question'; id: string; personal?: boolean }
   | { kind: 'compare'; id: string }
   | { kind: 'homecoming'; year: number }
@@ -225,7 +227,7 @@ function Voyage() {
 
   const body = {
     today: <Today people={people} activeId={activeId} onSwitch={id => { setActiveId(id); setTodayVisit(previous => previous + 1); }}
-      onAdd={() => open({ kind: 'profile', add: true })} onManage={() => open({ kind: 'people' })} today={today} profile={profile} goMyth={openMyth} openCalendar={openCalendar} create={editProfile}
+      onAdd={() => open({ kind: 'profile', add: true })} onManage={() => open({ kind: 'people' })} openJournal={() => open({ kind: 'journal' })} today={today} profile={profile} goMyth={openMyth} openCalendar={openCalendar} create={editProfile}
       ranks={openRanking} onSave={openNote} questions={stored.questions} reflections={stored.reflections}
       tarotDraw={stored.tarotDraw} tarotLog={stored.tarotLog} onDrawTarot={drawTarot}
       openQuestion={id => openQuestion(id, true)} openQuestions={() => go('questions')}
@@ -244,13 +246,9 @@ function Voyage() {
       saveCheck={reason => updateSelf(value => ({ ...value, checks: [{ day, reason }, ...value.checks.filter(check => check.day !== day)].slice(0, 60) }))}
       saveAfter={(id, after) => updateSelf(value => ({ ...value, moves: value.moves.map(move => move.id === id ? { ...move, after } : move) }))} />,
     questions: <QuestionSea open={openQuestion} create={profile ? undefined : editProfile} />,
-    chart: <LifeChart today={today} profile={profile} create={editProfile} calendar={() => openCalendar()}
+    chart: <LifeWave today={today} profile={profile} create={editProfile} calendar={() => openCalendar()} openJournal={() => open({ kind: 'journal' })}
       write={writeReflection} showToday={() => go('today')} records={stored.reflections} edit={editReflection} />,
     atlas: <Atlas create={editProfile} profile={profile} favorites={stored.favorites} open={openResident} myth={openMyth} pair={() => open({ kind: 'pair' })} />,
-    journal: <Journal profile={profile} notes={stored.notes} edit={editProfile} pair={() => open({ kind: 'pair' })} showToday={() => go('today')}
-      questions={stored.questions} reflections={stored.reflections} openTrail={openTrail} editReflection={editReflection} openChart={() => go('chart')}
-      create={() => openNote(dateKey(today))} openNote={openNote} goSelf={() => go('self')} selfCount={self.results.length}
-      onForget={() => open({ kind: 'people' })} />,
   }[tab];
 
   function detailBody(detail: Detail) {
@@ -271,6 +269,11 @@ function Voyage() {
         return <ProfileForm title={detail.add ? '友人・気になる人を占う' : 'あなたの海を、ひらきます。'} initial={detail.add ? blankInputs : inputs ?? blankInputs}
           persist={detail.add ? false : active ? active.saved : true} submitLabel={detail.add ? 'この人を占う' : undefined}
           onSubmit={(next, remember) => saveProfile(next, remember, detail.questionId, detail.add)} />;
+      case 'journal':
+        return <Journal profile={profile} notes={stored.notes} edit={editProfile} pair={() => open({ kind: 'pair' })} showToday={() => go('today')}
+          questions={stored.questions} reflections={stored.reflections} openTrail={openTrail} editReflection={editReflection} openChart={() => go('chart')}
+          create={() => openNote(dateKey(today))} openNote={openNote} goSelf={() => go('self')} selfCount={self.results.length}
+          onForget={() => open({ kind: 'people' })} />;
       case 'people':
         return <PeopleManager people={people} activeId={activeId} select={id => { setActiveId(id); go('today'); }} remove={removePerson}
           add={() => open({ kind: 'profile', add: true })} resetAll={resetAll} />;
@@ -282,10 +285,10 @@ function Voyage() {
           browse={() => go('questions')} history={() => compare(question.id)} showToday={() => go('today')} />;
       }
       case 'compare':
-        return <LifeChart today={today} profile={profile} questionId={detail.id} create={() => open({ kind: 'profile', questionId: detail.id })}
+        return <LifeWave today={today} profile={profile} questionId={detail.id} create={() => open({ kind: 'profile', questionId: detail.id })}
           write={writeReflection} showToday={() => go('today')} records={stored.reflections} edit={editReflection} />;
       case 'homecoming':
-        return <LifeChart today={today} profile={profile} initialYear={detail.year} create={editProfile}
+        return <LifeWave today={today} profile={profile} initialYear={detail.year} create={editProfile}
           write={writeReflection} showToday={() => go('today')} records={stored.reflections} edit={editReflection} />;
       case 'reflection': {
         const existing = stored.reflections.find(record => record.id === detail.id);
@@ -296,7 +299,7 @@ function Voyage() {
               ? previous.reflections.map(record => record.id === existing.id ? { ...value, id: existing.id } : record)
               : [{ ...value, id: Math.max(Date.now(), (previous.reflections[0]?.id ?? 0) + 1) }, ...previous.reflections],
           }));
-          if (existing) back(); else go('journal');
+          if (existing) back(); else setPath([{ kind: 'journal' }]);
         }} remove={existing ? () => {
           setStored(previous => ({ ...previous, reflections: previous.reflections.filter(record => record.id !== existing.id) }));
           back();
@@ -333,7 +336,7 @@ function Voyage() {
               if (text) notes.push({ day, text });
               return { ...previous, notes: notes.sort((a, b) => b.day.localeCompare(a.day)) };
             });
-            go('journal');
+            setPath([{ kind: 'journal' }]);
           }} />;
       }
       case 'pair':

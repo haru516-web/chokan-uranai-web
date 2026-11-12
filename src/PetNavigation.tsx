@@ -8,7 +8,6 @@ export const mainTabs = [
   { id: 'questions', label: '問い', title: '問いの海', mark: '◌', accent: '#a8c4f0' },
   { id: 'chart', label: '人生', title: '人生の流れ', mark: '◈', accent: '#f0b48f' },
   { id: 'atlas', label: '図鑑', title: '住人図鑑', mark: '✦', accent: '#d6a8e8' },
-  { id: 'journal', label: '記録', title: '記録（航海帳）', mark: '⌑', accent: '#e8d29a' },
 ] as const;
 
 export type MainTab = typeof mainTabs[number]['id'];

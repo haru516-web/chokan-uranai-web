@@ -1,23 +1,24 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import type { ReactNode } from 'react';
-import { currents, iconArt, scenes, stages } from './art';
+import { currents, iconArt, scenes, stages, tierArt } from './art';
 import { Image } from './web/image';
 import { LayeredReading } from './DailyReading';
-import { addDays, calendarEvents, dateKey, dateLabel, readDay, shortDate, tierColors, type Profile } from './domain';
+import { addDays, calendarEvents, dateKey, dateLabel, readDay, shortDate, tierColors, tiers, type Profile } from './domain';
 import { BornSea, NameReadingDetails, TypeTraits } from './NameReading';
 import { SelectedQuestionReading } from './Questions';
 import { TideFlow } from './ResidentCard';
 import { ctxFor, FIVE_PHASES, labelOf, OUTER, SEASON, STAGES } from './scoring';
 import { Meter, SeaGlobe } from './TideCharts';
 import { GodAnimation } from './GodAnimation';
+import { Scene } from './Story';
 import { fortuneFor, tomorrowFor } from './fortune';
 import { FortuneAreas, LuckyCard, TomorrowCard } from './FortuneDetail';
 import { Gloss, TermText, useGloss } from './Glossary';
 import { PersonSwitcher, type Person } from './People';
 import { ResultPoster } from './ResultPoster';
 import { Float, glow, Sparkles } from './Visual';
-import { Button, C, Card, Chip, Chips, Fold, NextLinks, S, Tile, display, rounded } from './ui';
+import { Art, Button, C, Card, Chip, Chips, Fold, NextLinks, S, Tile, display, rounded } from './ui';
 import { findQuestion, nextTideChange, ownResident, revisitQuestion, type Question, type Reflection, type SavedQuestion } from './voyage';
 import { DailyTarot, type SavedTarotDraw } from './DailyTarot';
 import { seasonOf } from './tarotDeck';
@@ -29,14 +30,14 @@ const tierIcons = ['🎣', '⛵', '🌙', '⚡', '🌀'];
 type FoldId = 'why' | 'me' | 'layers' | 'flow' | 'moon';
 
 export function Today({ people, activeId, onSwitch, onAdd, onManage, today, profile, goMyth, openCalendar, create, ranks, onSave, questions, reflections, openQuestion, openQuestions, openHomecoming, tarotDraw, tarotLog, onDrawTarot,
-  shareTideCard, goSelf, openExplanation, startQuiz, selfLast, selectedQuestion }: {
+  shareTideCard, openJournal, goSelf, openExplanation, startQuiz, selfLast, selectedQuestion }: {
   people: Person[]; activeId: number | null; onSwitch: (id: number) => void; onAdd: () => void; onManage: () => void;
   today: Date; profile: Profile | null; goMyth: () => void; openCalendar: (date: Date, mode: 'current' | 'stage') => void;
   create: () => void; ranks: (date: Date) => void; onSave: (day: string) => void;
   questions: SavedQuestion[]; reflections: Reflection[]; openQuestion: (id: string) => void;
   openQuestions: () => void; openHomecoming: (year: number) => void;
   tarotDraw: SavedTarotDraw | null; tarotLog: SavedTarotDraw[]; onDrawTarot: (cardId: string) => void;
-  shareTideCard: () => void; goSelf: () => void; openExplanation: () => void; startQuiz: () => void;
+  shareTideCard: () => void; openJournal: () => void; goSelf: () => void; openExplanation: () => void; startQuiz: () => void;
   selfLast: { name: string; mark: string; color: string } | null;
   selectedQuestion?: { question: Question; saved: boolean; toggle: () => void; compare: () => void };
 }) {
@@ -44,6 +45,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
   const [shareMessage, setShareMessage] = useState('');
   const [fold, setFold] = useState<FoldId | null>(null);
   const [showScore, setShowScore] = useState(false);
+  const [showName, setShowName] = useState(false);
   const toggle = (id: FoldId) => setFold(current => current === id ? null : id);
   const date = addDays(today, offset);
   const [replay, setReplay] = useState(0);
@@ -151,74 +153,93 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
       <ResultPoster key={playKey + (instant ? 'i' : '')} reading={reading} band={resident?.band} dateText={dateLabel(c)} dayWord={dayWord}
         personName={activePerson && !activePerson.me ? activePerson.inputs.name : undefined} instant={instant} />
     </Pressable>
-    <Chips>
-      <Chip onPress={() => setReplay(value => value + 1)}>▶ もう一度見る</Chip>
-    </Chips>
-    <Text style={S.tiny}>💡 名札・タイプ名・順位・段階をタップすると、意味が出ます。</Text>
+    <View style={styles.toolbar}>
+      <Chip onPress={() => setReplay(value => value + 1)}>▶ もう一度</Chip>
+      <Chip onPress={() => { void share(); }}>共有</Chip>
+      <Text style={[S.tiny, { flex: 1, textAlign: 'right' }]}>名札や順位をタップで解説</Text>
+    </View>
+    {!!shareMessage && <Text selectable accessibilityLiveRegion="polite" style={S.tiny}>{shareMessage}</Text>}
     {dayNavigation}
     <DailyTarot today={today} savedDraw={tarotDraw} log={tarotLog} onDraw={onDrawTarot} personKey={'k' + profile.t.key}
       season={seasonOf(profile.t.mod)} level={tarotLevel} />
     <PersonSwitcher people={people} activeId={activeId} onSwitch={onSwitch} onAdd={onAdd} onManage={onManage} />
-    <Chips>
-      <Chip onPress={() => { void share(); }}>テキストで共有</Chip>
-    </Chips>
-    {!!shareMessage && <Text selectable accessibilityLiveRegion="polite" style={S.tiny}>{shareMessage}</Text>}
 
-    <Text accessibilityRole="header" style={S.h2}>{dayWord}の詳しい運勢</Text>
-    <FortuneAreas key={'a' + seenKey} fortune={fortune} dayWord={dayWord} />
-    <LuckyCard key={'l' + seenKey} fortune={fortune} dayWord={dayWord} />
-    {tomorrow && <TomorrowCard key={'t' + seenKey} tomorrow={tomorrow} />}
+    {(departureDay || tideChange || homecoming || revisit || currentQuestion) && <View style={S.stack}>
+      {departureDay && <Card>
+        <Text style={[S.kicker, { color: C.gold }]}>✦ 今日だけの知らせ</Text>
+        <Text style={S.h3}>今日は、あなたの出航日</Text>
+        <Text style={S.body}>この一年で見え方が変わった出来事を、一つ思い出してみましょう。</Text>
+      </Card>}
+      {tideChange && <Card>
+        <Text style={[S.kicker, { color: C.gold }]}>✦ 今日だけの知らせ</Text>
+        <Text style={S.h3}>潮替わり · {STAGES[c.stage].n}</Text>
+        <Gloss style={S.body}>{c.solarMonthTerm + 'からの海況です。いま気になることを一つ選んでみましょう。'}</Gloss>
+        <Button quiet onPress={openQuestions}>新しい問いを選ぶ</Button>
+      </Card>}
+      {homecoming && <Card>
+        <TermText id="帰郷の年" style={S.h3} />
+        <Gloss style={S.body}>{(c.solarYear - 12) + '年と同じ海流が巡っています。'}</Gloss>
+        <Button quiet onPress={() => openHomecoming(c.solarYear - 12)}>{(c.solarYear - 12) + '年の海と記録を見る'}</Button>
+      </Card>}
+      {revisit && previous && <Card>
+        <Text style={S.kicker}>{previous.title}</Text>
+        <Text style={S.h3}>{revisit.question}</Text>
+        <Button quiet onPress={() => openQuestion(revisit.id)}>問いを読み直す</Button>
+      </Card>}
+      {currentQuestion && <SelectedQuestionReading question={currentQuestion.question} profile={profile} />}
+    </View>}
 
-    {!!events2.length && <Chips>{events2.map(event => <Chip key={event}>{event}</Chip>)}</Chips>}
-    {currentQuestion && <SelectedQuestionReading question={currentQuestion.question} profile={profile} />}
-    {revisit && previous && <Card>
-      <Text style={S.kicker}>{previous.title}</Text>
-      <Text style={S.h3}>{revisit.question}</Text>
-      <Button quiet onPress={() => openQuestion(revisit.id)}>問いを読み直す</Button>
-    </Card>}
-    {departureDay && <Card>
-      <Text style={S.h3}>今日は、あなたの出航日</Text>
-      <Text style={S.body}>この一年で見え方が変わった出来事を、一つ思い出してみましょう。</Text>
-    </Card>}
-    {tideChange && <Card>
-      <Text style={S.h3}>潮替わり · {STAGES[c.stage].n}</Text>
-      <Gloss style={S.body}>{c.solarMonthTerm + 'からの海況です。いま気になることを一つ選んでみましょう。'}</Gloss>
-      <Button quiet onPress={openQuestions}>新しい問いを選ぶ</Button>
-    </Card>}
-    {homecoming && <Card>
-      <TermText id="帰郷の年" style={S.h3} />
-      <Gloss style={S.body}>{(c.solarYear - 12) + '年と同じ海流が巡っています。'}</Gloss>
-      <Button quiet onPress={() => openHomecoming(c.solarYear - 12)}>{(c.solarYear - 12) + '年の海と記録を見る'}</Button>
-    </Card>}
+    <View style={styles.bookHead}>
+      <Text style={[S.kicker, { color: tierColor }]}>{dateLabel(c)}</Text>
+      <Text accessibilityRole="header" style={styles.bookTitle}>{dayWord}の鑑定書</Text>
+      <Text style={S.tiny}>ゆっくり下へ。章がひとつずつ、ひらいていきます。</Text>
+    </View>
 
-    <Text style={S.h2}>気になるところをタップ</Text>
-    <Fold title="なぜこの結果なの？" hint="2つの力と、点数の理由" open={fold === 'why'} onToggle={() => toggle('why')}>
-      <Text style={S.body}>{outlook.detail}</Text>
-      <View style={styles.reason}>
-        <TermText id="今日の一手" style={S.kicker}>{dayWord + 'の一手が、これになった理由'}</TermText>
-        <Text style={S.body}>{dayWord}は「自分が進む力」が{goStrong ? '強く' : '控えめで'}、「周りを変える力」が{changeStrong ? '強い' : '控えめな'}日です。{goStrong && changeStrong ? '動くことも、人を巻き込むことも通りやすい' : goStrong ? '自分のことは進むけれど、人を動かすのは難しい' : changeStrong ? '自分で進めるより、人に頼るほうがうまくいく' : '進むよりも、守って休むほうが得をする'}ので、一手は「{outlook.action}」になりました。</Text>
-      </View>
-      <Gloss style={S.tiny}>年の海流・節気ごとの海況・今日の月を重ね、160の名札を相性のよい順に並べて決まります。</Gloss>
-      <Button quiet onPress={() => setShowScore(!showScore)}>{showScore ? '点数の内訳を閉じる' : '点数の内訳まで見る'}</Button>
-      {showScore && <ReadingReasons reading={reading} />}
-    </Fold>
-    <Fold title="自分のタイプと人間関係のヒント" hint={resident ? resident.band + '・' + labelOf(profile.t) : undefined} open={fold === 'me'} onToggle={() => toggle('me')}>
-      {resident && <TypeTraits entry={resident} />}
-      <BornSea profile={profile} />
-      <NameReadingDetails profile={profile} />
-    </Fold>
-    <Fold title="今日・今月・今年の流れ" hint="3つの海を重ねて読む" open={fold === 'layers'} onToggle={() => toggle('layers')}>
-      <LayeredReading reading={reading} isToday={isToday}>
-        <Text style={S.tiny}>次の潮替わり　{dateKey(next.date)} ／ あと{next.days}日</Text>
-      </LayeredReading>
-    </Fold>
-    <Fold title="これから1年の運勢カレンダー" hint="年の海流と月ごとの海況" open={fold === 'flow'} onToggle={() => toggle('flow')}>
-      <TideFlow profile={profile} context={c} showCalendar={openCalendar} />
-      <Button quiet onPress={() => openCalendar(date, 'current')}>運勢の流れを詳しく見る</Button>
-    </Fold>
-    <Fold title="今日の月と潮" hint={c.moon + '・' + c.phaseTide} open={fold === 'moon'} onToggle={() => toggle('moon')}>
-      {moonCard}
-    </Fold>
+    <View key={'story' + seenKey}>
+      <Scene index={0} color={tierColor} kicker={dayWord + 'の海'} title={outlook.title + 'の日'} lead={fortune.sea} next="四つの運勢">
+        {tierArt[reading.layers.day] && <View style={[S.card, { borderColor: tierColor + '88' }]}><Art source={tierArt[reading.layers.day]!} height={190} label={outlook.title + 'の海'} /></View>}
+        <Text style={styles.detail}>{outlook.detail}</Text>
+        <Meter title="自分が進む力" value={reading.force.go} color={tierColor} caption={goStrong ? '強い' : '控えめ'} />
+        <Meter title="周りを変える力" value={reading.force.change} color="#a8c4f0" caption={changeStrong ? '強い' : '控えめ'} />
+        <View style={styles.reason}>
+          <TermText id="今日の一手" style={S.kicker}>{dayWord + 'の一手が、これになった理由'}</TermText>
+          <Text style={S.body}>{goStrong && changeStrong ? '動くことも、人を巻き込むことも通りやすい日' : goStrong ? '自分のことは進むけれど、人を動かすのは難しい日' : changeStrong ? '自分で進めるより、人に頼るほうがうまくいく日' : '進むよりも、守って休むほうが得をする日'}。だから一手は<Text style={{ color: C.ink, fontWeight: '900' }}>「{outlook.action}」</Text>。</Text>
+        </View>
+        {!!events.length && <Chips>{events.map(event => <Chip key={event}>{event}</Chip>)}</Chips>}
+      </Scene>
+
+      <Scene index={1} color={fortune.best.color} kicker="仕事・恋愛・金運・健康" title={'いちばんは「' + fortune.best.label + '」'} lead={'4つのうち、' + fortune.best.label + 'がいちばん輝く日。★の数で、得意と不得意が分かります。'} next={resident ? resident.band + 'という海' : 'あなたという海'}>
+        <FortuneAreas fortune={fortune} dayWord={dayWord} hideSea />
+      </Scene>
+
+      {resident && <Scene index={2} color={SEASON[profile.t.mod].col} kicker={'あなたのタイプ　' + labelOf(profile.t)} title={resident.band + '　' + resident.subtitle} lead={resident.hook} next="三つの潮が重なる">
+        <Text style={styles.detail}>{resident.inner}</Text>
+        <TypeTraits entry={resident} />
+        <Button quiet onPress={() => setShowName(!showName)}>{showName ? '名札の決まり方を閉じる' : '名札の決まり方を詳しく見る'}</Button>
+        {showName && <NameReadingDetails profile={profile} />}
+      </Scene>}
+
+      <Scene index={3} color={tierColors[reading.layers.year]} kicker="年・月・日" title={'年は' + tiers[reading.layers.year] + '、月は' + tiers[reading.layers.block]} lead={reading.layers.text} next={dayWord + 'のお守り'}>
+        <LayeredReading reading={reading} isToday={isToday}>
+          <Text style={S.tiny}>次の潮替わり　{dateKey(next.date)} ／ あと{next.days}日</Text>
+        </LayeredReading>
+        <TideFlow profile={profile} context={c} showCalendar={openCalendar} />
+      </Scene>
+
+      <Scene index={4} color={fortune.lucky.color.hex} kicker="ラッキーカラー・方角・時間" title={fortune.lucky.color.name + 'を、身につけて'} lead={'方角は' + fortune.lucky.direction + '、いい時間は' + fortune.lucky.time + '。'} next="月と潮">
+        <LuckyCard fortune={fortune} dayWord={dayWord} />
+      </Scene>
+
+      <Scene index={5} last={!tomorrow} color="#c1d2ef" kicker={dayWord + 'の月'} title={c.moon + '・' + c.phaseTide} lead={isNewMoon ? '新月。始めたいことを、一つだけ選ぶ夜です。' : isFullMoon ? '満月。いま手元にあるものを、確かめる夜です。' : '月の形と距離が、' + dayWord + 'の潮の強さを決めています。'} next={tomorrow ? '明日の潮' : undefined}>
+        {moonCard}
+        <Button quiet onPress={() => setShowScore(!showScore)}>{showScore ? '点数の内訳を閉じる' : '順位の計算を、点数の内訳まで見る'}</Button>
+        {showScore && <ReadingReasons reading={reading} />}
+      </Scene>
+
+      {tomorrow && <Scene index={6} last color={['#efd393', '#b6dfc4', '#c1d2ef', '#ff5a4d', '#e0245e'][tomorrow.level]} kicker="予告" title="明日の潮は……">
+        <TomorrowCard tomorrow={tomorrow} />
+      </Scene>}
+    </View>
 
     <Pressable accessibilityRole="button" onPress={selfLast ? goSelf : startQuiz} style={({ pressed }) => [styles.banner, pressed && { opacity: .8 }]}>
       <Text style={{ fontSize: 30 }}>{selfLast ? selfLast.mark : '🧭'}</Text>
@@ -235,6 +256,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
       { icon: '💭', label: '今の気持ちに近い問いを読む', hint: '悩みから選べます', onPress: openQuestions },
       { icon: '📊', label: 'この日の160名札の順位', hint: '全タイプの中での位置', onPress: () => ranks(date) },
       { icon: '🖼️', label: '潮札を画像で共有', onPress: shareTideCard },
+      { icon: '📓', label: '記録・設定', hint: '残した問い・日記・人とデータの管理', onPress: openJournal },
     ]} />
     <View style={S.row}>
       <Tile source={currents[c.outer]} subtitle="今年の海流" title={OUTER[c.outer].n} onPress={() => openCalendar(date, 'current')} />
@@ -318,5 +340,9 @@ const styles = StyleSheet.create({
   action: { gap: 4, padding: 14, borderRadius: 16, backgroundColor: '#0f1830', borderWidth: 1, borderColor: C.line },
   actionText: { color: C.ink, fontSize: 19, lineHeight: 28, fontWeight: '800' },
   factor: { borderTopWidth: 1, borderTopColor: C.line, paddingTop: 8, gap: 3 },
+  toolbar: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  bookHead: { alignItems: 'center', gap: 2, paddingTop: 14, paddingBottom: 6 },
+  bookTitle: { color: C.ink, fontSize: 30, lineHeight: 42, fontFamily: rounded, fontWeight: '900', letterSpacing: 4 },
+  detail: { color: C.muted, fontSize: 16, lineHeight: 28 },
   reason: { gap: 4, padding: 12, borderRadius: 14, backgroundColor: '#111a31', borderWidth: 1, borderColor: C.line },
 });

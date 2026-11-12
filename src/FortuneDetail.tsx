@@ -44,16 +44,16 @@ function Stars({ count, color, play, delay }: { count: number; color: string; pl
   </View>;
 }
 
-export function FortuneAreas({ fortune, dayWord }: { fortune: Fortune; dayWord: string }) {
+export function FortuneAreas({ fortune, dayWord, hideSea }: { fortune: Fortune; dayWord: string; hideSea?: boolean }) {
   const [ref, seen] = useInView<HTMLDivElement>();
   return <View ref={ref as never} style={S.stack}>
-    <View style={S.card}>
+    {!hideSea && <View style={S.card}>
       {tierArt[fortune.level] && <Art source={tierArt[fortune.level]!} height={140} />}
       <View style={styles.sea}>
         <Text style={S.kicker}>{dayWord}の海のようす</Text>
         <Text style={styles.seaText}>{fortune.sea}</Text>
       </View>
-    </View>
+    </View>}
     <View style={styles.grid}>
       {fortune.areas.map((area, index) => <View key={area.id} {...(seen ? fx('pop') : {})}
         style={[S.card, styles.area, asStyle(seen ? { animationDelay: index * 110 + 'ms', borderColor: area.color + '66' } : { opacity: 0 })]}>
@@ -106,7 +106,10 @@ export function TomorrowCard({ tomorrow }: { tomorrow: ReturnType<typeof tomorro
   const open = useGloss();
   const color = TIER_COLORS[tomorrow.level];
   const arrow = tomorrow.trend === 'up' ? '↗' : tomorrow.trend === 'down' ? '↘' : '→';
-  return <Appear style={[S.card, styles.tomorrow, asStyle({ borderColor: color + '99', backgroundImage: `linear-gradient(160deg, ${color}2e 0%, #141e37 62%)` })]}>
+  const art = tierArt[tomorrow.level];
+  return <Appear style={[S.card, styles.tomorrow, asStyle({ borderColor: color + '99', backgroundImage: art
+    ? `linear-gradient(180deg, rgba(20,30,55,.55) 0%, #141e37 58%), url(${art})`
+    : `linear-gradient(160deg, ${color}2e 0%, #141e37 62%)`, backgroundSize: '100% auto', backgroundRepeat: 'no-repeat', backgroundPosition: 'top center' })]}>
     <Waves color={color} level={Math.min(tomorrow.level, 1)} />
     <View style={S.between}>
       <Text style={S.kicker}>明日の潮　{tomorrow.month}月{tomorrow.day}日（{tomorrow.weekday}）</Text>
@@ -133,7 +136,7 @@ const styles = StyleSheet.create({
   sea: { padding: 16, gap: 6, backgroundColor: '#15213d' },
   seaText: { color: C.ink, fontSize: 17, lineHeight: 29, fontFamily: rounded, fontWeight: '700' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  area: { flexGrow: 1, flexBasis: '46%', minWidth: 150, padding: 14, gap: 6 },
+  area: { flexGrow: 1, flexBasis: '46%', minWidth: 128, padding: 14, gap: 6 },
   areaIcon: { width: 36, height: 36, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   areaText: { color: C.muted, fontSize: 14, lineHeight: 23 },
   best: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 9 },
