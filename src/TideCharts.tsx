@@ -1,8 +1,8 @@
-import { useId } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, G, Line, Path, Polygon, Polyline, RadialGradient, Stop, Text as SvgText } from './web/svg';
-import { cycleFor, cycleTier, tiers, type Profile } from './domain';
-import { blockScoreOf, labelOf, OUTER, SOLAR_MONTH_TERMS, STAGES, yearScoreOf, type SeaContext } from './scoring';
+import { cycleFor, cycleTier, jstToday, tiers, type Profile } from './domain';
+import { blockScoreOf, ctxFor, labelOf, OUTER, STAGES, yearScoreOf, type SeaContext } from './scoring';
 import { C, S } from './ui';
 
 const spokes = Array.from({ length: 12 }, (_, index) => index);
@@ -41,8 +41,8 @@ export function SeaGlobe({ context }: { context: SeaContext }) {
         return <G key={i}>
           <Circle cx={x} cy={y} r={i === context.outer ? 5.2 : 2} fill={i === context.outer ? C.gold : '#7790bf'} />
           {i === context.outer && <Circle cx={x} cy={y} r="8.5" stroke={C.gold} strokeWidth=".8" fill="none" />}
-          <Circle cx={sx} cy={sy} r={i === context.stage ? 3.8 : 1.7} fill="#e1ebff" />
-          {i === context.stage && <Circle cx={sx} cy={sy} r="8" stroke="#e1ebff" strokeWidth=".8" fill="none" />}
+          <Circle cx={sx} cy={sy} r={i === Math.floor(context.stage / 2) ? 3.8 : 1.7} fill="#e1ebff" />
+          {i === Math.floor(context.stage / 2) && <Circle cx={sx} cy={sy} r="8" stroke="#e1ebff" strokeWidth=".8" fill="none" />}
         </G>;
       })}
       <Path d="M150 135 L153 147 L165 150 L153 153 L150 165 L147 153 L135 150 L147 147 Z" fill="#e8d29a" />
@@ -50,54 +50,124 @@ export function SeaGlobe({ context }: { context: SeaContext }) {
   </View>;
 }
 
-const paper = ['#f0db9f', '#d8d5ae', '#b8bec7', '#827367', '#59475b'];
+// 大漁・順風・凪・荒波・轟沈の色。輪に色を載せて、年・月ごとの調子が一目でわかるようにする。
+const paper = ['#f4c86a', '#86d9b4', '#93b7f2', '#ef9d76', '#dc6f8e'];
+const rimColor = ['#fff0bd', '#c8f3df', '#d4e3ff', '#ffd2b8', '#ffc0d1'];
 
-export function TideWheel({ context, profile, onMonth, onSolarMonth, onYear }: {
+/** 輪が見えたらアニメーションを始める。見えるまでは輪を隠しておく。 */
+function useInView(enabled: boolean) {
+  const ref = useRef<unknown>(null);
+  const [seen, setSeen] = useState(!enabled);
+  useEffect(() => {
+    if (!enabled || seen) return;
+    const node = ref.current as Element | null;
+    if (!node || typeof IntersectionObserver === 'undefined') { setSeen(true); return; }
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) { setSeen(true); observer.disconnect(); }
+    }, { threshold: 0.35 });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [enabled, seen]);
+  return [ref, seen] as const;
+}
+
+type RingStyle = { [key: string]: string | number };
+
+export function TideWheel({ context, profile, onMonth, onStage, onYear, animate = true, pastOnly = false }: {
   context: SeaContext; profile: Profile | null; onMonth: (month: number) => void; onYear: (year: number) => void;
-  onSolarMonth: (solarMonth: number) => void;
+  onStage: (stage: number) => void; animate?: boolean; pastOnly?: boolean;
 }) {
+  // pastOnly：今日より先の年・月は薄く表示して、押せないようにする。
+  const now = pastOnly ? ctxFor(jstToday()) : null;
+  const futureYear = (entry: number) => !!now && entry > now.solarYear;
+  const futureStage = (stage: number) => !!now && (context.solarYear > now.solarYear || (context.solarYear === now.solarYear && stage > now.stage));
+  const futureMonth = (m: number) => !!now && (context.Y > now.Y || (context.Y === now.Y && m > now.MO));
+  const dim = (off: boolean) => (off ? { opacity: 0.28 } : undefined);
   const cycle = profile && cycleFor(profile.t);
   const year = context.solarYear;
   const block = context.solarMonth;
   const years = spokes.map(i => year + (i <= 5 ? i : i - 12));
   const yearTier = profile && cycle ? cycleTier(yearScoreOf(year, profile.t).score, cycle.years) : null;
+  const [ref, seen] = useInView(animate);
+  // 一度演出が終わったら固定する（画面を離れて戻ったときに、輪が回り直さないように）。
+  const [done, setDone] = useState(false);
+  useEffect(() => {
+    if (!seen) return;
+    const timer = setTimeout(() => setDone(true), 4200);
+    return () => clearTimeout(timer);
+  }, [seen]);
+  // 外側 → 中 → 内側の順に、回って所定の位置に落ち着く（delay / dur は秒）。
+  const ring = (from: number, delay: number, dur: number): RingStyle => ({ '--from': from + 'deg', '--over': (from < 0 ? 7 : -7) + 'deg', '--delay': delay + 's', '--dur': dur + 's' });
+  const lock = (delay: number, dur: number): RingStyle => ({ '--delay': (delay + dur * 0.9) + 's' });
 
-  return <View style={styles.wheel}>
-    <Svg width="100%" height="100%" viewBox="0 0 300 300">
+  return <View ref={ref as never} style={styles.wheel}>
+    <Svg className="tide-wheel" data-play={!animate || done ? '2' : seen ? '1' : '0'} width="100%" height="100%" viewBox="0 0 300 300">
+      <Defs>
+        <RadialGradient id="tide-wheel-glow" cx="0.5" cy="0.5" r="0.5">
+          <Stop offset="0.55" stopColor="#f4c86a" stopOpacity="0" />
+          <Stop offset="0.8" stopColor="#7fa6ff" stopOpacity="0.16" />
+          <Stop offset="1" stopColor="#f4c86a" stopOpacity="0.28" />
+        </RadialGradient>
+      </Defs>
       <Circle cx={center} cy={center} r="148" stroke="#8b7449" strokeWidth=".7" fill="#10172b" />
-      {years.map((entry, i) => {
-        const slot = (context.outer + entry - year + 12) % 12;
-        const tier = profile && cycle ? cycleTier(yearScoreOf(entry, profile.t).score, cycle.years) : 2;
-        const [x, y] = point(124, i * 30);
-        return <G key={entry} onPress={() => onYear(entry)}>
-          <Path d={wedge(108, 145, i * 30 - 14.8, i * 30 + 14.8)} fill={paper[tier]} stroke={i === 0 ? '#fbe2a4' : '#1b1a23'} strokeWidth={i === 0 ? 2 : .6} />
-          <SvgText x={x} y={y} textAnchor="middle" fontSize="11.5" fontWeight="700" fill={tier < 3 ? '#151925' : '#fff4dc'}>{OUTER[slot].n.replace('の海流', '')}</SvgText>
-          <SvgText x={x} y={y + 12} textAnchor="middle" fontSize="8" fill={tier < 3 ? '#151925' : '#fff4dc'}>{entry}</SvgText>
-        </G>;
-      })}
-      {spokes.map(i => {
-        const tier = profile && cycle ? cycleTier(blockScoreOf(year, i, profile.t).score, cycle.blocks) : 2;
-        const [x, y] = point(77, i * 30);
-        return <G key={i} onPress={() => onSolarMonth(i)}>
-          <Path d={wedge(61, 91, i * 30 - 14.7, i * 30 + 14.7)} fill={paper[tier]} stroke={i === block ? C.gold : '#181c30'} strokeWidth={i === block ? 1.5 : .6} />
-          <SvgText x={x} y={y + 2} textAnchor="middle" fontSize="6.6" fontWeight="700" fill={tier < 3 ? '#161827' : '#fff4dc'}>{SOLAR_MONTH_TERMS[i]}</SvgText>
-          <SvgText x={x} y={y + 10} textAnchor="middle" fontSize="6.6" fill={tier < 3 ? '#161827' : '#fff4dc'}>{STAGES[i].n}</SvgText>
-        </G>;
-      })}
-      {spokes.map(i => {
-        const [x, y] = point(99, i * 30);
-        return <G key={i} onPress={() => onMonth(i + 1)}>
-          <Path d={wedge(92, 105, i * 30 - 14.7, i * 30 + 14.7)} fill={context.MO === i + 1 ? '#eac98b' : '#272c42'} />
-          <SvgText x={x} y={y + 3} textAnchor="middle" fontSize="9" fill={context.MO === i + 1 ? '#181a22' : '#e0dbc9'}>{i + 1}月</SvgText>
-        </G>;
-      })}
-      <Circle cx={center} cy={center} r="57" fill="#10172b" stroke="#a48a59" strokeWidth=".7" />
-      <Circle cx={center} cy={center} r="52" fill="none" stroke="#594b39" strokeWidth=".6" />
-      <Polygon points="150,10 145,2 155,2" fill="#f5d899" />
-      <SvgText x={center} y="128" fill="#dfc38d" textAnchor="middle" fontSize="10">{profile ? labelOf(profile.t) : '潮環の輪'}</SvgText>
-      <SvgText x={center} y="147" fill="#f8efd9" textAnchor="middle" fontSize="14" fontWeight="700">{context.yearPillar}年 · {context.MO}月</SvgText>
-      <SvgText x={center} y="165" fill="#e8cc93" textAnchor="middle" fontSize="9">{yearTier === null ? OUTER[context.outer].n : '年の運勢 · ' + tiers[yearTier]}</SvgText>
-      <SvgText x={center} y="179" fill="#e8cc93" textAnchor="middle" fontSize="8">{context.solarMonthTerm} · {STAGES[context.stage].n}</SvgText>
+      <Circle cx={center} cy={center} r="148" fill="url(#tide-wheel-glow)" />
+      {/* 落ち着く先の目印（回っている間も見える）。外から、年・月・海況（24）・中央。 */}
+      {[112, 146, 101, 111, 46, 100].map(radius => <Circle key={radius} cx={center} cy={center} r={radius} stroke="#c9b27a" strokeOpacity=".22" strokeWidth=".6" fill="none" strokeDasharray="1.5 3" />)}
+
+      <G className="tide-ring" style={ring(-640, 0.1, 2.0)}>
+        {years.map((entry, i) => {
+          const slot = (context.outer + entry - year + 12) % 12;
+          const tier = profile && cycle ? cycleTier(yearScoreOf(entry, profile.t).score, cycle.years) : 2;
+          const [x, y] = point(128, i * 30);
+          return <G key={entry} onPress={futureYear(entry) ? undefined : () => onYear(entry)} style={dim(futureYear(entry))}>
+            <Path d={wedge(112, 146, i * 30 - 14.8, i * 30 + 14.8)} fill={paper[tier]} stroke={i === 0 ? '#fff2c4' : '#1b1a23'} strokeWidth={i === 0 ? 2.4 : .6} />
+            <SvgText x={x} y={y - 1} textAnchor="middle" fontSize="12.5" fontWeight="800" fill="#151925">{OUTER[slot].n.replace('の海流', '')}</SvgText>
+            <SvgText x={x} y={y + 11} textAnchor="middle" fontSize="8.5" fontWeight="700" fill="#151925">{entry}</SvgText>
+          </G>;
+        })}
+      </G>
+      <Circle className="tide-lock" cx={center} cy={center} r="146" stroke="#fff2c4" strokeWidth="2" fill="none" style={lock(0.1, 2.0)} />
+
+      {/* 海況は24段階。節月ごとに前半・後半の2つに分けて、名前を輪に沿って並べる。 */}
+      <G className="tide-ring" style={ring(520, 1.0, 1.8)}>
+        {Array.from({ length: 24 }, (_, stage) => {
+          const month = Math.floor(stage / 2);
+          const angle = (month * 30 + (stage % 2 ? 7.5 : -7.5) + 360) % 360;
+          const tier = profile && cycle ? cycleTier(blockScoreOf(year, month, profile.t).score, cycle.blocks) : 2;
+          const [x, y] = point(73, angle);
+          const rotate = angle <= 180 ? angle - 90 : angle + 90;
+          const name = STAGES[stage].n;
+          const on = stage === context.stage;
+          return <G key={stage} onPress={futureStage(stage) ? undefined : () => onStage(stage)} style={dim(futureStage(stage))}>
+            <Path d={wedge(46, 100, angle - 7.4, angle + 7.4)} fill={paper[tier]} fillOpacity={stage % 2 ? 1 : 0.9} stroke={on ? '#fff2c4' : '#181c30'} strokeWidth={on ? 2 : .6} />
+            <SvgText x={0} y={0} transform={`translate(${x} ${y + 3.2}) rotate(${rotate})`} textAnchor="middle" fontSize={name.length > 4 ? 8 : 9.2} fontWeight="800" fill="#12151f">{name}</SvgText>
+          </G>;
+        })}
+      </G>
+      <Circle className="tide-lock" cx={center} cy={center} r="100" stroke="#bfe9ff" strokeWidth="1.6" fill="none" style={lock(1.0, 1.8)} />
+
+      <G className="tide-ring" style={ring(-400, 1.9, 1.6)}>
+        {spokes.map(i => {
+          // 月は、その月に始まる節月の隣に置く（立春は2月、立冬は11月）。1月は小寒の隣になる。
+          const slot = (i + 11) % 12;
+          const [x, y] = point(106, slot * 30);
+          const on = context.MO === i + 1;
+          return <G key={i} onPress={futureMonth(i + 1) ? undefined : () => onMonth(i + 1)} style={dim(futureMonth(i + 1))}>
+            <Path d={wedge(101, 111, slot * 30 - 14.7, slot * 30 + 14.7)} fill={on ? '#ffd98a' : '#2a3150'} stroke={on ? '#fff2c4' : 'none'} strokeWidth=".8" />
+            <SvgText x={x} y={y + 3.2} textAnchor="middle" fontSize="9.5" fontWeight={on ? '800' : '600'} fill={on ? '#181a22' : '#f0ead8'}>{i + 1}月</SvgText>
+          </G>;
+        })}
+      </G>
+      <Circle className="tide-lock" cx={center} cy={center} r="111" stroke="#ffd98a" strokeWidth="1.6" fill="none" style={lock(1.9, 1.6)} />
+
+      <G className="tide-center">
+        <Circle cx={center} cy={center} r="44" fill="#10172b" stroke="#a48a59" strokeWidth=".8" />
+        <SvgText x={center} y="127" fill="#dfc38d" textAnchor="middle" fontSize="9.5">{profile ? labelOf(profile.t) : '潮環の輪'}</SvgText>
+        <SvgText x={center} y="148" fill="#f8efd9" textAnchor="middle" fontSize="12.5" fontWeight="800">{context.yearPillar}年 · {context.MO}月</SvgText>
+        <SvgText x={center} y="164" fill={yearTier === null ? '#e8cc93' : paper[yearTier]} textAnchor="middle" fontSize="8.5" fontWeight="800">{yearTier === null ? OUTER[context.outer].n : '年の運勢 · ' + tiers[yearTier]}</SvgText>
+        <SvgText x={center} y="178" fill="#f3dca4" textAnchor="middle" fontSize="9" fontWeight="700">{STAGES[context.stage].n}</SvgText>
+      </G>
+      <Polygon className="tide-pointer" points="150,10 145,2 155,2" fill="#f5d899" />
     </Svg>
   </View>;
 }
@@ -111,7 +181,7 @@ export function Meter({ title, value, color = C.gold, caption }: { title: string
 
 const styles = StyleSheet.create({
   globe: { width: '100%', maxWidth: 228, aspectRatio: 1, alignSelf: 'center' },
-  wheel: { width: '100%', maxWidth: 490, aspectRatio: 1, alignSelf: 'center' },
+  wheel: { width: '100%', maxWidth: 560, aspectRatio: 1, alignSelf: 'center' },
   meter: { gap: 4, paddingVertical: 3 },
   track: { height: 4, backgroundColor: '#35415b', borderRadius: 2, overflow: 'hidden' },
 });

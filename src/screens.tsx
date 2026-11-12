@@ -8,9 +8,9 @@ import { GodAnimation } from './GodAnimation';
 import { Gloss } from './Glossary';
 import { TypeTraits } from './NameReading';
 import { TideMarks } from './ResidentCard';
-import { ctxFor, dayTable, FIVE_PHASES, labelOf, OUTER, SEASON, solarMonthStartDate, SOLAR_MONTH_TERMS, STAGES, yearScoreOf, blockScoreOf } from './scoring';
+import { ctxFor, dayTable, FIVE_PHASES, labelOf, MONTH_STAGES, OUTER, SEASON, solarMonthStartDate, solarStageStartDate, STAGES, yearScoreOf, blockScoreOf } from './scoring';
 import { TideWheel } from './TideCharts';
-import { Art, Button, C, Card, Chip, Chips, Fold, Heading, NextLinks, S, Section, Tile, tapFx } from './ui';
+import { Art, Button, C, Card, Chip, Chips, Fold, Heading, NextLinks, S, Section, Tile, tapFx, useColumns } from './ui';
 import { findQuestion, ownResident, residents, type Reflection, type SavedQuestion } from './voyage';
 
 export type Note = { day: string; text: string };
@@ -37,49 +37,54 @@ export function Calendar({ today, profile, initial }: { today: Date; profile: Pr
   const yearLevel = profile && cycle ? cycleTier(yearScoreOf(c.solarYear, profile.t).score, cycle.years) : null;
   const blockLevel = profile && cycle ? cycleTier(blockScoreOf(c.solarYear, block, profile.t).score, cycle.blocks) : null;
 
+  // 見られるのは今日まで。先の日付を選ぼうとしたら今日に合わせる。
+  const nowCtx = ctxFor(today);
+  const atPresentYear = c.solarYear >= nowCtx.solarYear;
+  const atPresentMonth = c.Y > nowCtx.Y || (c.Y === nowCtx.Y && c.MO >= nowCtx.MO);
   function choose(date: Date) {
+    if (date.getTime() > today.getTime()) date = today;
     setOffset(Math.round((date.getTime() - today.getTime()) / 86_400_000));
     setSelected(null);
   }
 
   return <View style={S.stack}>
-    <Heading tag="運勢カレンダー" title="運勢の流れ" body="輪や日付をタップすると、その時期に切り替わります。" />
-    <TideWheel context={c} profile={profile}
+    <Heading tag="過去と今の運勢" title="運勢の輪" body="輪や日付をタップすると、その時期の海に切り替わります。見られるのは今日までです。" />
+    <TideWheel pastOnly context={c} profile={profile}
       onMonth={month => choose(new Date(Date.UTC(c.Y, month - 1, 1)))}
-      onSolarMonth={solarMonth => choose(solarMonthStartDate(c.solarYear, solarMonth))}
+      onStage={stage => choose(solarStageStartDate(c.solarYear, stage))}
       onYear={year => choose(solarMonthStartDate(year, 0))} />
     <View style={S.between}>
       <Chip onPress={() => choose(solarMonthStartDate(c.solarYear - 1, c.solarMonth))}>‹ 前年</Chip>
       <Chip onPress={() => choose(today)}>現在に戻る</Chip>
-      <Chip onPress={() => choose(solarMonthStartDate(c.solarYear + 1, c.solarMonth))}>翌年 ›</Chip>
+      {atPresentYear ? <View style={{ minWidth: 60 }} /> : <Chip onPress={() => choose(solarMonthStartDate(c.solarYear + 1, c.solarMonth))}>翌年 ›</Chip>}
     </View>
     <Card>
       <Text style={S.kicker}>{c.solarYear}年　·　{c.yearPillar}{profile && c.solarYear >= profile.birthSolarYear ? '　／　その年に' + (c.solarYear - profile.birthSolarYear) + '歳' : ''}</Text>
       <Text style={S.h2}>{year.n}</Text>
-      <Text style={S.body}>{year.t}　·　{year.th}の年。{year.d}。</Text>
-      <Text style={S.tiny}>年干 {c.yearStem}（{c.yearPolarity}・{FIVE_PHASES[c.yearElement].name}）· 年支 {c.yearBranch}（{FIVE_PHASES[c.yearBranchElement].name}）　／　節気 {c.solarTerm}・月支 {c.monthBranch}</Text>
+      <Text style={S.body}>{year.th}の年。{year.d}。</Text>
+      <Text style={S.tiny}>年干 {c.yearStem}（{c.yearPolarity}・{FIVE_PHASES[c.yearElement].name}）· 年支 {c.yearBranch}（{FIVE_PHASES[c.yearBranchElement].name}）　／　月支 {c.monthBranch}</Text>
       {yearLevel !== null && <Text style={[S.h3, { color: tierColors[yearLevel] }]}>年の運勢　{tiers[yearLevel]}</Text>}
-      <Text style={S.kicker}>{c.solarMonthTerm}からの節気海況</Text>
+      <Text style={S.kicker}>いまの海況</Text>
       <Text style={S.h3}>{STAGES[c.stage].n}{blockLevel !== null ? '　／　' + tiers[blockLevel] : ''}</Text>
       <Text style={S.body}>{STAGES[c.stage].d}。</Text>
     </Card>
-    <Button quiet onPress={() => setShowCycle(!showCycle)}>{showCycle ? '見取り図を閉じる' : '過去と先の流れを見比べる'}</Button>
+    <Button quiet onPress={() => setShowCycle(!showCycle)}>{showCycle ? '見取り図を閉じる' : '過去の流れを見比べる'}</Button>
     {showCycle && <Card>
       <Chips>
         <Chip active={cycleMode === 'year'} onPress={() => setCycleMode('year')}>十二年の海流</Chip>
-        <Chip active={cycleMode === 'block'} onPress={() => setCycleMode('block')}>一年分の節気海況</Chip>
+        <Chip active={cycleMode === 'block'} onPress={() => setCycleMode('block')}>一年分の月の海況</Chip>
       </Chips>
-      {Array.from({ length: 12 }, (_, i) => {
+      {Array.from({ length: 7 }, (_, i) => {
         const step = i - 6;
         const isYear = cycleMode === 'year';
         const solarMonth = ((block + step) % 12 + 12) % 12;
         const y = c.solarYear + (isYear ? step : Math.floor((block + step) / 12));
-        const item = isYear ? OUTER[(c.outer + step + 12) % 12] : STAGES[solarMonth];
+        const item = isYear ? OUTER[(c.outer + step + 12) % 12] : MONTH_STAGES[solarMonth];
         const level = profile && cycle ? isYear ? cycleTier(yearScoreOf(y, profile.t).score, cycle.years)
           : cycleTier(blockScoreOf(y, solarMonth, profile.t).score, cycle.blocks) : null;
         return <Pressable {...tapFx} accessibilityRole="button" key={step} onPress={() => choose(isYear ? solarMonthStartDate(y, 0) : solarMonthStartDate(y, solarMonth))}
           style={[S.between, { paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }]}>
-          <View style={{ flex: 1 }}><Text style={S.tiny}>{y}年{isYear ? '' : ' · ' + SOLAR_MONTH_TERMS[solarMonth]}</Text>
+          <View style={{ flex: 1 }}><Text style={S.tiny}>{y}年{isYear ? '' : ' · ' + (solarMonthStartDate(y, solarMonth).getUTCMonth() + 1) + '月ごろ'}</Text>
             <Text style={S.h3}>{item.n}</Text></View>
           {level !== null && <Text style={[S.tiny, { color: tierColors[level] }]}>{tiers[level]}</Text>}
         </Pressable>;
@@ -89,7 +94,7 @@ export function Calendar({ today, profile, initial }: { today: Date; profile: Pr
     <View style={S.between}>
       <Chip onPress={() => choose(new Date(Date.UTC(c.Y, c.MO - 2, 1)))}>‹ 前月</Chip>
       <Text style={S.h3}>{c.Y}年{c.MO}月</Text>
-      <Chip onPress={() => choose(new Date(Date.UTC(c.Y, c.MO, 1)))}>翌月 ›</Chip>
+      {atPresentMonth ? <View style={{ minWidth: 60 }} /> : <Chip onPress={() => choose(new Date(Date.UTC(c.Y, c.MO, 1)))}>翌月 ›</Chip>}
     </View>
     <Card>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
@@ -98,9 +103,10 @@ export function Calendar({ today, profile, initial }: { today: Date; profile: Pr
         {Array.from({ length: dayCount }, (_, i) => {
           const day = addDays(monthStart, i);
           const hasEvent = calendarEvents(day, profile).some(event => event !== '帰郷の年');
-          return <Pressable {...tapFx} key={i} accessibilityRole="button" accessibilityLabel={shortDate(ctxFor(day)) + (hasEvent ? ' 行事あり' : '')}
-            accessibilityState={{ selected: i + 1 === c.DA }} onPress={() => choose(day)}
-            style={{ width: '14.285%', minHeight: 43, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: i + 1 === c.DA ? C.raised : undefined }}>
+          const future = day.getTime() > today.getTime();
+          return <Pressable {...tapFx} key={i} accessibilityRole="button" accessibilityLabel={shortDate(ctxFor(day)) + (hasEvent ? ' 行事あり' : '')} disabled={future}
+            accessibilityState={{ selected: i + 1 === c.DA, disabled: future }} onPress={() => choose(day)}
+            style={{ width: '14.285%', minHeight: 43, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: i + 1 === c.DA ? C.raised : undefined, opacity: future ? .28 : 1 }}>
             <Text style={{ color: i + 1 === c.DA ? C.gold : C.ink, fontWeight: '700' }}>{i + 1}</Text>
             <Text style={{ color: C.gold, fontSize: 7, height: 9 }}>{hasEvent ? '◆' : ' '}</Text>
           </Pressable>;
@@ -113,12 +119,12 @@ export function Calendar({ today, profile, initial }: { today: Date; profile: Pr
     <Section title="海流と海況の図譜" />
     <Chips>
       <Chip active={mode === 'current'} onPress={() => { setMode('current'); setSelected(null); }}>12の海流</Chip>
-      <Chip active={mode === 'stage'} onPress={() => { setMode('stage'); setSelected(null); }}>12の海況</Chip>
+      <Chip active={mode === 'stage'} onPress={() => { setMode('stage'); setSelected(null); }}>24の海況</Chip>
     </Chips>
     <View style={S.card}>
       <Art source={images[index]} height={195} />
       <View style={S.pad}>
-        <Text style={S.kicker}>{(index + 1).toString().padStart(2, '0')}  /  12</Text>
+        <Text style={S.kicker}>{(index + 1).toString().padStart(2, '0')}  /  {list.length}</Text>
         <Text style={S.h2}>{mode === 'current' ? list[index].n : name}</Text><Text style={S.body}>{description}</Text>
         <Text style={[S.body, { color: C.aqua }]}>{prompt}</Text>
       </View>
@@ -129,13 +135,22 @@ export function Calendar({ today, profile, initial }: { today: Date; profile: Pr
         <Text style={[S.tiny, { paddingVertical: 5, textAlign: 'center' }]}>{item.n.replace('の海流', '')}</Text>
       </Pressable>)}
     </View>
-    <Card><Text style={S.h3}>海の行事</Text><Gloss style={S.body}>立春に年の海流が替わり、12の節気で海況が巡ります。新月・満月を迎える日は「月を読む日」。生まれた日は「私の出航日」、生まれた年と同じ十二支の海流が巡る年は「帰郷の年」です。</Gloss></Card>
+    <Card><Text style={S.h3}>海の行事</Text><Gloss style={S.body}>立春に年の海流が替わり、約半月ごとに24の海況が巡ります。新月・満月を迎える日は「月を読む日」。生まれた日は「私の出航日」、生まれた年と同じ十二支の海流が巡る年は「帰郷の年」です。</Gloss></Card>
   </View>;
 }
+
+// 四季の神様。god は GodAnimation の番号（0 冬 / 1 春 / 2 夏 / 3 秋 / 4 潮祖）。
+const seasonGods = [
+  { god: 1, name: '春霞', season: '春', role: '見えない島を信じて、先に踏み出す神。' },
+  { god: 2, name: '夏照', season: '夏', role: '声を届けて、まだ見ぬ誰かを呼ぶ神。' },
+  { god: 3, name: '秋津', season: '秋', role: '測り、見たものを記録に残す神。' },
+  { god: 0, name: '冬凪', season: '冬', role: '静かに、石の下まで問い直す神。' },
+];
 
 export function Atlas({ profile, favorites, open, myth, pair, create }: {
   profile: Profile | null; favorites: number[]; open: OpenResident; myth: () => void; pair: () => void; create: () => void;
 }) {
+  const { item: columnWidth } = useColumns();
   const [season, setSeason] = useState<number | null>(null);
   const [depth, setDepth] = useState<number | null>(null);
   const [onlySaved, setOnlySaved] = useState(false);
@@ -147,6 +162,15 @@ export function Atlas({ profile, favorites, open, myth, pair, create }: {
       [resident.band, resident.subtitle].some(text => text.includes(query.trim()));
   });
   return <View style={S.stack}>
+    <Section title="四季の神様" note="16のタイプを季節ごとに見守る、四柱の神様。" />
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 }}>
+      {seasonGods.map(item => <View key={item.name} style={[S.card, { width: columnWidth, alignItems: 'center', padding: 12, gap: 4 }]}>
+        <GodAnimation index={item.god} style={{ width: 96 }} label={item.name + '（' + item.season + '）'} />
+        <Text style={S.kicker}>{item.season}の神</Text>
+        <Text style={S.h2}>{item.name}</Text>
+        <Text style={[S.tiny, { textAlign: 'center' }]}>{item.role}</Text>
+      </View>)}
+    </View>
     <Heading tag="16タイプ" title="あなたはどのタイプ？" body="気になるタイプをタップ。考え方や人との関わり方が読めます。" />
     {profile ? <Button onPress={() => open(own)}>自分のタイプを見る　›</Button> : <Button onPress={create}>自分のタイプを調べる（約30秒）　›</Button>}
     <TextInput accessibilityLabel="占いタイプを検索" value={query} onChangeText={setQuery}
@@ -163,7 +187,7 @@ export function Atlas({ profile, favorites, open, myth, pair, create }: {
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 }}>
       {visible.map(resident => <Pressable {...tapFx} key={resident.id} accessibilityRole="button" onPress={() => open(resident.index)}
         accessibilityLabel={[resident.band, resident.subtitle, resident.index === own ? 'あなたのタイプ' : ''].filter(Boolean).join('、')}
-        style={[S.card, { width: '48.5%' }]}>
+        style={[S.card, { width: columnWidth }]}>
         <View style={{ padding: 11, gap: 3 }}>
           <Text style={S.kicker}>NO. {resident.id}{resident.index === own ? ' · あなた' : ''}{favorites.includes(resident.index) ? ' · ★' : ''}</Text>
           <Text style={S.h2}>{resident.band}</Text>

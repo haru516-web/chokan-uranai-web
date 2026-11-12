@@ -26,12 +26,12 @@ export function DailyAdvice({ reading, isToday = true, children }: ReadingCardPr
 export function LayeredReading({ reading, isToday = true, children }: ReadingCardProps) {
   const { context, layers, fivePhase } = reading;
   return <Card>
-    <Text style={S.kicker}>年・節気・{isToday ? '今日' : 'この日'}</Text>
+    <Text style={S.kicker}>年・月・{isToday ? '今日' : 'この日'}</Text>
     <Text accessibilityRole="header" style={S.h2}>三つの海を重ねて読む</Text>
     <View style={S.row}>
       {([
         [context.yearPillar + '年', OUTER[context.outer].th, layers.year],
-        [context.solarMonthTerm, STAGES[context.stage].n, layers.block],
+        [isToday ? '今月' : 'この月', STAGES[context.stage].n, layers.block],
         [shortDate(context), context.dayPillar + ' · ' + context.moon, layers.day],
       ] as const).map(([when, theme, level]) => <View key={when} style={[styles.layer, { borderTopColor: tierColors[level] }]}>
         <Text style={S.tiny}>{when}</Text>

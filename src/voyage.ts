@@ -1,7 +1,7 @@
 import { addDays, cycleFor, cycleTier, dateKey, residentIndex, type Profile } from './domain';
 import questions from './questions.json';
 import residents from './residents.json';
-import { blockScoreOf, ctxFor, OUTER, solarMonthStartDate, SOLAR_MONTH_TERMS, STAGES, yearScoreOf } from './scoring';
+import { blockScoreOf, ctxFor, MONTH_STAGES, OUTER, solarMonthStartDate, yearScoreOf } from './scoring';
 
 export { questions, residents };
 export type Question = typeof questions[number];
@@ -56,17 +56,17 @@ export function periodFor(year: number, type: Profile['t']) {
     level: cycleTier(current.score, cycle.years),
     blocks: Array.from({ length: 12 }, (_, solarMonth) => {
       const result = blockScoreOf(year, solarMonth, type);
-      return { solarMonth, term: SOLAR_MONTH_TERMS[solarMonth], date: solarMonthStartDate(year, solarMonth),
-        stage: STAGES[result.st], level: cycleTier(result.score, cycle.blocks) };
+      return { solarMonth, date: solarMonthStartDate(year, solarMonth),
+        stage: MONTH_STAGES[result.st], level: cycleTier(result.score, cycle.blocks) };
     }),
   };
 }
 
 export function nextTideChange(today: Date) {
-  const currentMonth = ctxFor(today).solarMonth;
+  const currentMonth = ctxFor(today).stage;
   for (let days = 1; days <= 35; days++) {
     const date = addDays(today, days);
-    if (ctxFor(date).solarMonth !== currentMonth) return { date, days };
+    if (ctxFor(date).stage !== currentMonth) return { date, days };
   }
   const date = addDays(today, 30);
   return { date, days: 30 };

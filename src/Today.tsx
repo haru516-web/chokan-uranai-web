@@ -8,7 +8,7 @@ import { addDays, calendarEvents, dateKey, dateLabel, readDay, shortDate, tierCo
 import { BornSea, NameReadingDetails, TypeTraits } from './NameReading';
 import { SelectedQuestionReading } from './Questions';
 import { TideFlow } from './ResidentCard';
-import { ctxFor, FIVE_PHASES, labelOf, OUTER, SEASON, STAGES } from './scoring';
+import { ctxFor, DAY_STAGES, FIVE_PHASES, labelOf, OUTER, SEASON, STAGES } from './scoring';
 import { Meter, SeaGlobe } from './TideCharts';
 import { GodAnimation } from './GodAnimation';
 import { Scene } from './Story';
@@ -18,7 +18,7 @@ import { Gloss, TermText, useGloss } from './Glossary';
 import { PersonSwitcher, type Person } from './People';
 import { ResultPoster } from './ResultPoster';
 import { Float, glow, Sparkles } from './Visual';
-import { Art, Button, C, Card, Chip, Chips, Fold, NextLinks, S, Tile, display, rounded } from './ui';
+import { Art, Button, C, Card, Chip, Chips, Fold, NextLinks, S, Tile, display, rounded, useColumns } from './ui';
 import { findQuestion, nextTideChange, ownResident, revisitQuestion, type Question, type Reflection, type SavedQuestion } from './voyage';
 import { DailyTarot, type SavedTarotDraw } from './DailyTarot';
 import { seasonOf } from './tarotDeck';
@@ -43,6 +43,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
 }) {
   const [offset, setOffset] = useState(0);
   const [shareMessage, setShareMessage] = useState('');
+  const { desktop } = useColumns();
   const [fold, setFold] = useState<FoldId | null>(null);
   const [showScore, setShowScore] = useState(false);
   const [showName, setShowName] = useState(false);
@@ -116,10 +117,12 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
       <Text accessibilityRole="header" style={styles.welcome}>今日のあなたの海は、{'\n'}凪か、荒波か。</Text>
       <Gloss style={S.body}>潮環占いは、年の海流・月の満ち欠け・あなたの名札を重ねて、今日の運勢を160通りの順位で読む占いです。</Gloss>
     </View>
-    <Door color={C.gold} big badge="まずはこれ" kicker="占い" title="今日の運勢を占う" hint="生年月日と名前だけ・30秒" cta="占ってみる" onPress={create}
+    <View style={desktop ? { flexDirection: 'row', gap: 13, alignItems: 'stretch' } : S.stack}>
+    <Door fill={desktop} color={C.gold} big badge="まずはこれ" kicker="占い" title="今日の運勢を占う" hint="生年月日と名前だけ・30秒" cta="占ってみる" onPress={create}
       art={<Float><GodAnimation forcePlay index={4} style={{ width: 104 }} /></Float>} />
-    <Door color="#9fd8c7" kicker="自己診断" title="自己純度を測る" hint="名前も入力もなし・約1分" cta="診断する" onPress={startQuiz}
+    <Door fill={desktop} color="#9fd8c7" kicker="自己診断" title="自己純度を測る" hint="名前も入力もなし・約1分" cta="診断する" onPress={startQuiz}
       art={<Float>{iconArt.compass ? <Image source={iconArt.compass} style={{ width: 88, height: 88 }} contentFit="contain" accessible={false} /> : <Text style={styles.doorIcon}>🧭</Text>}</Float>} />
+    </View>
     <DailyTarot today={today} savedDraw={tarotDraw} log={tarotLog} onDraw={onDrawTarot} personKey="guest" season={null} level={null} onCreate={create} />
     <View style={S.row}>
       <Pressable accessibilityRole="button" onPress={openQuestions} {...({ dataSet: { ui: 'tap' } } as object)} style={({ pressed }) => [S.card, styles.small, pressed && { opacity: .7 }]}>
@@ -130,7 +133,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
       </Pressable>
     </View>
     <Fold title="今日の海をのぞく" hint="日付と月だけでわかる、今日の海のようす" open={fold === 'moon'} onToggle={() => toggle('moon')}>
-      <Text style={S.tiny}>{c.yearPillar}　／　{OUTER[c.outer].n}　／　{c.solarMonthTerm} {STAGES[c.stage].n}</Text>
+      <Text style={S.tiny}>{c.yearPillar}　／　{OUTER[c.outer].n}　／　{STAGES[c.stage].n}</Text>
       {moonCard}
     </Fold>
     <Text style={S.tiny}>入力した内容はこの端末の中だけで使います。</Text>
@@ -173,7 +176,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
       {tideChange && <Card>
         <Text style={[S.kicker, { color: C.gold }]}>✦ 今日だけの知らせ</Text>
         <Text style={S.h3}>潮替わり · {STAGES[c.stage].n}</Text>
-        <Gloss style={S.body}>{c.solarMonthTerm + 'からの海況です。いま気になることを一つ選んでみましょう。'}</Gloss>
+        <Gloss style={S.body}>{'いまの海況です。いま気になることを一つ選んでみましょう。'}</Gloss>
         <Button quiet onPress={openQuestions}>新しい問いを選ぶ</Button>
       </Card>}
       {homecoming && <Card>
@@ -252,24 +255,23 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
 
     <Text style={S.h2}>次はどうする？</Text>
     <NextLinks items={[
-      { icon: '🧭', label: '自分の判断を見つめる（自己純度）', hint: '8つの場面を直感で選ぶ・約1分', onPress: goSelf },
+      { icon: '🧭', label: '自分の判断を見つめる（自己診断）', hint: '8つの場面を直感で選ぶ・約1分', onPress: goSelf },
       { icon: '💭', label: '今の気持ちに近い問いを読む', hint: '悩みから選べます', onPress: openQuestions },
       { icon: '📊', label: 'この日の160名札の順位', hint: '全タイプの中での位置', onPress: () => ranks(date) },
       { icon: '🖼️', label: '潮札を画像で共有', onPress: shareTideCard },
-      { icon: '📓', label: '記録・設定', hint: '残した問い・日記・人とデータの管理', onPress: openJournal },
     ]} />
     <View style={S.row}>
       <Tile source={currents[c.outer]} subtitle="今年の海流" title={OUTER[c.outer].n} onPress={() => openCalendar(date, 'current')} />
-      <Tile source={stages[c.stage]} subtitle="節気の海況" title={STAGES[c.stage].n} onPress={() => openCalendar(date, 'stage')} />
+      <Tile source={stages[c.stage]} subtitle="今の海況" title={STAGES[c.stage].n} onPress={() => openCalendar(date, 'stage')} />
     </View>
     <View style={S.row}><Tile source={scenes[0]} subtitle="潮環神話" title="見られなかった海" onPress={goMyth} /></View>
   </View>;
 }
 
-function Door({ color, big, badge, kicker, title, hint, cta, onPress, art }: {
-  color: string; big?: boolean; badge?: string; kicker: string; title: string; hint: string; cta: string; onPress: () => void; art: ReactNode;
+function Door({ fill, color, big, badge, kicker, title, hint, cta, onPress, art }: {
+  fill?: boolean; color: string; big?: boolean; badge?: string; kicker: string; title: string; hint: string; cta: string; onPress: () => void; art: ReactNode;
 }) {
-  return <Pressable accessibilityRole="button" onPress={onPress} {...({ dataSet: { ui: 'tap' } } as object)} style={({ pressed }) => [styles.door, glow(color), { borderColor: color, minHeight: big ? 210 : 150 }, pressed && { opacity: .8 }]}>
+  return <Pressable accessibilityRole="button" onPress={onPress} {...({ dataSet: { ui: 'tap' } } as object)} style={({ pressed }) => [styles.door, fill && { flex: 1 }, glow(color), { borderColor: color, minHeight: big ? 210 : 150 }, pressed && { opacity: .8 }]}>
     <View style={{ flex: 1, gap: 6, justifyContent: 'center' }}>
       {badge && <View style={[styles.badge, { backgroundColor: color }]}><Text style={styles.badgeText}>{badge}</Text></View>}
       <Text style={[S.kicker, { color }]}>{kicker}</Text>
@@ -289,7 +291,7 @@ function ReadingReasons({ reading }: { reading: Reading }) {
     { title: '海況の基礎点', score: p.base, note: STAGES[c.stage].d },
     { title: '季節 × 月の形', score: p.moon, note: season.n + 'は' + season.moon + 'に力が出ます。今日の月は「' + c.moon + '」。深さが得意な月相を少しずらします。' },
     { title: '深さ × 月の距離', score: p.depth, note: '今日の月は約' + (c.dist / 10000).toFixed(1) + '万km。深い名札は近い月、浅い名札は遠い月の潮に乗りやすくなります。' },
-    { title: '季節の拠点 × 節気・五行', score: p.aff, note: season.n + 'の拠点は「' + STAGES[season.home].n + '」。' + c.solarMonthTerm + 'の月令は' + FIVE_PHASES[fivePhase.month].name + 'で、季節の型との関係は「' + fivePhase.monthRelation.kind + '」です。' },
+    { title: '季節の拠点 × 海況・五行', score: p.aff, note: season.n + 'の拠点は「' + STAGES[season.home * 2].n + '」。' + 'この月の月令は' + FIVE_PHASES[fivePhase.month].name + 'で、季節の型との関係は「' + fivePhase.monthRelation.kind + '」です。' },
     { title: '季節 × 年の干支五行', score: p.comp, note: c.yearPillar + '年の年干は' + c.yearPolarity + 'の' + FIVE_PHASES[fivePhase.year].name + '（' + fivePhase.yearRelation.kind + '）、年支は' + FIVE_PHASES[fivePhase.yearBranch].name + '（' + fivePhase.yearBranchRelation.kind + '）。' + (t.minus ? '「−」の名札では関係の向きが反転します。' : '') },
     ...(t.minus ? [{ title: '「−」の向かい風', score: p.hw, note: '向かい風体質にかかる補正です。' }] : []),
     ...(t.A ? [{ title: 'A（渦）× 月の距離', score: p.vor, note: '月が近いほど、渦の力が強く表れます。' }] : []),
@@ -306,7 +308,7 @@ function ReadingReasons({ reading }: { reading: Reading }) {
       <Gloss style={S.body}>{note}</Gloss>
     </View>)}
     <Text style={S.h3}>名札 {row.score.toFixed(1)}点　／　全体平均 {reading.mean.toFixed(1)}点</Text>
-    <Text style={S.body}>あなた個人の日の海は「{STAGES[personal.pos].n}」。誕生日と総画数から読んだ補正{personal.delta >= 0 ? '+' : ''}{personal.delta.toFixed(1)}点{personal.ret ? '（帰郷の年の加点を含む）' : ''}{t.A ? 'と、Aの渦による振れ幅' : ''}を重ねると、{personalRank}位相当です。</Text>
+    <Text style={S.body}>あなた個人の日の海は「{DAY_STAGES[personal.pos].n}」。誕生日と総画数から読んだ補正{personal.delta >= 0 ? '+' : ''}{personal.delta.toFixed(1)}点{personal.ret ? '（帰郷の年の加点を含む）' : ''}{t.A ? 'と、Aの渦による振れ幅' : ''}を重ねると、{personalRank}位相当です。</Text>
   </View>;
 }
 

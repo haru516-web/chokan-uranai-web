@@ -1,26 +1,19 @@
 import { moonAt } from './moon';
-import { BRANCHES, BRANCH_ELEMENTS, FIVE_PHASES, SOLAR_MONTH_TERMS, solarCalendarFor, solarMonthStartDate } from './solarCalendar';
+import { BRANCHES, BRANCH_ELEMENTS, FIVE_PHASES, SOLAR_MONTH_TERMS, solarCalendarFor, solarMonthStartDate, solarStageStartDate } from './solarCalendar';
 
 // Scoring and astronomical cycles carried over from the original prototype.
 const numStr = n => n.toFixed(1);
 
-export const STAGES=[
- {n:"朝凪",d:"始まりの静けさ。休んで、備える"},{n:"さざ波",d:"小さく動き始める。試しに漕ぎ出す"},
- {n:"満ち潮",d:"潮が満ちて、物も人も集まり始める"},{n:"追い風",d:"風が背中を押す。素直に進む"},
- {n:"順風",d:"一番速く進む。帆を張り切る"},{n:"波立つ",d:"ざわつき始める。変化の兆しに気づく"},
- {n:"うねり",d:"遠くの嵐の気配が届く"},{n:"嵐",d:"一番荒れる。出航せず、守って耐える"},
- {n:"嵐の目",d:"中心だけ静か。ここで見極める"},{n:"雨上がり",d:"空が澄む。立て直して再出発"},
- {n:"引き潮",d:"潮が引く。手放す・整理する"},{n:"夕凪",d:"終わりの静けさ。次の周期に備える"}
-];
-var STAGE_PTS=[5,6,7,9,10,6,4,1,3,6,4,5];
-export const OUTER=[
- {n:"イルカの海流",th:"出会い",t:"暖流",d:"人との縁の方へ運ぶ"},{n:"鯛の海流",th:"実り",t:"暖流",d:"成果・収穫の方へ運ぶ"},
- {n:"鰻の海流",th:"変化",t:"寒流",d:"環境が変わる方へ運ぶ"},{n:"亀の海流",th:"蓄え",t:"寒流",d:"静かに力を溜める方へ"},
- {n:"鮪の海流",th:"挑戦",t:"暖流",d:"未知へ運ぶ。強い"},{n:"海月の海流",th:"回復",t:"暖流",d:"休養と立て直しの方へ"},
- {n:"蛸の海流",th:"創作",t:"暖流",d:"ものづくり・表現の方へ運ぶ"},{n:"鯨の海流",th:"発信",t:"暖流",d:"声が遠くへ届く方へ運ぶ"},
- {n:"烏賊の海流",th:"探索",t:"寒流",d:"学び・探し物の方へ。深い"},{n:"鰯の海流",th:"結束",t:"暖流",d:"約束・チーム・家族の方へ"},
- {n:"飛魚の海流",th:"解放",t:"寒流",d:"手放しと自由の方へ運ぶ"},{n:"鮭の海流",th:"帰郷",t:"寒流",d:"原点・自分に戻る方へ運ぶ"}
-];
+// 海況は24段階（節月を前半・後半に分けたもの）。月ごとの点は前半・後半の平均。
+export const STAGES=[{"n":"薄氷の凪","d":"氷の下で、動く前の静けさ。休んで、備える"},{"n":"東風潮","d":"解けて、ゆるみ始める。固いものをほぐす"},{"n":"春さざれ","d":"小さく動き始める。試しに漕ぎ出す"},{"n":"若潮の澪","d":"昼と夜が釣り合う。バランスを整える"},{"n":"花曇りの潮","d":"澄んで、人も物も集まり始める"},{"n":"恵みの潮","d":"雨が種を育てる。蒔いたものが根づく"},{"n":"薫風","d":"風が背中を押す。素直に進む"},{"n":"南風","d":"満ちて、勢いづく。広げどき"},{"n":"帆満ちの海","d":"いちばん速く進む。帆を張り切る"},{"n":"白南風","d":"頂点のまぶしさ。成果を確かめる"},{"n":"夕立雲","d":"ざわつく兆し。変化に気づく"},{"n":"油凪","d":"蒸して動かない。焦らず足を止める"},{"n":"遠雷の沖","d":"遠くの嵐の気配が届く。備えを見直す"},{"n":"野分の兆し","d":"風向きが変わる。荷を固める"},{"n":"野分","d":"いちばん荒れる。出航せず、守って耐える"},{"n":"大時化","d":"荒れが続く。無理をせず、凌ぐ"},{"n":"嵐の眼","d":"中心だけ静か。ここで見極める"},{"n":"凪間","d":"束の間の静けさ。静かに整理する"},{"n":"時雨上がり","d":"空が澄む。立て直して再出発"},{"n":"澄み潮","d":"水が澄んで見通せる。次の針路を決める"},{"n":"引き潮","d":"潮が引く。手放す・整理する"},{"n":"一陽の底","d":"底を打って、折り返す。小さな光を見つける"},{"n":"寒凪","d":"冷えた静けさ。次の周期に備える"},{"n":"凍て凪","d":"いちばん静か。休んで、力を溜める"}];
+var STAGE_PTS=[4.5,5.5,5.5,6.5,6.5,7.5,8.5,9.5,10,10,7,5,4.5,3.5,1,1,2,4,5,7,5,3,4,6];
+// 日の海（12日で一巡する日ごとの波）は、これまでどおり12段階。名前は24段階の前半の名前を使う。
+var DAY_PTS=[5,6,7,9,10,6,4,1,3,6,4,5];
+export const STAGE_POINTS=STAGE_PTS;
+export const DAY_POINTS=DAY_PTS;
+export const MONTH_STAGES=Array.from({length:12},function(_,k){ return {n:STAGES[2*k].n,d:STAGES[2*k].d,second:STAGES[2*k+1]}; });
+export const DAY_STAGES=Array.from({length:12},function(_,k){ return {n:STAGES[2*k].n,d:STAGES[2*k].d}; });
+export const OUTER=[{"n":"珊瑚の海流","th":"芽吹き","d":"新しい種を宿す方へ運ぶ"},{"n":"牡蠣の海流","th":"根づき","d":"根を張り、粘り強く結ぶ方へ"},{"n":"飛魚の海流","th":"旅立ち","d":"水面を飛び出し、外へ向かう方へ"},{"n":"イルカの海流","th":"出会い","d":"人との縁が広がる方へ運ぶ"},{"n":"鮪の海流","th":"挑戦","d":"勢いよく未知へ泳ぎ出す方へ"},{"n":"鯨の海流","th":"表現","d":"声や作品が遠くへ届く方へ運ぶ"},{"n":"鰻の海流","th":"転換","d":"流れが折り返し、姿を変える方へ"},{"n":"鯛の海流","th":"実り","d":"収穫を味わい、受け取る方へ"},{"n":"鰯の海流","th":"結束","d":"群れを束ね、整える方へ"},{"n":"蛸の海流","th":"成就","d":"形に仕上げ、やり遂げる方へ"},{"n":"海月の海流","th":"手放し","d":"力を抜き、ただよう方へ"},{"n":"鮭の海流","th":"源流","d":"原点に戻り、次へ託す方へ"}];
 /* index = (Y+M+D) mod 4 */
 export const SEASON=[
  {n:"冬",element:4,ang:270,home:11,act:"蓄える",col:"#8ecbff",moon:"下弦の頃"},
@@ -28,7 +21,7 @@ export const SEASON=[
  {n:"夏",element:1,ang:90,home:4,act:"広げる",col:"#ffb26b",moon:"上弦の頃"},
  {n:"秋",element:3,ang:180,home:9,act:"実らせる",col:"#f2c979",moon:"満月の頃"}
 ];
-export { FIVE_PHASES, SOLAR_MONTH_TERMS, solarMonthStartDate };
+export { FIVE_PHASES, SOLAR_MONTH_TERMS, solarMonthStartDate, solarStageStartDate };
 export const NUMS=[1,1.5,2,2.5,3,3.5,4,4.5,5,5.5];
 var TIDE_AMP={"最接近":1,"近い":.78,"ふつう":.55,"遠い":.32,"最遠":.1};   /* strength of the tide-raising pull by Earth-Moon distance (independent of the moon's shape) */
 var WD=["日","月","火","水","木","金","土"];
@@ -42,7 +35,7 @@ export function ctxFor(d){
     solarMonth:cal.solarMonth,solarMonthTerm:cal.solarMonthTerm,monthBranchIndex:cal.monthBranchIndex,monthBranch:cal.monthBranch,
     monthElement:cal.monthElement,monthPolarity:cal.monthPolarity,dayCycleIndex:cal.dayCycleIndex,dayStemIndex:cal.dayStemIndex,
     dayBranchIndex:cal.dayBranchIndex,dayStem:cal.dayStem,dayBranch:cal.dayBranch,dayPillar:cal.dayPillar,dayElement:cal.dayElement,
-    dayPolarity:cal.dayPolarity,stage:cal.solarMonth,outer:cal.yearBranchIndex,
+    dayPolarity:cal.dayPolarity,stage:cal.solarStage,outer:cal.yearBranchIndex,
     dayIndex:Math.floor(Date.UTC(Y,MO-1,DA)/86400000), seed:Y*10000+MO*100+DA};
 }
 /* ---- the 160 types ---- */
@@ -54,7 +47,8 @@ var TYPES=[];
 })();
 export function labelOf(t){ return SEASON[t.mod].n+(t.A?" A":"")+(t.minus?"-":"")+numStr(t.num); }
 
-function ringOf(stage,mod){ var r=Math.abs(stage-SEASON[mod].home); return Math.min(r,12-r); }
+/* stage は24段階。季節の拠点（home は12段階の番号）との近さを、これまでと同じ 0〜6 の目盛りで返す。 */
+function ringOf(stage,mod){ var r=Math.abs(stage-SEASON[mod].home*2); return Math.min(r,24-r)/2; }
 const GENERATES=[1,2,3,4,0];
 const CONTROLS=[2,3,4,0,1];
 function relationOf(person,environment){
@@ -85,7 +79,7 @@ function partsFor(c,t){
   /* 日の海: a fast 12-day wave. Each type starts at its own position (season/depth/minus/A), so the order reshuffles every day. */
   var off=(t.mod*3+t.ni+(t.minus?5:0)+(t.A?7:0))%12, dpos=(c.dayBranchIndex+off)%12;
   var dayRelation=fivePhaseRelation(t,c.dayElement);
-  var day=(STAGE_PTS[dpos]-5.5)/4.5*1.6+dayRelation.score*.35;
+  var day=(DAY_PTS[dpos]-5.5)/4.5*1.6+dayRelation.score*.35;
   var vor=t.A? (TIDE_AMP[c.tide]-0.55)*1.6 : 0;                /* A (vortex) resonates with a near moon (big pull) */
   var hw=t.minus? -1.5 : 0;                                    /* 「−」: constant headwind, so minus types sink toward the bottom more often (design intent: 免罪符) */
   return {base:STAGE_PTS[c.stage],moon:moon,depth:depth,aff:aff,comp:comp,ring:ring,day:day,dpos:dpos,vor:vor,hw:hw};
@@ -120,7 +114,7 @@ export function axes(c, row) {
 export function personalFor(c,prof,row){
   var offset=((prof.Y+prof.M+prof.D+(prof.total||0))%12+12)%12;
   var pos=(c.dayBranchIndex+offset)%12;
-  var wave=(STAGE_PTS[pos]-5.5)/4.5*1.6;
+  var wave=(DAY_PTS[pos]-5.5)/4.5*1.6;
   var ret=(c.solarYear>prof.birthSolarYear&&c.yearBranchIndex===prof.birthYearBranchIndex)?1:0;
   return {pos:pos,wave:wave,ret:ret,delta:wave-row.p.day+ret};
 }
@@ -130,7 +124,7 @@ export function blockScoreOf(y,b,t){
   var yearElement=Math.floor(yearStem/2), yearBranchElement=BRANCH_ELEMENTS[outer], monthBranch=BRANCHES[(st+2)%12], monthElement=BRANCH_ELEMENTS[(st+2)%12];
   var monthRelation=fivePhaseRelation(t,monthElement);
   return {st:st,outer:outer,yearElement:yearElement,yearBranchElement:yearBranchElement,monthElement:monthElement,
-    score:STAGE_PTS[st]+(1-ringOf(st,t.mod)/3)*1.5+monthRelation.score*.45+compOf(yearElement,yearBranchElement,t)+(t.minus?-1.5:0)};
+    score:(STAGE_PTS[2*st]+STAGE_PTS[2*st+1])/2+(1-(ringOf(2*st,t.mod)+ringOf(2*st+1,t.mod))/2/3)*1.5+monthRelation.score*.45+compOf(yearElement,yearBranchElement,t)+(t.minus?-1.5:0)};
 }
 export function yearScoreOf(y,t){
   var outer=((y-4)%12+12)%12, sum=0, b;

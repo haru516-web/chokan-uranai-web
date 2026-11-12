@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { dateKey, tierColors, tiers, type Profile } from './domain';
 import { TideMarks } from './ResidentCard';
-import { ctxFor, labelOf, OUTER, solarMonthStartDate, SOLAR_MONTH_TERMS, STAGES } from './scoring';
+import { ctxFor, labelOf, MONTH_STAGES, OUTER, solarMonthStartDate, STAGES } from './scoring';
 import { Button, C, Card, Chip, Chips, Heading, S, Section, tapFx } from './ui';
 import { categories, findQuestion, nextTideChange, ownResident, periodFor, questions, type Reflection, type SavedQuestion } from './voyage';
 
@@ -45,7 +45,7 @@ export function LifeChart({ today, profile, questionId, initialYear, create, cal
     <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={{ gap: 8, paddingBottom: 8 }}>
       {years.map(y => {
         const tide = profile && periodFor(y, profile.t);
-        const names = solarMonths.map(i => STAGES[i].n);
+        const names = solarMonths.map(i => MONTH_STAGES[i].n);
         return <Pressable {...tapFx} key={y} onPress={() => chooseYear(y)} accessibilityRole="button" accessibilityState={{ selected: year === y }}
           accessibilityLabel={`${y}年、${names.join('、')}`} style={[S.card, styles.year, year === y && styles.selected]}>
           <Text style={S.h3}>{y}</Text>
@@ -62,19 +62,19 @@ export function LifeChart({ today, profile, questionId, initialYear, create, cal
       <Text style={S.body}>{OUTER[context.outer].th}の年。{OUTER[context.outer].d}。</Text>
       {solarMonths.map(i => {
         const canSelect = year < thisYear || i <= todayContext.solarMonth;
-        return <Chip key={SOLAR_MONTH_TERMS[i]} active={selectedMonth === i} onPress={canSelect ? () => setMonth(i) : undefined}>
-          {SOLAR_MONTH_TERMS[i] + '　' + STAGES[i].n + (period ? ' ／ ' + tiers[period.blocks[i].level] : '')}
+        return <Chip key={i} active={selectedMonth === i} onPress={canSelect ? () => setMonth(i) : undefined}>
+          {(solarMonthStartDate(year, i).getUTCMonth() + 1) + '月ごろ　' + MONTH_STAGES[i].n + '→' + MONTH_STAGES[i].second.n + (period ? ' ／ ' + tiers[period.blocks[i].level] : '')}
         </Chip>;
       })}
       {currentPeriod && year !== thisYear && <Text style={S.tiny}>今は {currentPeriod.current.n} ／ {tiers[currentPeriod.level]}。現在の海況は {currentPeriod.blocks[todayContext.solarMonth].stage.n} です。</Text>}
     </Card>
     <Card>
-      <Text style={S.h3}>節気ごとの海を読む</Text>
+      <Text style={S.h3}>月ごとの海を読む</Text>
       <Chips>{solarMonths.filter(i => year < thisYear || i <= todayContext.solarMonth).map(i =>
-        <Chip key={i} active={selectedMonth === i} onPress={() => setMonth(i)}>{SOLAR_MONTH_TERMS[i]}</Chip>,
+        <Chip key={i} active={selectedMonth === i} onPress={() => setMonth(i)}>{(solarMonthStartDate(year, i).getUTCMonth() + 1) + '月ごろ'}</Chip>,
       )}</Chips>
       {month !== null && <>
-        <Text style={S.h2}>{context.solarYear}年 · {context.solarMonthTerm} · {STAGES[context.stage].n}</Text>
+        <Text style={S.h2}>{context.solarYear}年 · {context.MO}月{context.DA}日ごろ · {STAGES[context.stage].n}</Text>
         <Text style={S.body}>{STAGES[context.stage].d}。</Text>
         {profile && <>
           <Text style={S.body}>この象徴で読み直すなら、{ownResident(profile).band}（名札 {labelOf(profile.t)}）にとって、年の海は「{tiers[period!.level]}」、この節気の海は「{tiers[period!.blocks[selectedMonth].level]}」です。</Text>

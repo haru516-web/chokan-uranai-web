@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AsyncStorage from './web/storage';
 import * as Haptics from './web/haptics';
 import { Image } from './web/image';
@@ -6,17 +6,17 @@ import { StatusBar } from './web/status-bar';
 import { AppState, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from './web/safe-area';
 import { harbor, seal } from './art';
-import { blankInputs, dateKey, jstToday, makeProfile, validate, type Inputs } from './domain';
+import { blankInputs, dateKey, jstToday, makeProfile, readDay, validate, type Inputs } from './domain';
 import { QuestionTrail, ReflectionEditor } from './LifeChart';
-import { LifeWave } from './LifeWave';
+import { LifeWave, scrollToLifeCalendar } from './LifeWave';
 import { ProfileForm } from './ProfileForm';
 import { PairReading } from './PairReading';
 import { QuestionAnswer, QuestionSea } from './Questions';
 import { ShareTideCard } from './ResidentCard';
 import { Today } from './Today';
-import { DailyTarot, type SavedTarotDraw } from './DailyTarot';
-import { findTarot } from './tarotDeck';
-import { Atlas, Calendar, Chapter, Journal, Myth, NoteEditor, Ranking, Resident, type Note } from './screens';
+import { TarotHome, type SavedTarotDraw } from './DailyTarot';
+import { findTarot, seasonOf } from './tarotDeck';
+import { Atlas, Chapter, Journal, Myth, NoteEditor, Ranking, Resident, type Note } from './screens';
 import { C, S } from './ui';
 import { findQuestion, type Reflection, type SavedQuestion } from './voyage';
 import { mainTabs, TabBar, type MainTab } from './PetNavigation';
@@ -24,7 +24,7 @@ import { mainTabs, TabBar, type MainTab } from './PetNavigation';
 const detailTitles: Record<string, string> = {
   explanation: '仕組みの解説', selfQuiz: '診断', selfResult: '診断の結果', selfWish: '意志を潮に乗せる', profile: '自分の海をひらく',
   question: '問いを読む', compare: 'あの頃の海と比べる', homecoming: '帰郷の年', reflection: '振り返りを書く', trail: '問いの記録',
-  share: '潮札を共有', calendar: '運勢の流れ', myth: '潮環神話', pair: '相性を見る', resident: '住人の紹介', chapter: '神話を読む',
+  share: '潮札を共有', myth: '潮環神話', pair: '相性を見る', resident: '住人の紹介', chapter: '神話を読む',
   note: '航海帳に記す', journal: '記録・設定', rank: '160名札の順位', people: '人の管理・リセット',
 };
 import { Explanation } from './Explanation';
@@ -47,7 +47,6 @@ type Detail =
   | { kind: 'reflection'; year: number; month: number; questionId?: string; id?: number }
   | { kind: 'trail'; id: string }
   | { kind: 'share' }
-  | { kind: 'calendar'; date?: Date; mode?: 'current' | 'stage' }
   | { kind: 'myth' }
   | { kind: 'pair' }
   | { kind: 'resident'; index: number }
@@ -65,7 +64,9 @@ export default function App() {
 }
 
 function Voyage() {
-  const wide = useWindowDimensions().width >= 720;
+  const windowWidth = useWindowDimensions().width;
+  const wide = windowWidth >= 720;
+  const desktop = windowWidth >= 1000;
   const [ready, setReady] = useState(false);
   const [storageError, setStorageError] = useState(false);
   const [stored, setStored] = useState<Saved>(empty);
@@ -129,7 +130,18 @@ function Voyage() {
     return () => { clearInterval(timer); subscription.remove(); };
   }, []);
 
+  // 画面を開くときは先頭から、戻るときは元の位置へ（ページ全体がスクロールするため、自分で覚えて戻す）。
+  const scrollMemory = useRef<number[]>([]);
+  const scrollTo = (top: number) => {
+    if (Platform.OS !== 'web') return;
+    // 画面の組み替えが終わってから位置を合わせる（念のため、レイアウト確定後にもう一度）。
+    const apply = () => window.scrollTo({ top, left: 0, behavior: 'instant' as ScrollBehavior });
+    setTimeout(apply, 0);
+    setTimeout(apply, 80);
+  };
   function go(next: MainTab) {
+    scrollMemory.current = [];
+    scrollTo(0);
     setPath([]);
     setTab(next);
     setTodayVisit(previous => previous + 1);
@@ -144,15 +156,28 @@ function Voyage() {
       return { ...previous, tarotDraw: entry, tarotLog: [...previous.tarotLog.filter(item => item.day !== drawDay), entry].slice(-400) };
     });
   }
-  const open = (next: Detail) => setPath(previous => [...previous, next]);
-  const back = () => setPath(previous => previous.slice(0, -1));
+  const open = (next: Detail) => {
+    if (Platform.OS === 'web') scrollMemory.current.push(window.scrollY);
+    scrollTo(0);
+    setPath(previous => [...previous, next]);
+  };
+  const back = () => {
+    scrollTo(scrollMemory.current.pop() ?? 0);
+    setPath(previous => previous.slice(0, -1));
+  };
   const openResident = (index: number) => open({ kind: 'resident', index });
   const openChapter = (index: number) => open({ kind: 'chapter', index });
   const openNote = (day: string) => open({ kind: 'note', day });
   const editProfile = () => open({ kind: 'profile' });
   const openRanking = (date: Date) => open({ kind: 'rank', date });
   const openQuestion = (id: string, personal = false) => open({ kind: 'question', id, personal });
-  const openCalendar = (date?: Date, mode?: 'current' | 'stage') => open({ kind: 'calendar', date, mode });
+  // 運勢の輪をタップしたら、人生の流れタブ内の「運勢の輪」へ。別の画面には移らない。
+  const [calendarFocus, setCalendarFocus] = useState<{ date: Date; mode: 'current' | 'stage'; key: number } | null>(null);
+  const openCalendar = (date?: Date, mode?: 'current' | 'stage') => {
+    setCalendarFocus({ date: date ?? today, mode: mode ?? 'current', key: Date.now() });
+    go('chart');
+    scrollToLifeCalendar();
+  };
   const openMyth = () => open({ kind: 'myth' });
   const openTrail = (id: string) => open({ kind: 'trail', id });
   const compare = (id: string) => open({ kind: 'compare', id });
@@ -241,12 +266,15 @@ function Voyage() {
         compare: () => compare(selectedQuestion.id),
       } : undefined}
       openHomecoming={year => open({ kind: 'homecoming', year })} />,
+    tarot: <TarotHome today={today} savedDraw={stored.tarotDraw} log={stored.tarotLog} onDraw={drawTarot}
+      personKey={profile ? 'k' + profile.t.key : 'guest'} season={profile ? seasonOf(profile.t.mod) : null}
+      level={profile ? readDay(today, profile).layers.day : null} onCreate={editProfile} goToday={() => go('today')} />,
     self: <SelfHome state={self} profile={meProfile} today={day} start={startQuiz} openWish={openWish}
       openResult={id => open({ kind: 'selfResult', id })} goToday={() => go('today')}
       saveCheck={reason => updateSelf(value => ({ ...value, checks: [{ day, reason }, ...value.checks.filter(check => check.day !== day)].slice(0, 60) }))}
       saveAfter={(id, after) => updateSelf(value => ({ ...value, moves: value.moves.map(move => move.id === id ? { ...move, after } : move) }))} />,
     questions: <QuestionSea open={openQuestion} create={profile ? undefined : editProfile} />,
-    chart: <LifeWave today={today} profile={profile} create={editProfile} calendar={() => openCalendar()} openJournal={() => open({ kind: 'journal' })}
+    chart: <LifeWave embedCalendar calendarFocus={calendarFocus} today={today} profile={profile} create={editProfile} openJournal={() => open({ kind: 'journal' })}
       write={writeReflection} showToday={() => go('today')} records={stored.reflections} edit={editReflection} />,
     atlas: <Atlas create={editProfile} profile={profile} favorites={stored.favorites} open={openResident} myth={openMyth} pair={() => open({ kind: 'pair' })} />,
   }[tab];
@@ -310,8 +338,6 @@ function Voyage() {
           reopen={() => openQuestion(detail.id)} compare={() => compare(detail.id)} remove={day => removeQuestion(detail.id, day)} />;
       case 'share':
         return profile && <ShareTideCard profile={profile} />;
-      case 'calendar':
-        return <Calendar today={today} profile={profile} initial={detail.date ? { date: detail.date, mode: detail.mode ?? 'current' } : undefined} />;
       case 'myth':
         return <Myth open={openChapter} read={stored.read} />;
       case 'resident': {
@@ -348,7 +374,7 @@ function Voyage() {
   return <SafeAreaView style={layout.root} edges={['top', 'bottom', 'left', 'right']}>
     <StatusBar style="light" />
     {Platform.OS === 'web' && <Image source={harbor} style={[StyleSheet.absoluteFill, { opacity: 0.18 }]} contentFit="cover" />}
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={layout.frame}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[layout.frame, desktop && layout.frameDesktop]}>
       <div className="ambient" aria-hidden="true" style={{ '--accent': accent } as React.CSSProperties}>
         <b /><b /><b />
         {Array.from({ length: 12 }, (_, i) => <i key={i} style={{ left: (i * 29 + 5) % 100 + '%', fontSize: 8 + (i % 4) * 3, animationDuration: 14 + (i % 5) * 4 + 's', animationDelay: -(i * 2.3) + 's' }}>✦</i>)}
@@ -376,12 +402,12 @@ function Voyage() {
       <TabBar wide={wide} seasonIndex={profile?.t.mod ?? null} activeTab={tab} onSelect={go} />
       {storageError && <Text accessibilityRole="alert" style={[S.tiny, layout.error]}>端末の保存領域にアクセスできませんでした。この画面で続けられます。</Text>}
       {ready ? <>
-        <ScrollView key={`${tab}-${todayVisit}`} {...({ dataSet: { screen: tab } } as object)} style={[layout.scroll, detail && layout.hidden]} contentContainerStyle={layout.content}
+        <ScrollView key={`${tab}-${todayVisit}`} {...({ dataSet: { screen: tab, layer: 'tab' } } as object)} style={[layout.scroll, detail && layout.hidden]} contentContainerStyle={[layout.content, desktop && layout.contentDesktop]}
           keyboardShouldPersistTaps="handled">
           {ritual && profile ? null : body}
         </ScrollView>
-        {path.map((entry, index) => <ScrollView key={entry.kind + index} {...({ dataSet: { screen: entry.kind } } as object)}
-          style={[layout.scroll, index !== path.length - 1 && layout.hidden]} contentContainerStyle={entry.kind === 'explanation' ? { backgroundColor: '#f5f7fb', paddingBottom: 50 } : layout.content}
+        {path.map((entry, index) => <ScrollView key={entry.kind + index} {...({ dataSet: { screen: entry.kind, layer: 'detail' } } as object)}
+          style={[layout.scroll, index !== path.length - 1 && layout.hidden]} contentContainerStyle={entry.kind === 'explanation' ? { backgroundColor: '#f5f7fb', paddingBottom: 50 } : [layout.content, desktop && layout.contentDesktop]}
           keyboardShouldPersistTaps="handled">
           {detailBody(entry)}
         </ScrollView>)}
@@ -394,6 +420,8 @@ function Voyage() {
 const layout = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.base, alignItems: 'center' },
   frame: { flex: 1, width: '100%', maxWidth: 780, backgroundColor: C.base, alignSelf: 'center', overflow: 'hidden' },
+  frameDesktop: { maxWidth: 1120 },
+  contentDesktop: { paddingHorizontal: 32, paddingTop: 24 },
   header: { minHeight: 62, paddingHorizontal: 14, gap: 12, flexDirection: 'row', alignItems: 'center', borderBottomColor: C.line, borderBottomWidth: StyleSheet.hairlineWidth },
   pageTitle: { color: C.ink, fontSize: 19, lineHeight: 26, fontWeight: '800' },
   backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: C.panel, borderWidth: 1, borderColor: C.line },
@@ -401,7 +429,7 @@ const layout = StyleSheet.create({
   help: { paddingHorizontal: 12, minHeight: 40, justifyContent: 'center', borderRadius: 20, borderWidth: 1, borderColor: '#4c6aa8' },
   wash: { position: 'absolute', top: 0, left: 0, right: 0, height: 300 },
   scroll: { flex: 1 },
-  hidden: { display: 'none' },
+  hidden: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0, pointerEvents: 'none', visibility: 'hidden' } as object,
   content: { padding: 16, paddingBottom: 32 },
   error: { backgroundColor: '#4b2c29', padding: 8, color: C.error },
 });

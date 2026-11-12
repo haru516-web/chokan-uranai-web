@@ -75,7 +75,10 @@ function makeElement<T extends SVGElement>(tag: string) {
 export const Circle = makeElement<SVGCircleElement>('circle');
 export const Defs = makeElement<SVGDefsElement>('defs');
 export const G = makeElement<SVGGElement>('g');
+export const ClipPath = makeElement<SVGClipPathElement>('clipPath');
 export const Line = makeElement<SVGLineElement>('line');
+export const LinearGradient = makeElement<SVGLinearGradientElement>('linearGradient');
+export const SvgImage = makeElement<SVGImageElement>('image');
 export const Path = makeElement<SVGPathElement>('path');
 export const Polygon = makeElement<SVGPolygonElement>('polygon');
 export const Polyline = makeElement<SVGPolylineElement>('polyline');

@@ -1,5 +1,5 @@
 import { analyze, nameChars, strokeOf } from './strokes';
-import { NUMS, SEASON, axes, blockScoreOf, ctxFor, dayTable, fivePhaseRelation, personalFor, yearScoreOf, type SeaContext, type SeaType } from './scoring';
+import { NUMS, SEASON, STAGES, axes, blockScoreOf, ctxFor, dayTable, fivePhaseRelation, personalFor, yearScoreOf, type SeaContext, type SeaType } from './scoring';
 import content from './content.json';
 import readingText from './reading-text.json';
 
@@ -91,9 +91,9 @@ function layeredReading(year: Tier, block: Tier, day: Tier) {
   else if (day > 2) lead = '今日は大きな決断を急がず、潮が変わるまで見張りに回る日です。';
   else lead = '今日は大きな波が少なく、自分の速度で進めます。年の流れを見ながら、手元を一つ整えましょう。';
   const middle = [
-    '節気の海も背中を押しています。', '節気の海には、まだ追い風があります。',
-    '節気の海は穏やかです。', '節気の海は荒れやすい時期。余力を残しておきましょう。',
-    '節気の海はもっとも荒れる時期。長く守りたいものを優先しましょう。',
+    'この月の海も背中を押しています。', 'この月の海には、まだ追い風があります。',
+    'この月の海は穏やかです。', 'この月の海は荒れやすい時期。余力を残しておきましょう。',
+    'この月の海はもっとも荒れる時期。長く守りたいものを優先しましょう。',
   ][block];
   return lead + middle;
 }
@@ -145,7 +145,7 @@ export function calendarEvents(date: Date, profile: Profile | null) {
   const c = ctxFor(date);
   const before = ctxFor(addDays(date, -1));
   const result = [];
-  if (before.solarMonth !== c.solarMonth) result.push('潮替わり · ' + c.solarMonthTerm);
+  if (before.stage !== c.stage) result.push('潮替わり · ' + STAGES[c.stage].n);
   if (before.solarYear !== c.solarYear) result.push('年の海流替わり · ' + c.yearPillar);
   // Use the day when the phase crosses 0° or 180° since the previous JST noon.
   if (before.ph > c.ph) result.push('月を読む日 · 新月');

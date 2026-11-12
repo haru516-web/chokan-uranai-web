@@ -92,7 +92,7 @@ export function SelfHome({ state, profile, today, start, openResult, openWish, s
       <Text style={[S.h2, { color: C.gold }]}>›</Text>
     </Pressable>
     {!last && <View style={st.hero}>
-      <Text style={S.kicker}>自己純度</Text>
+      <Text style={S.kicker}>自己診断</Text>
       <Text accessibilityRole="header" style={st.heroTitle}>今の自分は、{'\n'}自分で選べてる？</Text>
       <Text style={S.body}>8つの場面を、直感でタップ。約1分。</Text>
       <Button onPress={start}>はじめる　›</Button>
@@ -306,9 +306,9 @@ export function SelfWish({ profile, today, wish, saveMove, createProfile, finish
     <View style={st.hero}>
       <Text style={S.kicker}>決めました</Text>
       <Text accessibilityRole="header" style={st.heroTitle}>{choices[choice ?? 0].mark}　{text}{'\n'}を「{choices[choice ?? 0].text}」</Text>
-      <Text style={S.body}>あとで、どうだったかを振り返りましょう。自己純度のホームに出ます。</Text>
+      <Text style={S.body}>あとで、どうだったかを振り返りましょう。自己診断のホームに出ます。</Text>
     </View>
-    <Button onPress={finish}>自己純度に戻る</Button>
+    <Button onPress={finish}>自己診断に戻る</Button>
   </View>;
 
   if (step === 0) return <View style={S.stack}>

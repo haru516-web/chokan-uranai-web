@@ -254,3 +254,26 @@ button, input, textarea, select { font: inherit; }
 }
 [data-ui="tarot-face-front"] { transform: rotateY(180deg); animation: tarot-land 1.4s ease 1.6s 1 both; }
 [data-ui="tarot-caption"] { display: flex !important; flex-direction: column !important; gap: 4px !important; align-items: center !important; animation: tarot-caption .6s ease 1.5s both; }
+
+/* 運勢の輪：外側 → 中 → 内側の順に、回って所定の位置に落ち着く。 */
+@keyframes tide-ring-settle {
+  0%   { transform: rotate(var(--from)) scale(.9); opacity: 0; animation-timing-function: cubic-bezier(.14, .7, .2, 1); }
+  14%  { opacity: 1; }
+  80%  { transform: rotate(var(--over)) scale(1.01); animation-timing-function: ease-in-out; }
+  92%  { transform: rotate(calc(var(--over) * -.35)) scale(1); animation-timing-function: ease-in-out; }
+  100% { transform: rotate(0deg) scale(1); opacity: 1; }
+}
+@keyframes tide-lock { 0% { opacity: 0; transform: scale(1); } 25% { opacity: .95; } 100% { opacity: 0; transform: scale(1.07); } }
+@keyframes tide-center-in { 0% { opacity: 0; transform: scale(.7); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes tide-pointer-tick { 0% { transform: translateY(-12px); opacity: 0; } 60% { transform: translateY(2px); opacity: 1; } 100% { transform: translateY(0); opacity: 1; } }
+.tide-wheel .tide-ring, .tide-wheel .tide-lock, .tide-wheel .tide-center, .tide-wheel .tide-pointer { transform-origin: 150px 150px; opacity: 0; }
+.tide-wheel[data-play="1"] .tide-ring { animation: tide-ring-settle var(--dur, 1.8s) linear var(--delay, 0s) both; }
+.tide-wheel[data-play="1"] .tide-lock { animation: tide-lock .9s ease-out var(--delay, 0s) both; }
+.tide-wheel[data-play="1"] .tide-center { animation: tide-center-in .7s cubic-bezier(.2, .9, .2, 1) 3.0s both; }
+.tide-wheel[data-play="1"] .tide-pointer { animation: tide-pointer-tick .6s cubic-bezier(.2, .9, .2, 1) 3.2s both; transform-origin: 150px 6px; }
+
+/* 詳細画面は右からすっと入る。中身の順次表示は止めて、画面ごと動かす。 */
+@keyframes screen-push { from { opacity: 0; transform: translateX(34px); } to { opacity: 1; transform: translateX(0); } }
+[data-layer="detail"] { animation: screen-push .3s cubic-bezier(.2, .8, .2, 1) backwards; }
+[data-layer="detail"] > div > div > * { animation: none !important; }
+.tide-wheel[data-play="2"] .tide-ring, .tide-wheel[data-play="2"] .tide-center, .tide-wheel[data-play="2"] .tide-pointer { animation: none; opacity: 1; }

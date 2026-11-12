@@ -7,7 +7,8 @@ import { GodAnimation } from './GodAnimation';
 import { Gloss, TermText, useGloss } from './Glossary';
 import { useInView } from './FortuneDetail';
 import { ReflectionCards } from './LifeChart';
-import { ctxFor, labelOf, SEASON, SOLAR_MONTH_TERMS } from './scoring';
+import { ctxFor, labelOf, SEASON } from './scoring';
+import { Calendar } from './screens';
 import { Button, C, Card, display, NextLinks, rounded, S } from './ui';
 import { findQuestion, ownResident, periodFor, type Reflection } from './voyage';
 import { Float, fx, Sparkles } from './Visual';
@@ -34,14 +35,14 @@ function yearsFor(profile: Profile, thisYear: number): Year[] {
   });
 }
 
-/** 今から12か月を順に並べる（節気の月単位）。 */
+/** 今から12か月を順に並べる（月の単位）。 */
 function monthsAhead(profile: Profile, today: Date) {
   const c = ctxFor(today);
   return Array.from({ length: 12 }, (_, k) => {
     const solarMonth = (c.solarMonth + k) % 12;
     const year = c.solarYear + Math.floor((c.solarMonth + k) / 12);
     const block = periodFor(year, profile.t).blocks[solarMonth];
-    return { year, solarMonth, level: block.level, stage: block.stage.n, term: SOLAR_MONTH_TERMS[solarMonth], month: block.date.getUTCMonth() + 1, now: k === 0 };
+    return { year, solarMonth, level: block.level, stage: block.stage.n, month: block.date.getUTCMonth() + 1, now: k === 0 };
   });
 }
 
@@ -120,8 +121,15 @@ function Answer({ mark, kicker, title, body, color, delay }: { mark: string; kic
 
 const demoProfile = makeProfile({ birth: '1998-04-12', name: '汐里', manual: {} });
 
-export function LifeWave({ today, profile, questionId, initialYear, create, calendar, write, records, edit, openJournal, showToday }: {
-  today: Date; profile: Profile | null; questionId?: string; initialYear?: number; create: () => void; calendar?: () => void;
+/** 人生の流れタブ内の「運勢の輪」まで、なめらかにスクロールする。 */
+export function scrollToLifeCalendar() {
+  if (typeof document === 'undefined') return;
+  setTimeout(() => document.getElementById('life-calendar')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 280);
+}
+
+export function LifeWave({ today, profile, questionId, initialYear, create, embedCalendar, calendarFocus, write, records, edit, openJournal, showToday }: {
+  today: Date; profile: Profile | null; questionId?: string; initialYear?: number; create: () => void;
+  embedCalendar?: boolean; calendarFocus?: { date: Date; mode: 'current' | 'stage'; key: number } | null;
   write: (year: number, month: number, questionId?: string) => void; records: Reflection[]; edit: (record: Reflection) => void;
   openJournal?: () => void; showToday: () => void;
 }) {
@@ -178,9 +186,9 @@ export function LifeWave({ today, profile, questionId, initialYear, create, cale
       title={now.level <= 1 && (!nextGood || nextGood.year > thisYear + 1) ? '追い風は、いま吹いています' : nextGood ? nextGood.year + '年（' + (nextGood.year - thisYear) + '年後）' : 'しばらく凪が続きます'}
       body={nextGood ? nextGood.year + '年は「' + tiers[nextGood.level] + '」。大きく動くなら、この年に照準を合わせて準備を。' : '派手な追い風はありませんが、荒れる年もありません。着実さが味方です。'}
       color={tierColors[nextGood?.level ?? 2]} delay={120} />
-    {caution && <Answer mark="!" kicker="これから1年で気をつけたい月" title={caution.year + '年' + caution.month + '月ごろ（' + caution.term + '〜）'}
+    {caution && <Answer mark="!" kicker="これから1年で気をつけたい月" title={caution.year + '年' + caution.month + '月ごろ〜'}
       body={'「' + tiers[caution.level] + '」の海況。大きな決断や契約は、この時期を避けるか、余裕を持って。'} color={tierColors[caution.level]} delay={240} />}
-    {best && <Answer mark="★" kicker="これから1年でいちばんの月" title={best.year + '年' + best.month + '月ごろ（' + best.term + '〜）'}
+    {best && <Answer mark="★" kicker="これから1年でいちばんの月" title={best.year + '年' + best.month + '月ごろ〜'}
       body={'「' + tiers[best.level] + '」の海況。始めたいことの一歩目は、この月に置くと流れに乗れます。'} color={tierColors[best.level]} delay={360} />}
 
     {!demo && <View key={selected} {...fx('up')} style={[S.card, styles.year, asStyle({ borderColor: tierColors[sel.level] })]}>
@@ -209,7 +217,7 @@ export function LifeWave({ today, profile, questionId, initialYear, create, cale
         })}
       </View>
       {chosen !== null && <View key={chosen} {...fx('fade')} style={styles.monthDetail}>
-        <Text style={S.kicker}>{blocks[chosen].date.getUTCMonth() + 1}月ごろ（<TermText id="節気" style={S.kicker}>{SOLAR_MONTH_TERMS[chosen]}</TermText>〜）</Text>
+        <Text style={S.kicker}>{blocks[chosen].date.getUTCMonth() + 1}月ごろ〜</Text>
         <Text style={S.h3}><Text style={{ color: tierColors[blocks[chosen].level] }}>{tiers[blocks[chosen].level]}</Text>　{MONTH_TEXT[blocks[chosen].level]}</Text>
         <Gloss style={S.body}>{'海況「' + blocks[chosen].stage.n + '」：' + blocks[chosen].stage.d + '。'}</Gloss>
         {(selected < thisYear || (selected === thisYear && chosen <= c.solarMonth)) &&
@@ -223,8 +231,12 @@ export function LifeWave({ today, profile, questionId, initialYear, create, cale
       <ReflectionCards records={relevant} edit={edit} />
     </>}
 
+    {embedCalendar && <View nativeID="life-calendar" style={S.stack}>
+      <Calendar key={calendarFocus?.key ?? 0} today={today} profile={profile} initial={calendarFocus ? { date: calendarFocus.date, mode: calendarFocus.mode } : undefined} />
+    </View>}
+
     <NextLinks items={[
-      ...(calendar ? [{ icon: '🗓️', label: '暦で日付ごとに見る', hint: '新月・満月・潮替わりの日', onPress: calendar }] : []),
+      ...(embedCalendar ? [{ icon: '🗓️', label: '運勢の輪・暦へ', hint: '今日までの海を、日付ごとに読み返す', onPress: scrollToLifeCalendar }] : []),
       { icon: '🌊', label: '今日の占いへ', onPress: showToday },
       ...(openJournal ? [{ icon: '📓', label: '記録・設定', hint: '残した問い・日記・データの管理', onPress: openJournal }] : []),
     ]} />
@@ -233,10 +245,10 @@ export function LifeWave({ today, profile, questionId, initialYear, create, cale
 }
 
 function nextChange(today: Date) {
-  const current = ctxFor(today).solarMonth;
+  const current = ctxFor(today).stage;
   for (let d = 1; d <= 35; d++) {
     const date = new Date(today.getTime() + d * 86_400_000);
-    if (ctxFor(date).solarMonth !== current) return date;
+    if (ctxFor(date).stage !== current) return date;
   }
   return today;
 }

@@ -1,6 +1,6 @@
 import { Image } from './web/image';
 import type { ReactNode } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Gloss } from './Glossary';
 
 export const C = {
@@ -17,6 +17,13 @@ export const ui = (name: string, extra?: object) => ({ dataSet: { ui: name, ...e
 
 /** カード型の押せる要素に、浮き上がる・光る手ざわりをつける。 */
 export const tapFx = { dataSet: { ui: 'tap' } } as object;
+
+/** 画面幅に応じた段数。スマホ・タブレットは2段、PC（1000px以上）は4段。 */
+export function useColumns() {
+  const width = useWindowDimensions().width;
+  const desktop = width >= 1000;
+  return { desktop, cols: desktop ? 4 : 2, item: desktop ? '23.6%' : '48.5%' } as const;
+}
 
 export const S = StyleSheet.create({
   body: { color: C.muted, fontSize: 16, lineHeight: 27 },

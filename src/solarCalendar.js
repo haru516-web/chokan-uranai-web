@@ -93,6 +93,8 @@ export function solarCalendarFor(date) {
   const longitude = sunLongitude(atJstNoon);
   const solarTermIndex = Math.floor(norm(longitude - 285) / 15);
   const solarMonth = Math.floor(norm(longitude - 315) / 30);
+  // 海況は節月を前半・後半に分けた24段階。太陽の黄経を15度ごとに区切る（立春が0）。
+  const solarStage = Math.floor(norm(longitude - 315) / 15);
   const beforeRisshun = (month === 1 || month === 2) && longitude < 315;
   const solarYear = year - Number(beforeRisshun);
   const yearStemIndex = mod(solarYear - 4, 10);
@@ -119,6 +121,7 @@ export function solarCalendarFor(date) {
     solarTermIndex,
     solarTerm: SOLAR_TERMS[solarTermIndex],
     solarMonth,
+    solarStage,
     solarMonthTerm: SOLAR_MONTH_TERMS[solarMonth],
     monthBranchIndex,
     monthBranch: BRANCHES[monthBranchIndex],
@@ -139,5 +142,13 @@ export function solarMonthStartDate(solarYear, solarMonth) {
   const month = mod(solarMonth, 12);
   const gregorianYear = month === 11 ? solarYear + 1 : solarYear;
   const termIndex = MONTH_TERM_INDICES[month];
+  return calendarDateAtJstNoon(solarTermInstant(gregorianYear, termIndex));
+}
+
+/** 24段階の海況のはじまりの日（日本時間の正午ごろ）。stage は 0〜23、solarYear は立春で替わる年。 */
+export function solarStageStartDate(solarYear, stage) {
+  const s = mod(stage, 24);
+  const gregorianYear = s >= 22 ? solarYear + 1 : solarYear;
+  const termIndex = (2 + s) % 24;
   return calendarDateAtJstNoon(solarTermInstant(gregorianYear, termIndex));
 }

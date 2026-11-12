@@ -17,7 +17,7 @@ export function Ritual({ profile, today, onDone }: { profile: Profile; today: Da
     { label: '生まれた日の海をひらく', value: `${profile.Y}年${profile.M}月${profile.D}日`, result: season.n + 'の海' },
     { label: '名前の画数を数える', value: profile.name, result: profile.total + '画' },
     { label: '今日の月を読む', value: `${c.MO}月${c.DA}日`, result: c.moon + '・' + c.phaseTide },
-    { label: '三つの潮を重ねる', value: c.yearPillar + '年・' + c.solarMonthTerm, result: STAGES[c.stage].n },
+    { label: '三つの潮を重ねる', value: c.yearPillar + '年・' + c.MO + '月', result: STAGES[c.stage].n },
   ];
 
   useEffect(() => {

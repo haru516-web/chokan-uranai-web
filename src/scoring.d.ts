@@ -16,12 +16,17 @@ export type RankRow = {
 };
 export const NUMS: number[];
 export const STAGES: { n: string; d: string }[];
-export const OUTER: { n: string; th: string; t: string; d: string }[];
+export const MONTH_STAGES: { n: string; d: string; second: { n: string; d: string } }[];
+export const STAGE_POINTS: number[];
+export const DAY_POINTS: number[];
+export const DAY_STAGES: { n: string; d: string }[];
+export const OUTER: { n: string; th: string; d: string }[];
 export const SEASON: { n: string; element: number; ang: number; act: string; col: string; moon: string; home: number }[];
 export const FIVE_PHASES: { name: string; action: string }[];
 export const SOLAR_MONTH_TERMS: string[];
 export function ctxFor(date: Date): SeaContext;
 export function solarMonthStartDate(solarYear: number, solarMonth: number): Date;
+export function solarStageStartDate(solarYear: number, stage: number): Date;
 export function fivePhaseRelation(type: SeaType, element: number): { kind: string; score: number; description: string };
 export function labelOf(type: SeaType): string;
 export function dayTable(context: SeaContext): { rows: RankRow[]; byKey: Record<number, RankRow>; mean: number };

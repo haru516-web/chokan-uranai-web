@@ -5,7 +5,7 @@ import { tarotBack } from './art';
 import { dateKey } from './domain';
 import { Image } from './web/image';
 import { findTarot, seasonNames, tarotSpread, tarotTone, type Level, type Season, type TarotCard } from './tarotDeck';
-import { Button, C, S } from './ui';
+import { Button, C, Heading, NextLinks, S } from './ui';
 
 export type SavedTarotDraw = { day: string; cardId: string };
 
@@ -29,6 +29,17 @@ function CardBack({ style, caption }: { style?: object; caption?: string }) {
       <View style={styles.ringSmall}><View style={styles.ringCoreSmall} /></View>
       {caption ? <Text style={styles.backCaption}>{caption}</Text> : null}
     </View>
+  </View>;
+}
+
+/** 上部タブの「タロット」。占いをしていなくても、これだけで遊べる。 */
+export function TarotHome({ goToday, ...props }: React.ComponentProps<typeof DailyTarot> & { goToday: () => void }) {
+  return <View style={S.stack}>
+    <Heading tag="タロット" title="今日の一枚を引く" body="占いをしなくても遊べます。入力や登録は要りません。1日1回、22枚の大アルカナから出会う札です。" />
+    <DailyTarot {...props} />
+    {props.season === null && <NextLinks items={[
+      { icon: '☾', label: '今日の運勢を占う', hint: '占うと、この札があなたの海の読みで変わります', onPress: goToday },
+    ]} />}
   </View>;
 }
 
