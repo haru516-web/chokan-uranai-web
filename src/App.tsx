@@ -13,6 +13,8 @@ import { PairReading } from './PairReading';
 import { QuestionAnswer, QuestionSea } from './Questions';
 import { ShareTideCard } from './ResidentCard';
 import { Today } from './Today';
+import { DailyTarot, type SavedTarotDraw } from './DailyTarot';
+import { findTarot } from './tarotDeck';
 import { Atlas, Calendar, Chapter, Journal, Myth, NoteEditor, Ranking, Resident, type Note } from './screens';
 import { C, S } from './ui';
 import { findQuestion, type Reflection, type SavedQuestion } from './voyage';
@@ -51,8 +53,8 @@ type Detail =
   | { kind: 'note'; day: string }
   | { kind: 'rank'; date: Date };
 
-type Saved = { inputs: Inputs | null; people: Person[]; notes: Note[]; favorites: number[]; read: number[]; questions: SavedQuestion[]; reflections: Reflection[]; self: SelfState };
-const empty: Saved = { inputs: null, people: [], notes: [], favorites: [], read: [], questions: [], reflections: [], self: emptySelf };
+type Saved = { inputs: Inputs | null; people: Person[]; notes: Note[]; favorites: number[]; read: number[]; questions: SavedQuestion[]; reflections: Reflection[]; self: SelfState; tarotDraw: SavedTarotDraw | null; tarotLog: SavedTarotDraw[] };
+const empty: Saved = { inputs: null, people: [], notes: [], favorites: [], read: [], questions: [], reflections: [], self: emptySelf, tarotDraw: null, tarotLog: [] };
 const storageKey = 'chokan/v1';
 let pendingSave: Promise<void> = Promise.resolve();
 
@@ -93,7 +95,9 @@ function Voyage() {
     AsyncStorage.getItem(storageKey).then(raw => {
       if (!mounted || !raw) return;
       const parsed = JSON.parse(raw);
-      const data: Saved = { ...empty, ...parsed, self: { ...emptySelf, ...parsed.self } };
+      const data: Saved = { ...empty, ...parsed, self: { ...emptySelf, ...parsed.self },
+        tarotLog: Array.isArray(parsed.tarotLog) ? parsed.tarotLog.filter((item: SavedTarotDraw) => typeof item?.day === 'string' && typeof item?.cardId === 'string') : [] };
+      if (data.tarotDraw && !data.tarotLog.some(item => item.day === data.tarotDraw?.day)) data.tarotLog = [...data.tarotLog, data.tarotDraw];
       let list: Person[] = Array.isArray(parsed.people) ? parsed.people.filter((person: Person) => person?.inputs && !validate(person.inputs)) : [];
       if (!list.length && parsed.inputs && !validate(parsed.inputs)) list = [{ id: 1, inputs: parsed.inputs, me: true, saved: true }];
       data.inputs = null;
@@ -128,6 +132,15 @@ function Voyage() {
     setTab(next);
     setTodayVisit(previous => previous + 1);
     if (Platform.OS === 'ios') void Haptics.selectionAsync().catch(() => {});
+  }
+  function drawTarot(cardId: string) {
+    const drawDay = dateKey(jstToday());
+    setStored(previous => {
+      const alreadyDrawn = previous.tarotDraw?.day === drawDay && !!findTarot(previous.tarotDraw.cardId);
+      if (alreadyDrawn || !findTarot(cardId)) return previous;
+      const entry = { day: drawDay, cardId };
+      return { ...previous, tarotDraw: entry, tarotLog: [...previous.tarotLog.filter(item => item.day !== drawDay), entry].slice(-400) };
+    });
   }
   const open = (next: Detail) => setPath(previous => [...previous, next]);
   const back = () => setPath(previous => previous.slice(0, -1));
@@ -214,6 +227,7 @@ function Voyage() {
     today: <Today people={people} activeId={activeId} onSwitch={id => { setActiveId(id); setTodayVisit(previous => previous + 1); }}
       onAdd={() => open({ kind: 'profile', add: true })} onManage={() => open({ kind: 'people' })} today={today} profile={profile} goMyth={openMyth} openCalendar={openCalendar} create={editProfile}
       ranks={openRanking} onSave={openNote} questions={stored.questions} reflections={stored.reflections}
+      tarotDraw={stored.tarotDraw} tarotLog={stored.tarotLog} onDrawTarot={drawTarot}
       openQuestion={id => openQuestion(id, true)} openQuestions={() => go('questions')}
       shareTideCard={() => open({ kind: 'share' })} goSelf={() => go('self')}
       openExplanation={() => open({ kind: 'explanation' })} startQuiz={startQuiz}

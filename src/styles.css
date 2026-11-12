@@ -227,3 +227,30 @@ button, input, textarea, select { font: inherit; }
 [data-fx="peek"] { animation-name: fx-peek !important; animation-duration: 2.3s !important; animation-timing-function: ease-in-out !important; animation-fill-mode: both !important; position: relative; z-index: 20; }
 
 @keyframes fx-heave { 0%, 100% { transform: translateY(8px); } 50% { transform: translateY(-14px); } }
+
+/* タロット：選んだ札が回りながら画面へ近づき、最後に大きく開く。 */
+@keyframes tarot-fly {
+  0%   { transform: translate(var(--dx), var(--dy)) scale(var(--s)) rotateY(0deg) rotateZ(-8deg); }
+  55%  { transform: translate(calc(var(--dx) * .15), calc(var(--dy) * .15 - 30px)) scale(.8) rotateY(720deg) rotateZ(6deg); }
+  100% { transform: translate(0, 0) scale(1) rotateY(1260deg) rotateZ(0deg); }
+}
+@keyframes tarot-land { 0%, 100% { box-shadow: 0 0 0 rgba(234, 204, 140, 0); } 50% { box-shadow: 0 0 46px rgba(234, 204, 140, .55); } }
+@keyframes tarot-backdrop { from { opacity: 0; } to { opacity: 1; } }
+@keyframes tarot-caption { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+[data-ui="tarot-overlay"] {
+  position: fixed !important; inset: 0 !important; z-index: 1000 !important;
+  display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; gap: 22px !important;
+  background: rgba(5, 9, 22, .9) !important; cursor: pointer;
+  animation: tarot-backdrop .4s ease both;
+}
+[data-ui="tarot-stage"] { perspective: 1100px; display: flex !important; align-items: center !important; justify-content: center !important; }
+[data-ui="tarot-card"] {
+  position: relative !important; transform-style: preserve-3d;
+  animation: tarot-fly 1.7s cubic-bezier(.22, .7, .2, 1) both;
+  border-radius: 13px; will-change: transform;
+}
+[data-ui="tarot-face-back"], [data-ui="tarot-face-front"] {
+  position: absolute !important; inset: 0 !important; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 13px; overflow: hidden;
+}
+[data-ui="tarot-face-front"] { transform: rotateY(180deg); animation: tarot-land 1.4s ease 1.6s 1 both; }
+[data-ui="tarot-caption"] { display: flex !important; flex-direction: column !important; gap: 4px !important; align-items: center !important; animation: tarot-caption .6s ease 1.5s both; }

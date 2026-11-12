@@ -19,6 +19,8 @@ import { ResultPoster } from './ResultPoster';
 import { Float, glow, Sparkles } from './Visual';
 import { Button, C, Card, Chip, Chips, Fold, NextLinks, S, Tile, display, rounded } from './ui';
 import { findQuestion, nextTideChange, ownResident, revisitQuestion, type Question, type Reflection, type SavedQuestion } from './voyage';
+import { DailyTarot, type SavedTarotDraw } from './DailyTarot';
+import { seasonOf } from './tarotDeck';
 
 type Reading = ReturnType<typeof readDay>;
 // 結果の演出は、その人・その日の初回だけフル再生。再訪は即表示（「もう一度」で再生できる）。
@@ -26,13 +28,14 @@ const seenResults = new Set<string>();
 const tierIcons = ['🎣', '⛵', '🌙', '⚡', '🌀'];
 type FoldId = 'why' | 'me' | 'layers' | 'flow' | 'moon';
 
-export function Today({ people, activeId, onSwitch, onAdd, onManage, today, profile, goMyth, openCalendar, create, ranks, onSave, questions, reflections, openQuestion, openQuestions, openHomecoming,
+export function Today({ people, activeId, onSwitch, onAdd, onManage, today, profile, goMyth, openCalendar, create, ranks, onSave, questions, reflections, openQuestion, openQuestions, openHomecoming, tarotDraw, tarotLog, onDrawTarot,
   shareTideCard, goSelf, openExplanation, startQuiz, selfLast, selectedQuestion }: {
   people: Person[]; activeId: number | null; onSwitch: (id: number) => void; onAdd: () => void; onManage: () => void;
   today: Date; profile: Profile | null; goMyth: () => void; openCalendar: (date: Date, mode: 'current' | 'stage') => void;
   create: () => void; ranks: (date: Date) => void; onSave: (day: string) => void;
   questions: SavedQuestion[]; reflections: Reflection[]; openQuestion: (id: string) => void;
   openQuestions: () => void; openHomecoming: (year: number) => void;
+  tarotDraw: SavedTarotDraw | null; tarotLog: SavedTarotDraw[]; onDrawTarot: (cardId: string) => void;
   shareTideCard: () => void; goSelf: () => void; openExplanation: () => void; startQuiz: () => void;
   selfLast: { name: string; mark: string; color: string } | null;
   selectedQuestion?: { question: Question; saved: boolean; toggle: () => void; compare: () => void };
@@ -51,6 +54,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
   useEffect(() => { seenResults.add(seenKey); }, [seenKey]);
   const instant = wasSeen || skipKey === playKey;
   const reading = profile && readDay(date, profile);
+  const tarotLevel = profile ? (offset === 0 && reading ? reading.layers.day : readDay(today, profile).layers.day) : null;
   const c = reading?.context ?? ctxFor(date);
   const events = calendarEvents(date, profile);
   const previous = offset === 0 && revisitQuestion(events, today, questions, reflections);
@@ -114,6 +118,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
       art={<Float><GodAnimation forcePlay index={4} style={{ width: 104 }} /></Float>} />
     <Door color="#9fd8c7" kicker="自己診断" title="自己純度を測る" hint="名前も入力もなし・約1分" cta="診断する" onPress={startQuiz}
       art={<Float>{iconArt.compass ? <Image source={iconArt.compass} style={{ width: 88, height: 88 }} contentFit="contain" accessible={false} /> : <Text style={styles.doorIcon}>🧭</Text>}</Float>} />
+    <DailyTarot today={today} savedDraw={tarotDraw} log={tarotLog} onDraw={onDrawTarot} personKey="guest" season={null} level={null} onCreate={create} />
     <View style={S.row}>
       <Pressable accessibilityRole="button" onPress={openQuestions} {...({ dataSet: { ui: 'tap' } } as object)} style={({ pressed }) => [S.card, styles.small, pressed && { opacity: .7 }]}>
         {iconArt.question ? <Image source={iconArt.question} style={{ width: 40, height: 40 }} contentFit="contain" accessible={false} /> : <Text style={styles.smallIcon}>💭</Text>}<Text style={S.h3}>悩みから問いを読む</Text><Text style={S.tiny}>入力なし</Text>
@@ -151,6 +156,8 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
     </Chips>
     <Text style={S.tiny}>💡 名札・タイプ名・順位・段階をタップすると、意味が出ます。</Text>
     {dayNavigation}
+    <DailyTarot today={today} savedDraw={tarotDraw} log={tarotLog} onDraw={onDrawTarot} personKey={'k' + profile.t.key}
+      season={seasonOf(profile.t.mod)} level={tarotLevel} />
     <PersonSwitcher people={people} activeId={activeId} onSwitch={onSwitch} onAdd={onAdd} onManage={onManage} />
     <Chips>
       <Chip onPress={() => { void share(); }}>テキストで共有</Chip>
