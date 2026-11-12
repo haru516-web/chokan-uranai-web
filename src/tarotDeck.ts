@@ -4,10 +4,10 @@ import { tarotArt } from './art';
  * 大アルカナ22枚。意味は3層で持つ。
  *  1. 普遍の意味（message / action / keywords）… 誰が引いても同じ、標準的なタロットの読み。
  *  2. 季節のレンズ（lens）… 占いで出たタイプの季節（春夏秋冬）によって、同じ札の受け取り方が変わる。
- *  3. 今日の海の調子（tarotTone）… 今日の運勢（大漁〜轟沈）で、札の活かし方を添える。
+ *  3. 今日の海の調子（tarotTone）… 今日の運勢（凱風〜轟沈）で、札の活かし方を添える。
  */
 export type Season = 0 | 1 | 2 | 3; // 0 春 / 1 夏 / 2 秋 / 3 冬（図鑑の並びと同じ）
-export type Level = 0 | 1 | 2 | 3 | 4; // 0 大漁 / 1 順風 / 2 凪 / 3 荒波 / 4 轟沈
+export type Level = 0 | 1 | 2 | 3 | 4; // 0 凱風 / 1 順風 / 2 凪 / 3 荒波 / 4 轟沈
 
 type Card = {
   id: string; no: number; arcana: string; en: string; deity: string;
@@ -115,7 +115,7 @@ export type TarotId = TarotCard['id'];
 export const findTarot = (id: string) => tarotDeck.find(card => card.id === id);
 
 export const seasonNames = ['春', '夏', '秋', '冬'] as const;
-const levelNames = ['大漁', '順風', '凪', '荒波', '轟沈'] as const;
+const levelNames = ['凱風', '順風', '凪', '荒波', '轟沈'] as const;
 
 /** タイプ（mod）から季節。図鑑の並び（春→夏→秋→冬）と同じ。 */
 export const seasonOf = (mod: number): Season => (((mod + 3) % 4) as Season);
@@ -125,7 +125,7 @@ export function tarotTone(level: Level, heavy?: boolean) {
   if (heavy && level >= 3) return levelNames[level] + 'の日に出た札。無理に動かず、休むことを今日の正しい選択にしましょう。';
   if (heavy) return levelNames[level] + 'の日。重く見える札ですが、手放しや気づきには向いた追い風です。';
   return [
-    '大漁の日。この札の意味を、思い切って行動に移せます。',
+    '凱風の日。この札の意味を、思い切って行動に移せます。',
     '順風の日。札の意味を、普段より一歩だけ前に出して試せます。',
     '凪の日。札の意味を、静かに整えるために使いましょう。',
     '荒波の日。札の意味は、守りに使うほど効果的。無理は禁物です。',

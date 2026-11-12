@@ -34,7 +34,7 @@ const stars = [
   { l: '2%', t: '8%', d: 0, s: 14 }, { l: '93%', t: '6%', d: 400, s: 18 }, { l: '94%', t: '36%', d: 900, s: 12 },
   { l: '3%', t: '42%', d: 300, s: 12 }, { l: '93%', t: '62%', d: 1200, s: 14 }, { l: '2%', t: '70%', d: 700, s: 16 },
 ];
-/** 背景にまたたく星。祝いたい場面（大漁・診断結果）に。 */
+/** 背景にまたたく星。祝いたい場面（凱風・診断結果）に。 */
 export function Sparkles({ color = C.gold }: { color?: string }) {
   return <View pointerEvents="none" style={StyleSheet.absoluteFill}>
     {stars.map((star, index) => <Text key={index} {...fx('twinkle', Math.round(star.d / 300))}
@@ -105,7 +105,7 @@ export function QuadMap({ p, s, prev, quads }: {
   </svg>;
 }
 
-const tierNames = ['大漁', '順風', '凪', '荒波', '轟沈'];
+const tierNames = ['凱風', '順風', '凪', '荒波', '轟沈'];
 const tierCols = ['#efd393', '#b6dfc4', '#c1d2ef', '#ff5a4d', '#e0245e'];
 /** 5段階を並べ、いまの段階だけ大きく強調する。 */
 export function TierStrip({ level }: { level: number }) {
@@ -181,7 +181,7 @@ export function TypeText({ text, delay = 0, speed = 30, instant, style }: {
 // 段階ごとの海の表情。荒れるほど波が高く・速く・尖り、白波が立つ。
 // cycles は 400 ユニット（画面の半分）に入る波の数。端が継ぎ目なく繋がるよう整数にしてある。
 const SEAS = [
-  { height: 70, amp: 6, cycles: 2, speeds: [18, 26], layers: 2, sharp: 0, heave: 0, foam: false, op: 0.3 },     // 大漁：ゆったり
+  { height: 70, amp: 6, cycles: 2, speeds: [18, 26], layers: 2, sharp: 0, heave: 0, foam: false, op: 0.3 },     // 凱風：ゆったり
   { height: 80, amp: 10, cycles: 2, speeds: [13, 19], layers: 2, sharp: 0.1, heave: 0, foam: false, op: 0.32 }, // 順風：軽やか
   { height: 56, amp: 3, cycles: 1, speeds: [24, 34], layers: 2, sharp: 0, heave: 0, foam: false, op: 0.26 },    // 凪：ほぼ平ら
   { height: 150, amp: 28, cycles: 3, speeds: [6, 9, 12], layers: 3, sharp: 0.45, heave: 3.2, foam: true, op: 0.42 },   // 荒波：高く尖る・白波

@@ -8,7 +8,7 @@ import { addDays, calendarEvents, dateKey, dateLabel, readDay, shortDate, tierCo
 import { BornSea, NameReadingDetails, TypeTraits } from './NameReading';
 import { SelectedQuestionReading } from './Questions';
 import { TideFlow } from './ResidentCard';
-import { ctxFor, DAY_STAGES, FIVE_PHASES, labelOf, OUTER, SEASON, STAGES } from './scoring';
+import { ctxFor, DAY_STAGES, FIVE_PHASES, labelOf, OUTER, SEASON, STAGES, stageFor } from './scoring';
 import { Meter, SeaGlobe } from './TideCharts';
 import { GodAnimation } from './GodAnimation';
 import { Scene } from './Story';
@@ -59,6 +59,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
   const reading = profile && readDay(date, profile);
   const tarotLevel = profile ? (offset === 0 && reading ? reading.layers.day : readDay(today, profile).layers.day) : null;
   const c = reading?.context ?? ctxFor(date);
+  const stageIndex = stageFor(c, profile?.t);
   const events = calendarEvents(date, profile);
   const previous = offset === 0 && revisitQuestion(events, today, questions, reflections);
   const question = previous && findQuestion(previous.id);
@@ -133,7 +134,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
       </Pressable>
     </View>
     <Fold title="今日の海をのぞく" hint="日付と月だけでわかる、今日の海のようす" open={fold === 'moon'} onToggle={() => toggle('moon')}>
-      <Text style={S.tiny}>{c.yearPillar}　／　{OUTER[c.outer].n}　／　{STAGES[c.stage].n}</Text>
+      <Text style={S.tiny}>{c.yearPillar}　／　{OUTER[c.outer].n}　／　{STAGES[stageIndex].n}</Text>
       {moonCard}
     </Fold>
     <Text style={S.tiny}>入力した内容はこの端末の中だけで使います。</Text>
@@ -175,7 +176,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
       </Card>}
       {tideChange && <Card>
         <Text style={[S.kicker, { color: C.gold }]}>✦ 今日だけの知らせ</Text>
-        <Text style={S.h3}>潮替わり · {STAGES[c.stage].n}</Text>
+        <Text style={S.h3}>潮替わり · {STAGES[stageIndex].n}</Text>
         <Gloss style={S.body}>{'いまの海況です。いま気になることを一つ選んでみましょう。'}</Gloss>
         <Button quiet onPress={openQuestions}>新しい問いを選ぶ</Button>
       </Card>}
@@ -262,7 +263,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
     ]} />
     <View style={S.row}>
       <Tile source={currents[c.outer]} subtitle="今年の海流" title={OUTER[c.outer].n} onPress={() => openCalendar(date, 'current')} />
-      <Tile source={stages[c.stage]} subtitle="今の海況" title={STAGES[c.stage].n} onPress={() => openCalendar(date, 'stage')} />
+      <Tile source={stages[stageIndex]} subtitle="今の海況" title={STAGES[stageIndex].n} onPress={() => openCalendar(date, 'stage')} />
     </View>
     <View style={S.row}><Tile source={scenes[0]} subtitle="潮環神話" title="見られなかった海" onPress={goMyth} /></View>
   </View>;
@@ -287,11 +288,12 @@ function ReadingReasons({ reading }: { reading: Reading }) {
   const { context: c, row, personal, personalRank, force, fivePhase } = reading;
   const { p, t } = row;
   const season = SEASON[t.mod];
+  const stageIndex = stageFor(c, t);
   const factors = [
-    { title: '海況の基礎点', score: p.base, note: STAGES[c.stage].d },
+    { title: '自分の海の時計（海況）', score: p.base, note: STAGES[stageIndex].n + '：' + STAGES[stageIndex].d + '。同じ海況でも、いつ来るか・どれだけ効くかは、人ごとに違います。' },
     { title: '季節 × 月の形', score: p.moon, note: season.n + 'は' + season.moon + 'に力が出ます。今日の月は「' + c.moon + '」。深さが得意な月相を少しずらします。' },
     { title: '深さ × 月の距離', score: p.depth, note: '今日の月は約' + (c.dist / 10000).toFixed(1) + '万km。深い名札は近い月、浅い名札は遠い月の潮に乗りやすくなります。' },
-    { title: '季節の拠点 × 海況・五行', score: p.aff, note: season.n + 'の拠点は「' + STAGES[season.home * 2].n + '」。' + 'この月の月令は' + FIVE_PHASES[fivePhase.month].name + 'で、季節の型との関係は「' + fivePhase.monthRelation.kind + '」です。' },
+    { title: '月の五行 × 季節型', score: p.aff, note: 'この月の月令は' + FIVE_PHASES[fivePhase.month].name + 'で、季節の型との関係は「' + fivePhase.monthRelation.kind + '」です。' },
     { title: '季節 × 年の干支五行', score: p.comp, note: c.yearPillar + '年の年干は' + c.yearPolarity + 'の' + FIVE_PHASES[fivePhase.year].name + '（' + fivePhase.yearRelation.kind + '）、年支は' + FIVE_PHASES[fivePhase.yearBranch].name + '（' + fivePhase.yearBranchRelation.kind + '）。' + (t.minus ? '「−」の名札では関係の向きが反転します。' : '') },
     ...(t.minus ? [{ title: '「−」の向かい風', score: p.hw, note: '向かい風体質にかかる補正です。' }] : []),
     ...(t.A ? [{ title: 'A（渦）× 月の距離', score: p.vor, note: '月が近いほど、渦の力が強く表れます。' }] : []),

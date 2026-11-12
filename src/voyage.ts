@@ -1,7 +1,7 @@
 import { addDays, cycleFor, cycleTier, dateKey, residentIndex, type Profile } from './domain';
 import questions from './questions.json';
 import residents from './residents.json';
-import { blockScoreOf, ctxFor, MONTH_STAGES, OUTER, solarMonthStartDate, yearScoreOf } from './scoring';
+import { blockScoreOf, ctxFor, monthStagesFor, OUTER, solarMonthStartDate, yearScoreOf } from './scoring';
 
 export { questions, residents };
 export type Question = typeof questions[number];
@@ -57,7 +57,7 @@ export function periodFor(year: number, type: Profile['t']) {
     blocks: Array.from({ length: 12 }, (_, solarMonth) => {
       const result = blockScoreOf(year, solarMonth, type);
       return { solarMonth, date: solarMonthStartDate(year, solarMonth),
-        stage: MONTH_STAGES[result.st], level: cycleTier(result.score, cycle.blocks) };
+        stage: monthStagesFor(year, solarMonth, type), level: cycleTier(result.score, cycle.blocks) };
     }),
   };
 }

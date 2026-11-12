@@ -4,8 +4,8 @@ import { BRANCHES, BRANCH_ELEMENTS, FIVE_PHASES, SOLAR_MONTH_TERMS, solarCalenda
 // Scoring and astronomical cycles carried over from the original prototype.
 const numStr = n => n.toFixed(1);
 
-// 海況は24段階（節月を前半・後半に分けたもの）。月ごとの点は前半・後半の平均。
-export const STAGES=[{"n":"薄氷の凪","d":"氷の下で、動く前の静けさ。休んで、備える"},{"n":"東風潮","d":"解けて、ゆるみ始める。固いものをほぐす"},{"n":"春さざれ","d":"小さく動き始める。試しに漕ぎ出す"},{"n":"若潮の澪","d":"昼と夜が釣り合う。バランスを整える"},{"n":"花曇りの潮","d":"澄んで、人も物も集まり始める"},{"n":"恵みの潮","d":"雨が種を育てる。蒔いたものが根づく"},{"n":"薫風","d":"風が背中を押す。素直に進む"},{"n":"南風","d":"満ちて、勢いづく。広げどき"},{"n":"帆満ちの海","d":"いちばん速く進む。帆を張り切る"},{"n":"白南風","d":"頂点のまぶしさ。成果を確かめる"},{"n":"夕立雲","d":"ざわつく兆し。変化に気づく"},{"n":"油凪","d":"蒸して動かない。焦らず足を止める"},{"n":"遠雷の沖","d":"遠くの嵐の気配が届く。備えを見直す"},{"n":"野分の兆し","d":"風向きが変わる。荷を固める"},{"n":"野分","d":"いちばん荒れる。出航せず、守って耐える"},{"n":"大時化","d":"荒れが続く。無理をせず、凌ぐ"},{"n":"嵐の眼","d":"中心だけ静か。ここで見極める"},{"n":"凪間","d":"束の間の静けさ。静かに整理する"},{"n":"時雨上がり","d":"空が澄む。立て直して再出発"},{"n":"澄み潮","d":"水が澄んで見通せる。次の針路を決める"},{"n":"引き潮","d":"潮が引く。手放す・整理する"},{"n":"一陽の底","d":"底を打って、折り返す。小さな光を見つける"},{"n":"寒凪","d":"冷えた静けさ。次の周期に備える"},{"n":"凍て凪","d":"いちばん静か。休んで、力を溜める"}];
+// 海況は24段階（約半月ごと）。並びと良し悪しは全員共通の表。いつ・どれだけ効くかは、人ごとの「海の時計」で変わる（下の personalStage / sensOf）。
+export const STAGES=[{"n":"凪の入り","d":"静けさの中で、動く前に整える"},{"n":"そよ波","d":"最初の揺れ。固いものがほどける"},{"n":"舟出","d":"漕ぎ出す準備ができる"},{"n":"潮目","d":"流れの境目。方向を選ぶ"},{"n":"満ち潮","d":"人も物も集まり始める"},{"n":"帆あげ","d":"帆を揚げて進み出す"},{"n":"追い風","d":"風が背中を押す。素直に進む"},{"n":"走り波","d":"勢いが乗る。広げどき"},{"n":"帆満ち","d":"いちばん速く進む。帆を張り切る"},{"n":"大海原","d":"見渡す限り開ける。成果を確かめる"},{"n":"波頭","d":"波が立ち始める。変化の兆し"},{"n":"無風","d":"風が止まる。足止め"},{"n":"遠雷","d":"遠くの嵐の気配が届く"},{"n":"黒雲","d":"空が暗くなる。荷を固める"},{"n":"時化","d":"いちばん荒れる。出航せず、守って耐える"},{"n":"大嵐","d":"荒れが続く。無理をせず、凌ぐ"},{"n":"嵐の眼","d":"中心だけ静か。ここで見極める"},{"n":"余波","d":"荒れの名残。静かに整理する"},{"n":"雲間","d":"光が差す。立て直して再出発"},{"n":"澄み潮","d":"水が澄んで見通せる。次の針路を決める"},{"n":"引き潮","d":"潮が引く。手放して整理する"},{"n":"底潮","d":"底を打って、折り返す。小さな光を見つける"},{"n":"夕凪","d":"静かに終わる。次の周期に備える"},{"n":"静潮","d":"いちばん静か。休んで、力を溜める"}];
 var STAGE_PTS=[4.5,5.5,5.5,6.5,6.5,7.5,8.5,9.5,10,10,7,5,4.5,3.5,1,1,2,4,5,7,5,3,4,6];
 // 日の海（12日で一巡する日ごとの波）は、これまでどおり12段階。名前は24段階の前半の名前を使う。
 var DAY_PTS=[5,6,7,9,10,6,4,1,3,6,4,5];
@@ -45,6 +45,28 @@ var TYPES=[];
     TYPES.push({mod:m,ni:ni,num:NUMS[ni],minus:!!mi,A:!!a,key:m*40+ni*4+mi*2+a});
   }
 })();
+/* ---- 人ごとの海の時計 ----
+   暦の24区間（c.stage）を、自分の時計の段階に読み替える。
+   ・起点: 季節の拠点が「帆満ち」（頂点）に来る。深さで±2段階ずれる（季節4×深さ5=20通り＋年のずれ）。
+   ・毎年のずれ: 時計が暦より少し速く進む。浅いほど速い（浅瀬6年・沿岸8年・沖合12年・深海24年で一巡）。
+   ・感度: 同じ海況でも、効き方の強弱はタイプで違う（深さ・A・−）。 */
+var BASE_SCALE=0.6;
+var DRIFT=[4,3,2,1];
+var SENS=[1.4,1.15,0.9,0.65];
+function depthGroup(t){ return t.ni<3?0:t.ni<5?1:t.ni<7?2:3; }
+export function personalStage(solarYear,stage,t){
+  var S=(solarYear-2000)*24+stage, d=DRIFT[depthGroup(t)];
+  var home=SEASON[t.mod].home*2, shift=Math.floor(t.ni/2)-2;
+  return (((S+Math.floor(S*d/24)-home+8+shift)%24)+24)%24;
+}
+function sensOf(t,dev){ var k=SENS[depthGroup(t)]*(t.A?1.25:1); if(dev<0&&t.minus) k*=1.3; return k; }
+function baseAt(solarYear,stage,t){ var dev=(STAGE_PTS[personalStage(solarYear,stage,t)]-5.5)*BASE_SCALE; return 5.5+dev*sensOf(t,dev); }
+/* 画面に出す海況の番号。タイプがあれば自分の時計、なければ暦のまま。 */
+export function stageFor(c,t){ return t?personalStage(c.solarYear,c.stage,t):c.stage; }
+export function monthStagesFor(solarYear,month,t){
+  var a=t?personalStage(solarYear,2*month,t):2*month, b=t?personalStage(solarYear,2*month+1,t):2*month+1;
+  return {n:STAGES[a].n,d:STAGES[a].d,second:STAGES[b]};
+}
 export function labelOf(t){ return SEASON[t.mod].n+(t.A?" A":"")+(t.minus?"-":"")+numStr(t.num); }
 
 /* stage は24段階。季節の拠点（home は12段階の番号）との近さを、これまでと同じ 0〜6 の目盛りで返す。 */
@@ -74,15 +96,16 @@ function partsFor(c,t){
   var depth=dd*(TIDE_AMP[c.tide]-0.55)*2;                     /* depth x moon distance (tide strength) */
   var ring=ringOf(c.stage,t.mod);
   var monthRelation=fivePhaseRelation(t,c.monthElement);
-  var aff=(1-ring/3)*1.5+monthRelation.score*.45;               /* solar month and the profile's five-phase correspondence */
+  var aff=monthRelation.score*.45;                              /* month's five-phase correspondence (the season's home is now the peak of the personal sea clock) */
   var comp=compOf(c.yearElement,c.yearBranchElement,t);        /* stem and branch elements x season profile */
   /* 日の海: a fast 12-day wave. Each type starts at its own position (season/depth/minus/A), so the order reshuffles every day. */
   var off=(t.mod*3+t.ni+(t.minus?5:0)+(t.A?7:0))%12, dpos=(c.dayBranchIndex+off)%12;
   var dayRelation=fivePhaseRelation(t,c.dayElement);
-  var day=(DAY_PTS[dpos]-5.5)/4.5*1.6+dayRelation.score*.35;
+  var wave=(DAY_PTS[dpos]-5.5)/4.5*1.6;
+  var day=wave*sensOf(t,wave)+dayRelation.score*.35;
   var vor=t.A? (TIDE_AMP[c.tide]-0.55)*1.6 : 0;                /* A (vortex) resonates with a near moon (big pull) */
   var hw=t.minus? -1.5 : 0;                                    /* 「−」: constant headwind, so minus types sink toward the bottom more often (design intent: 免罪符) */
-  return {base:STAGE_PTS[c.stage],moon:moon,depth:depth,aff:aff,comp:comp,ring:ring,day:day,dpos:dpos,vor:vor,hw:hw};
+  return {base:baseAt(c.solarYear,c.stage,t),moon:moon,depth:depth,aff:aff,comp:comp,ring:ring,day:day,dpos:dpos,vor:vor,hw:hw};
 }
 const tableCache = new Map();
 export function dayTable(c){
@@ -114,7 +137,7 @@ export function axes(c, row) {
 export function personalFor(c,prof,row){
   var offset=((prof.Y+prof.M+prof.D+(prof.total||0))%12+12)%12;
   var pos=(c.dayBranchIndex+offset)%12;
-  var wave=(DAY_PTS[pos]-5.5)/4.5*1.6;
+  var wave=(DAY_PTS[pos]-5.5)/4.5*1.6; wave=wave*sensOf(row.t,wave);
   var ret=(c.solarYear>prof.birthSolarYear&&c.yearBranchIndex===prof.birthYearBranchIndex)?1:0;
   return {pos:pos,wave:wave,ret:ret,delta:wave-row.p.day+ret};
 }
@@ -124,7 +147,7 @@ export function blockScoreOf(y,b,t){
   var yearElement=Math.floor(yearStem/2), yearBranchElement=BRANCH_ELEMENTS[outer], monthBranch=BRANCHES[(st+2)%12], monthElement=BRANCH_ELEMENTS[(st+2)%12];
   var monthRelation=fivePhaseRelation(t,monthElement);
   return {st:st,outer:outer,yearElement:yearElement,yearBranchElement:yearBranchElement,monthElement:monthElement,
-    score:(STAGE_PTS[2*st]+STAGE_PTS[2*st+1])/2+(1-(ringOf(2*st,t.mod)+ringOf(2*st+1,t.mod))/2/3)*1.5+monthRelation.score*.45+compOf(yearElement,yearBranchElement,t)+(t.minus?-1.5:0)};
+    score:(baseAt(y,2*st,t)+baseAt(y,2*st+1,t))/2+monthRelation.score*.45+compOf(yearElement,yearBranchElement,t)+(t.minus?-1.5:0)};
 }
 export function yearScoreOf(y,t){
   var outer=((y-4)%12+12)%12, sum=0, b;

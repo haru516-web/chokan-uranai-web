@@ -1,7 +1,7 @@
 // 占い結果の「詳しい運勢」。分野別の星、海のようす、ラッキー項目、明日の潮を、
 // その日の点数の内訳から決める（同じ人・同じ日なら必ず同じ結果）。
 import { addDays, calendarEvents, readDay, tiers, type Profile } from './domain';
-import { FIVE_PHASES, SEASON, STAGES } from './scoring';
+import { FIVE_PHASES, SEASON, STAGES, stageFor } from './scoring';
 
 type Reading = ReturnType<typeof readDay>;
 
@@ -16,7 +16,7 @@ const clamp = (value: number) => Math.max(0, Math.min(1, value));
 
 // 海のようす（段階ごとに3通り）
 const SEA = [
-  ['水面いっぱいに魚影が見える朝です。網を入れれば、入れただけ返ってきます。', '風も潮も、あなたの船の後ろから押しています。今日は海があなたの側にいます。', '年に何度もない、満ちきった潮です。ためらう時間がいちばんもったいない日。'],
+  ['南から、めでたい風が吹き抜ける朝です。帆を広げれば、広げただけ進みます。', '風も潮も、あなたの船の後ろから押しています。今日は海があなたの側にいます。', '年に何度もない、満ちきった潮です。ためらう時間がいちばんもったいない日。'],
   ['帆を張れば、ちゃんと進む海です。特別な準備はいりません。', '波は軽く、風は背中から。いつもの一歩が、少し遠くまで届きます。', '沖まで見通せる、気持ちのいい潮です。予定どおりに進めて大丈夫。'],
   ['鏡のように静かな海です。進むも休むも、あなたの速度で決められます。', '大きな波はありません。手元を整えるのに、ちょうどいい静けさです。', '風は弱く、潮もゆるやか。急がない用事から片づけると、一日がきれいに収まります。'],
   ['白波が立ちはじめています。遠出はやめて、岸の近くを進みましょう。', '風向きが定まらない海です。予定を一つ軽くしておくと、揺れても慌てずに済みます。', 'うねりが高い日です。大きな決断は、波が収まってからで間に合います。'],
@@ -124,7 +124,7 @@ export function tomorrowFor(today: Date, profile: Profile, todayRank: number) {
   return {
     date, level, tier: tiers[level], trend, hint,
     trendText: trend === 'up' ? '上げ潮（今日より追い風）' : trend === 'down' ? '下げ潮（今日より向かい風）' : '潮どまり（今日とほぼ同じ）',
-    moon: c.moon, phaseTide: c.phaseTide, stage: STAGES[c.stage].n, dayPillar: c.dayPillar,
+    moon: c.moon, phaseTide: c.phaseTide, stage: STAGES[stageFor(c, profile.t)].n, dayPillar: c.dayPillar,
     events: calendarEvents(date, profile).filter(event => event !== '帰郷の年'),
     month: c.MO, day: c.DA, weekday: '日月火水木金土'[c.wd],
   };

@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { shortDate, tierColors, tiers, type readDay } from './domain';
-import { FIVE_PHASES, OUTER, STAGES } from './scoring';
+import { FIVE_PHASES, OUTER, STAGES, stageFor } from './scoring';
 import { Gloss } from './Glossary';
 import { Card, S } from './ui';
 import type { ReactNode } from 'react';
@@ -31,7 +31,7 @@ export function LayeredReading({ reading, isToday = true, children }: ReadingCar
     <View style={S.row}>
       {([
         [context.yearPillar + '年', OUTER[context.outer].th, layers.year],
-        [isToday ? '今月' : 'この月', STAGES[context.stage].n, layers.block],
+        [isToday ? '今月' : 'この月', STAGES[stageFor(context, reading.row.t)].n, layers.block],
         [shortDate(context), context.dayPillar + ' · ' + context.moon, layers.day],
       ] as const).map(([when, theme, level]) => <View key={when} style={[styles.layer, { borderTopColor: tierColors[level] }]}>
         <Text style={S.tiny}>{when}</Text>

@@ -120,7 +120,7 @@ export const whys = ['望みが強い', '期限がある', 'まだ不安', '他�
 export const dones = ['できた', '少しだけ', 'できなかった'];
 export const learns = ['やって良かった', '思ってたのと違った', '理由は自分のものだった', '人の目が気になってた'];
 
-// 潮の段階（0 大漁 1 順風 2 凪 3 荒波 4 轟沈）→ 3つの行動の象徴
+// 潮の段階（0 凱風 1 順風 2 凪 3 荒波 4 轟沈）→ 3つの行動の象徴
 export function tideGuide(tier: number) {
   if (tier <= 1) return { mark: '⛵', name: '帆を張る日', line: '温めたものを、小さく外へ出してみる日。', suggest: 0 };
   if (tier === 2) return { mark: '🧭', name: '方角を確かめる日', line: '何を望むか整えて、準備する日。', suggest: 1 };

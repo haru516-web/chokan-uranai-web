@@ -7,7 +7,7 @@ import { Appear, useInView } from './FortuneDetail';
 import { GodAnimation } from './GodAnimation';
 import { Gloss } from './Glossary';
 import { ResidentSymbol, TideMarks } from './ResidentCard';
-import { OUTER, STAGES } from './scoring';
+import { OUTER, STAGES, stageFor } from './scoring';
 import { Button, C, Card, Chip, Chips, display, rounded, S, Section, tapFx } from './ui';
 import { categories, featuredQuestions, findQuestion, ownResident, questions, residentLens, type Question } from './voyage';
 import { Float, fx, Sparkles, TypeText } from './Visual';
@@ -197,7 +197,7 @@ export function QuestionAnswer({ question, profile, today, personal, saved, togg
         <Text style={S.h2}>いまの海を重ねる</Text>
         {([
           ['年の海流', OUTER[reading.context.outer].n, reading.layers.year],
-          ['この月の海況', STAGES[reading.context.stage].n, reading.layers.block],
+          ['この月の海況', STAGES[stageFor(reading.context, profile.t)].n, reading.layers.block],
           ['今日の潮', reading.context.moon, reading.layers.day],
         ] as const).map(([label, name, level]) => <View key={label} style={styles.layer}>
           <Text style={[styles.layerTier, { color: tierColors[level], borderColor: tierColors[level] }]}>{tiers[level]}</Text>

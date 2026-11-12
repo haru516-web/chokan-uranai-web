@@ -94,12 +94,12 @@ export function ResultPoster({ reading, band, personName, dateText, dayWord, ins
   const explainRank = () => explain({
     title: rank + '位 / 160', kicker: dayWord + 'の順位', mark: '位', color,
     body: glossary.順位.body,
-    rows: [['大漁', '1〜16位'], ['順風', '17〜56位'], ['凪', '57〜104位'], ['荒波', '105〜144位'], ['轟沈', '145〜160位']].map(([name, range], index) => ({
+    rows: [['凱風', '1〜16位'], ['順風', '17〜56位'], ['凪', '57〜104位'], ['荒波', '105〜144位'], ['轟沈', '145〜160位']].map(([name, range], index) => ({
       mark: name, label: range + (index === finalLevel ? '　← ' + dayWord + 'はここ' : ''), text: glossary[name].body.split('。')[0] + '。', color: COLORS[index],
     })),
     more: glossary.順位.more,
   });
-  const explainTier = () => explain({ ...glossary[['大漁', '順風', '凪', '荒波', '轟沈'][finalLevel]], color });
+  const explainTier = () => explain({ ...glossary[['凱風', '順風', '凪', '荒波', '轟沈'][finalLevel]], color });
 
   return <View {...(confirm ? fx('confirm') : {})} style={[styles.poster, glow(color), asStyle({
     borderColor: color, boxShadow: `0 0 0 1px ${color}66, 0 0 48px ${color}55`, transitionProperty: 'border-color, box-shadow', transitionDuration: '300ms',

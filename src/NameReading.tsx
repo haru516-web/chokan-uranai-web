@@ -46,7 +46,7 @@ export function NameReadingDetails({ profile }: { profile: Profile }) {
       <Text style={S.kicker}>壱　季節</Text>
       <Text style={S.h2}>{season.n}の海 · {nature.act}</Text>
       <Text style={S.body}>{nature.what}。得意なのは{nature.good}。気をつけたいのは{nature.care}です。</Text>
-      <Text style={S.body}>拠点の海況は「{STAGES[season.home * 2].n}」。{season.moon}に力が出やすく、正反対の季節は「{SEASON[(t.mod + 2) % 4].n}」です。</Text>
+      <Text style={S.body}>あなたの海の時計は、{season.n}の拠点で頂点の「{STAGES[8].n}」を迎え、毎年少しずつ前倒しで進みます。{season.moon}に力が出やすく、正反対の季節は「{SEASON[(t.mod + 2) % 4].n}」です。</Text>
       <Text style={S.tiny}>生年月日　（{Y}＋{M}＋{D}）÷ 4 の余り {t.mod}</Text>
     </Card>
     <Card>

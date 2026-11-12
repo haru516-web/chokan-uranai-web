@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, G, Line, Path, Polygon, Polyline, RadialGradient, Stop, Text as SvgText } from './web/svg';
 import { cycleFor, cycleTier, jstToday, tiers, type Profile } from './domain';
-import { blockScoreOf, ctxFor, labelOf, OUTER, STAGES, yearScoreOf, type SeaContext } from './scoring';
+import { blockScoreOf, ctxFor, labelOf, OUTER, personalStage, STAGES, stageFor, yearScoreOf, type SeaContext } from './scoring';
 import { C, S } from './ui';
 
 const spokes = Array.from({ length: 12 }, (_, index) => index);
@@ -50,7 +50,7 @@ export function SeaGlobe({ context }: { context: SeaContext }) {
   </View>;
 }
 
-// 大漁・順風・凪・荒波・轟沈の色。輪に色を載せて、年・月ごとの調子が一目でわかるようにする。
+// 凱風・順風・凪・荒波・轟沈の色。輪に色を載せて、年・月ごとの調子が一目でわかるようにする。
 const paper = ['#f4c86a', '#86d9b4', '#93b7f2', '#ef9d76', '#dc6f8e'];
 const rimColor = ['#fff0bd', '#c8f3df', '#d4e3ff', '#ffd2b8', '#ffc0d1'];
 
@@ -136,7 +136,7 @@ export function TideWheel({ context, profile, onMonth, onStage, onYear, animate 
           const tier = profile && cycle ? cycleTier(blockScoreOf(year, month, profile.t).score, cycle.blocks) : 2;
           const [x, y] = point(73, angle);
           const rotate = angle <= 180 ? angle - 90 : angle + 90;
-          const name = STAGES[stage].n;
+          const name = STAGES[profile ? personalStage(year, stage, profile.t) : stage].n;
           const on = stage === context.stage;
           return <G key={stage} onPress={futureStage(stage) ? undefined : () => onStage(stage)} style={dim(futureStage(stage))}>
             <Path d={wedge(46, 100, angle - 7.4, angle + 7.4)} fill={paper[tier]} fillOpacity={stage % 2 ? 1 : 0.9} stroke={on ? '#fff2c4' : '#181c30'} strokeWidth={on ? 2 : .6} />
@@ -165,7 +165,7 @@ export function TideWheel({ context, profile, onMonth, onStage, onYear, animate 
         <SvgText x={center} y="127" fill="#dfc38d" textAnchor="middle" fontSize="9.5">{profile ? labelOf(profile.t) : '潮環の輪'}</SvgText>
         <SvgText x={center} y="148" fill="#f8efd9" textAnchor="middle" fontSize="12.5" fontWeight="800">{context.yearPillar}年 · {context.MO}月</SvgText>
         <SvgText x={center} y="164" fill={yearTier === null ? '#e8cc93' : paper[yearTier]} textAnchor="middle" fontSize="8.5" fontWeight="800">{yearTier === null ? OUTER[context.outer].n : '年の運勢 · ' + tiers[yearTier]}</SvgText>
-        <SvgText x={center} y="178" fill="#f3dca4" textAnchor="middle" fontSize="9" fontWeight="700">{STAGES[context.stage].n}</SvgText>
+        <SvgText x={center} y="178" fill="#f3dca4" textAnchor="middle" fontSize="9" fontWeight="700">{STAGES[stageFor(context, profile?.t)].n}</SvgText>
       </G>
       <Polygon className="tide-pointer" points="150,10 145,2 155,2" fill="#f5d899" />
     </Svg>

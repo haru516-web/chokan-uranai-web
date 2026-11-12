@@ -1,5 +1,5 @@
 import { analyze, nameChars, strokeOf } from './strokes';
-import { NUMS, SEASON, STAGES, axes, blockScoreOf, ctxFor, dayTable, fivePhaseRelation, personalFor, yearScoreOf, type SeaContext, type SeaType } from './scoring';
+import { NUMS, SEASON, STAGES, stageFor, axes, blockScoreOf, ctxFor, dayTable, fivePhaseRelation, personalFor, yearScoreOf, type SeaContext, type SeaType } from './scoring';
 import content from './content.json';
 import readingText from './reading-text.json';
 
@@ -52,7 +52,7 @@ export function residentIndex(type: SeaType) {
   return ((type.mod + 3) % 4) * 4 + depth;
 }
 
-export const tiers = ['大漁', '順風', '凪', '荒波', '轟沈'] as const;
+export const tiers = ['凱風', '順風', '凪', '荒波', '轟沈'] as const;
 export const tierColors = ['#efd393', '#b6dfc4', '#c1d2ef', '#e3af92', '#e0a5b3'];
 type Tier = 0 | 1 | 2 | 3 | 4;
 
@@ -145,7 +145,7 @@ export function calendarEvents(date: Date, profile: Profile | null) {
   const c = ctxFor(date);
   const before = ctxFor(addDays(date, -1));
   const result = [];
-  if (before.stage !== c.stage) result.push('潮替わり · ' + STAGES[c.stage].n);
+  if (before.stage !== c.stage) result.push('潮替わり · ' + STAGES[stageFor(c, profile?.t)].n);
   if (before.solarYear !== c.solarYear) result.push('年の海流替わり · ' + c.yearPillar);
   // Use the day when the phase crosses 0° or 180° since the previous JST noon.
   if (before.ph > c.ph) result.push('月を読む日 · 新月');

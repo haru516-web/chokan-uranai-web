@@ -5,7 +5,7 @@ import { godArt, residentArt } from './art';
 import { dateLabel, type readDay, type Profile } from './domain';
 import { DailyRank } from './DailyRank';
 import { GodAnimation } from './GodAnimation';
-import { labelOf, OUTER, SEASON, solarMonthStartDate, solarStageStartDate, STAGES } from './scoring';
+import { labelOf, OUTER, SEASON, solarMonthStartDate, solarStageStartDate, STAGES, stageFor } from './scoring';
 import { TideWheel } from './TideCharts';
 import { Button, C, Card, Chip, Chips, S } from './ui';
 import { headwind, ownResident, residents, vortex } from './voyage';
@@ -62,7 +62,7 @@ export function TideSummary({ profile, reading, isToday = true, children }: {
       <GodAnimation index={season} style={styles.god} label={SEASON[season].n + 'の神'} />
       <View style={styles.rank}><DailyRank reading={reading} isToday={isToday} /></View>
     </View>
-    <Text style={[S.tiny, styles.center]}>{context.yearPillar}　／　{OUTER[context.outer].n}　·　{STAGES[context.stage].n}　／　{context.moon}</Text>
+    <Text style={[S.tiny, styles.center]}>{context.yearPillar}　／　{OUTER[context.outer].n}　·　{STAGES[stageFor(context, profile.t)].n}　／　{context.moon}</Text>
     {children}
   </View>;
 }

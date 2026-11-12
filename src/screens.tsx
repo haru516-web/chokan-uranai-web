@@ -8,7 +8,7 @@ import { GodAnimation } from './GodAnimation';
 import { Gloss } from './Glossary';
 import { TypeTraits } from './NameReading';
 import { TideMarks } from './ResidentCard';
-import { ctxFor, dayTable, FIVE_PHASES, labelOf, MONTH_STAGES, OUTER, SEASON, solarMonthStartDate, solarStageStartDate, STAGES, yearScoreOf, blockScoreOf } from './scoring';
+import { ctxFor, dayTable, FIVE_PHASES, labelOf, monthStagesFor, OUTER, SEASON, solarMonthStartDate, solarStageStartDate, STAGES, stageFor, yearScoreOf, blockScoreOf } from './scoring';
 import { TideWheel } from './TideCharts';
 import { Art, Button, C, Card, Chip, Chips, Fold, Heading, NextLinks, S, Section, Tile, tapFx, useColumns } from './ui';
 import { findQuestion, ownResident, residents, type Reflection, type SavedQuestion } from './voyage';
@@ -26,7 +26,8 @@ export function Calendar({ today, profile, initial }: { today: Date; profile: Pr
   const c = ctxFor(date);
   const list = mode === 'current' ? OUTER : STAGES;
   const images = mode === 'current' ? currents : stages;
-  const index = selected ?? (mode === 'current' ? c.outer : c.stage);
+  const stageIndex = stageFor(c, profile?.t);
+  const index = selected ?? (mode === 'current' ? c.outer : stageIndex);
   const [name, description, prompt] = (mode === 'current' ? content.currents : content.stages)[index];
   const events = calendarEvents(date, profile);
   const monthStart = new Date(Date.UTC(c.Y, c.MO - 1, 1));
@@ -65,8 +66,8 @@ export function Calendar({ today, profile, initial }: { today: Date; profile: Pr
       <Text style={S.tiny}>年干 {c.yearStem}（{c.yearPolarity}・{FIVE_PHASES[c.yearElement].name}）· 年支 {c.yearBranch}（{FIVE_PHASES[c.yearBranchElement].name}）　／　月支 {c.monthBranch}</Text>
       {yearLevel !== null && <Text style={[S.h3, { color: tierColors[yearLevel] }]}>年の運勢　{tiers[yearLevel]}</Text>}
       <Text style={S.kicker}>いまの海況</Text>
-      <Text style={S.h3}>{STAGES[c.stage].n}{blockLevel !== null ? '　／　' + tiers[blockLevel] : ''}</Text>
-      <Text style={S.body}>{STAGES[c.stage].d}。</Text>
+      <Text style={S.h3}>{STAGES[stageIndex].n}{blockLevel !== null ? '　／　' + tiers[blockLevel] : ''}</Text>
+      <Text style={S.body}>{STAGES[stageIndex].d}。</Text>
     </Card>
     <Button quiet onPress={() => setShowCycle(!showCycle)}>{showCycle ? '見取り図を閉じる' : '過去の流れを見比べる'}</Button>
     {showCycle && <Card>
@@ -79,7 +80,7 @@ export function Calendar({ today, profile, initial }: { today: Date; profile: Pr
         const isYear = cycleMode === 'year';
         const solarMonth = ((block + step) % 12 + 12) % 12;
         const y = c.solarYear + (isYear ? step : Math.floor((block + step) / 12));
-        const item = isYear ? OUTER[(c.outer + step + 12) % 12] : MONTH_STAGES[solarMonth];
+        const item = isYear ? OUTER[(c.outer + step + 12) % 12] : monthStagesFor(y, solarMonth, profile?.t);
         const level = profile && cycle ? isYear ? cycleTier(yearScoreOf(y, profile.t).score, cycle.years)
           : cycleTier(blockScoreOf(y, solarMonth, profile.t).score, cycle.blocks) : null;
         return <Pressable {...tapFx} accessibilityRole="button" key={step} onPress={() => choose(isYear ? solarMonthStartDate(y, 0) : solarMonthStartDate(y, solarMonth))}
@@ -165,7 +166,7 @@ export function Atlas({ profile, favorites, open, myth, pair, create }: {
     <Section title="四季の神様" note="16のタイプを季節ごとに見守る、四柱の神様。" />
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 }}>
       {seasonGods.map(item => <View key={item.name} style={[S.card, { width: columnWidth, alignItems: 'center', padding: 12, gap: 4 }]}>
-        <GodAnimation index={item.god} style={{ width: 96 }} label={item.name + '（' + item.season + '）'} />
+        <GodAnimation forcePlay index={item.god} style={{ width: 96 }} label={item.name + '（' + item.season + '）'} />
         <Text style={S.kicker}>{item.season}の神</Text>
         <Text style={S.h2}>{item.name}</Text>
         <Text style={[S.tiny, { textAlign: 'center' }]}>{item.role}</Text>
