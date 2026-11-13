@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Pressable, StyleSheet, Text, View, type GestureResponderEvent } from 'react-native';
 import { tarotBack } from './art';
@@ -6,6 +6,7 @@ import { dateKey } from './domain';
 import { Image } from './web/image';
 import { findTarot, seasonNames, tarotSpread, tarotTone, type Level, type Season, type TarotCard } from './tarotDeck';
 import { Button, C, Heading, NextLinks, S } from './ui';
+import { startTarotFx } from './tarotFx';
 
 export type SavedTarotDraw = { day: string; cardId: string };
 
@@ -43,6 +44,28 @@ export function TarotHome({ goToday, ...props }: React.ComponentProps<typeof Dai
   </View>;
 }
 
+const FLY_MS = 1700;   // 札が飛んできて開くまで（magic の tarot-fly と同じ長さ）
+
+/** めくった札のまわりに、その札の光景（光の粒・光の筋・稲妻）を描く。奥と手前の二枚に分けて、札の絵は隠さない。 */
+function TarotFx({ cardId }: { cardId: string }) {
+  const back = useRef<HTMLCanvasElement>(null);
+  const front = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    if (!back.current || !front.current) return;
+    return startTarotFx(back.current, front.current, {
+      cardId, landAt: FLY_MS / 1000,
+      box: () => document.querySelector('[data-ui="tarot-card"]')?.getBoundingClientRect() ?? null,
+      onShake: () => document.querySelector('[data-ui="tarot-stage"]')?.animate(
+        [{ transform: 'none' }, { transform: 'translate(-7px, 4px)' }, { transform: 'translate(6px, -4px)' }, { transform: 'translate(-4px, 2px)' }, { transform: 'translate(2px, -1px)' }, { transform: 'none' }],
+        { duration: 420, easing: 'ease-out' }),
+    });
+  }, [cardId]);
+  return <>
+    <canvas ref={back} className="tarot-fx tarot-fx-back" aria-hidden="true" />
+    <canvas ref={front} className="tarot-fx tarot-fx-front" aria-hidden="true" />
+  </>;
+}
+
 type Flight = { card: TarotCard; dx: number; dy: number; s: number; w: number };
 
 /**
@@ -69,7 +92,7 @@ export function DailyTarot({ today, savedDraw, log, onDraw, personKey, season, l
 
   useEffect(() => {
     if (!flight) { setLanded(false); return; }
-    const timer = setTimeout(() => setLanded(true), 1700);
+    const timer = setTimeout(() => setLanded(true), FLY_MS);
     return () => clearTimeout(timer);
   }, [flight]);
 
@@ -132,6 +155,7 @@ export function DailyTarot({ today, savedDraw, log, onDraw, personKey, season, l
 
     {flight && typeof document !== 'undefined' && createPortal(<Pressable accessibilityRole="button" accessibilityLabel="閉じる" onPress={() => { if (landed) setFlight(null); }}
       {...({ dataSet: { ui: 'tarot-overlay' } } as object)}>
+      <TarotFx cardId={flight.card.id} />
       <View {...({ dataSet: { ui: 'tarot-stage' } } as object)}>
         <View {...({ dataSet: { ui: 'tarot-card' } } as object)}
           style={{ width: flight.w, height: flight.w * 1.5, '--dx': flight.dx + 'px', '--dy': flight.dy + 'px', '--s': flight.s } as object}>

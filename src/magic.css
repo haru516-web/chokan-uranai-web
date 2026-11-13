@@ -148,3 +148,8 @@
 @keyframes fx-quake2 { 0%, 100% { transform: none; filter: brightness(1); } 10% { transform: translate(8px, 4px) rotate(.7deg); filter: brightness(1.8); } 24% { transform: translate(-7px, -5px) rotate(-.6deg); } 40% { transform: translate(5px, 3px) rotate(.3deg); filter: brightness(1.25); } 58% { transform: translate(-4px, -2px); } 76% { transform: translate(2px, 1px); } }
 [data-fx="quake"] { animation: fx-quake .55s ease-out both !important; }
 [data-fx="quake2"] { animation: fx-quake2 .55s ease-out both !important; }
+
+/* タロットをめくったときの光景（tarotFx）。奥の一枚は札の後ろ、手前の一枚は札の前に重ねる。 */
+.tarot-fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.tarot-fx-back { z-index: -1; }
+.tarot-fx-front { z-index: 2; }
