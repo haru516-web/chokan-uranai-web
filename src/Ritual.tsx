@@ -1,16 +1,24 @@
-// 鑑定の儀式。入力の直後、何を読んでいるのかを一つずつ見せてから結果をひらく。タップで飛ばせる。
-import { useEffect, useState } from 'react';
+// 鑑定の儀式。入力の直後、嵐の海の上で四重の光の輪が満ちていき、何を読んでいるのかを一つずつ見せてから結果をひらく。タップで飛ばせる。
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ritualBg } from './art';
 import type { Profile } from './domain';
 import { GodAnimation } from './GodAnimation';
+import { hexToRgb, RING_COUNT, startStorm } from './ritualStorm';
 import { ctxFor, SEASON, STAGES, stageFor } from './scoring';
 
-const STEP_MS = 850;
+const ORIGIN_GOD = 4;   // 源神（潮祖）
 
 export function Ritual({ profile, today, onDone }: { profile: Profile; today: Date; onDone: () => void }) {
-  const [step, setStep] = useState(0);
+  const [done, setDone] = useState(0);
+  const [opened, setOpened] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const percent = useRef<HTMLSpanElement>(null);
+  const finish = useRef(onDone);
+  finish.current = onDone;
+
   const c = ctxFor(today);
   const season = SEASON[profile.t.mod];
   const steps = [
@@ -19,41 +27,52 @@ export function Ritual({ profile, today, onDone }: { profile: Profile; today: Da
     { label: '今日の月を読む', value: `${c.MO}月${c.DA}日`, result: c.moon + '・' + c.phaseTide },
     { label: '三つの潮を重ねる', value: c.yearPillar + '年・' + c.MO + '月', result: STAGES[stageFor(c, profile.t)].n },
   ];
+  const now = steps[Math.min(done, RING_COUNT - 1)];
 
   useEffect(() => {
-    if (leaving) { const timer = setTimeout(onDone, 520); return () => clearTimeout(timer); }
-    if (step >= steps.length) { const timer = setTimeout(() => setLeaving(true), 350); return () => clearTimeout(timer); }
-    const timer = setTimeout(() => setStep(value => value + 1), STEP_MS);
-    return () => clearTimeout(timer);
-  }, [step, leaving, onDone, steps.length]);
+    if (!canvas.current) return;
+    return startStorm(canvas.current, {
+      tint: hexToRgb(season.col),
+      calm: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+      onLayout: (cx, cy, r) => {
+        root.current?.style.setProperty('--cx', cx + 'px');
+        root.current?.style.setProperty('--cy', cy + 'px');
+        root.current?.style.setProperty('--r', r + 'px');
+      },
+      onStep: setDone,
+      onPercent: value => { if (percent.current) percent.current.textContent = String(value); },
+      onFinale: () => setOpened(true),
+      onEnd: () => setLeaving(true),
+    });
+    // 一度きりの演出。途中で人や日付が変わっても描き直さない。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  return createPortal(<div className="ritual" data-leaving={leaving} style={{ '--tint': season.col, ...(ritualBg ? { backgroundImage: `linear-gradient(rgba(7,10,21,.55), rgba(7,10,21,.82)), url(${ritualBg})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}) } as React.CSSProperties}
+  useEffect(() => {
+    if (!leaving) return;
+    const timer = setTimeout(() => finish.current(), 620);
+    return () => clearTimeout(timer);
+  }, [leaving]);
+
+  return createPortal(<div ref={root} className="ritual" data-leaving={leaving} data-opened={opened}
+    style={{ '--tint': season.col, ...(ritualBg ? { backgroundImage: `url(${ritualBg})` } : {}) } as React.CSSProperties}
     role="status" aria-live="polite" onClick={() => setLeaving(true)}>
-    <div className="ritual-stars" aria-hidden="true">{Array.from({ length: 26 }, (_, i) => <i key={i} style={{
-      left: (i * 37 + 11) % 100 + '%', top: (i * 53 + 7) % 100 + '%', animationDelay: (i % 9) * 0.27 + 's', fontSize: 8 + (i % 4) * 4,
-    }}>✦</i>)}</div>
-    <div className="ritual-core" aria-hidden="true">
-      <svg viewBox="0 0 200 200" className="ritual-ring ritual-ring-a">
-        <circle cx="100" cy="100" r="96" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="2 7" />
-        {Array.from({ length: 12 }, (_, i) => <line key={i} x1="100" y1="6" x2="100" y2={i % 3 ? 14 : 22} stroke="currentColor" strokeWidth={i % 3 ? 1 : 2} transform={`rotate(${i * 30} 100 100)`} />)}
-      </svg>
-      <svg viewBox="0 0 200 200" className="ritual-ring ritual-ring-b">
-        <circle cx="100" cy="100" r="74" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="28 10" />
-        {Array.from({ length: 24 }, (_, i) => <circle key={i} cx="100" cy="30" r={i % 2 ? 1.2 : 2.2} fill="currentColor" transform={`rotate(${i * 15} 100 100)`} />)}
-      </svg>
-      <svg viewBox="0 0 200 200" className="ritual-ring ritual-ring-c">
-        <path d="M100 48 A52 52 0 1 1 99.9 48" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
-          strokeDasharray="327" strokeDashoffset={327 - 327 * Math.min(step, steps.length) / steps.length} style={{ transition: 'stroke-dashoffset .8s cubic-bezier(.2,.8,.2,1)' }} />
-      </svg>
-      <div className="ritual-god"><GodAnimation forcePlay index={step >= 1 ? profile.t.mod : 4} style={{ width: 96 }} /></div>
+    <canvas ref={canvas} className="ritual-sky" aria-hidden="true" />
+    <div className="ritual-god" aria-hidden="true">
+      <div key={done} className="ritual-god-beat"><GodAnimation forcePlay index={ORIGIN_GOD} style={{ width: '100%' }} /></div>
     </div>
-    <ol className="ritual-steps">
-      {steps.map((item, index) => <li key={item.label} data-state={index < step ? 'done' : index === step ? 'now' : 'wait'}>
-        <span className="ritual-dot" aria-hidden="true">{index < step ? '✓' : '◇'}</span>
-        <span className="ritual-label">{item.label}<small>{item.value}</small></span>
-        <b className="ritual-result">{index < step ? item.result : '…'}</b>
-      </li>)}
-    </ol>
+    <div className="ritual-read">
+      <p key={opened ? 'open' : done} className="ritual-now">
+        {opened || done >= RING_COUNT ? 'あなたの海が、ひらきます' : now.label}
+        <small>{opened || done >= RING_COUNT ? season.n + 'の海 ・ ' + steps[3].result : now.value}</small>
+      </p>
+      <p className="ritual-percent" aria-hidden="true"><span ref={percent}>0</span><i>%</i></p>
+      <ol className="ritual-found">
+        {steps.map((item, index) => <li key={item.label} data-state={index < done ? 'done' : index === done ? 'now' : 'wait'}>
+          <span className="ritual-sr">{item.label}：</span>{index < done ? item.result : '・・・'}
+        </li>)}
+      </ol>
+    </div>
     <p className="ritual-skip">タップで結果へ</p>
   </div>, document.body);
 }

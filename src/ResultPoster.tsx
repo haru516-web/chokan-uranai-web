@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { GodAnimation } from './GodAnimation';
 import { content, residentIndex, type readDay } from './domain';
@@ -9,6 +10,8 @@ import { labelOf, SEASON } from './scoring';
 import { residents } from './voyage';
 import { C, display, rounded, S } from './ui';
 import { imeSegmentsFor } from './kana';
+import { startResultFx } from './resultFx';
+import { hexToRgb } from './ritualStorm';
 import { Burst, Float, fx, glow, GlowPulse, ImeText, imeDuration, Reveal, Sparkles, TierStrip, TypeText, Waves } from './Visual';
 
 type Reading = ReturnType<typeof readDay>;
@@ -24,6 +27,34 @@ const DONE_AT = COUNT_START + COUNT_MS;
 
 const asStyle = (style: object) => style as unknown as ViewStyle;
 
+/** 確定の瞬間の光景を、画面いっぱいの canvas に描く。数字の位置を追いかけるので、ポスターの外まで光が届く。 */
+function ResultFx({ color, level, done, onShake }: { color: string; level: number; done: boolean; onShake: () => void }) {
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const engine = useRef<ReturnType<typeof startResultFx> | null>(null);
+  const shake = useRef(onShake);
+  shake.current = onShake;
+  const [alive, setAlive] = useState(true);
+  useEffect(() => {
+    if (!canvas.current) return;
+    const started = startResultFx(canvas.current, {
+      anchor: () => {
+        const box = document.querySelector('[data-ui="rank"]')?.getBoundingClientRect();
+        return box ? { x: box.left + box.width / 2, y: box.top + box.height / 2 } : null;
+      },
+      chargeAt: COUNT_START / 1000,
+      onShake: () => shake.current(),
+      onEnd: () => setAlive(false),
+    });
+    engine.current = started;
+    return () => started.stop();
+  }, []);
+  useEffect(() => {
+    if (done) engine.current?.finish(level, hexToRgb(color));
+    else engine.current?.setColor(hexToRgb(color));
+  }, [done, level, color]);
+  return alive ? createPortal(<canvas ref={canvas} className="result-fx" aria-hidden="true" />, document.body) : null;
+}
+
 /**
  * 占い結果のポスター。順位を1位から数え上げ、通過する段階の色へ枠・波・数字が変わっていき、
  * 該当順位で止まった瞬間に全体が「確定」の動きをする。
@@ -35,6 +66,7 @@ export function ResultPoster({ reading, band, personName, dateText, dayWord, ins
   const finalLevel = levelOfRank(rank);
   const [value, setValue] = useState(instant ? rank : 1);
   const [done, setDone] = useState(instant);
+  const [quake, setQuake] = useState(0);
 
   useEffect(() => {
     if (instant) { setValue(rank); setDone(true); return; }
@@ -101,13 +133,14 @@ export function ResultPoster({ reading, band, personName, dateText, dayWord, ins
   });
   const explainTier = () => explain({ ...glossary[['凱風', '順風', '凪', '荒波', '轟沈'][finalLevel]], color });
 
-  return <View {...(confirm ? fx('confirm') : {})} style={[styles.poster, glow(color), asStyle({
+  return <View {...(quake ? fx(quake % 2 ? 'quake' : 'quake2') : confirm ? fx('confirm') : {})} style={[styles.poster, glow(color), asStyle({
     borderColor: color, boxShadow: `0 0 0 1px ${color}66, 0 0 48px ${color}55`, transitionProperty: 'border-color, box-shadow', transitionDuration: '300ms',
   })]}>
     <Waves color={color} level={level} />
     {danger && <GlowPulse color={color} />}
     <Sparkles color={color} />
     {confirm && <Burst color={color} />}
+    {!instant && <ResultFx color={color} level={finalLevel} done={done} onShake={() => setQuake(count => count + 1)} />}
     <View style={S.between}>
       <Text style={S.kicker}>{dateText}</Text>
       <Text style={[S.kicker, { color: C.ink, opacity: .7 }]}>潮環占い</Text>
@@ -133,9 +166,9 @@ export function ResultPoster({ reading, band, personName, dateText, dayWord, ins
       </View>
     </Reveal>
     <Reveal kind="fade" delay={1100 + o} instant={instant} style={{ alignItems: 'center' }}>
-      <Pressable disabled={!done} onPress={explainRank} accessibilityRole="button"><View {...punch(150)}>
+      <Pressable disabled={!done} onPress={explainRank} accessibilityRole="button"><View {...(confirm ? fx('lock') : {})}>
         <Text accessibilityLabel={`${dayWord}は160タイプ中${rank}位`} style={styles.rankLine}>
-          <Text style={[styles.rankNum, { color }]}>{value}</Text> 位 / 160
+          <Text {...({ dataSet: { ui: 'rank' } } as object)} style={[styles.rankNum, { color }, done && asStyle({ textShadow: `0 0 22px ${color}aa` })]}>{value}</Text> 位 / 160
         </Text>
       </View></Pressable>
     </Reveal>

@@ -30,6 +30,7 @@ const detailTitles: Record<string, string> = {
 import { Explanation } from './Explanation';
 import { GlossProvider } from './Glossary';
 import { Ritual } from './Ritual';
+import { Opening } from './Opening';
 import { PeopleManager, PersonSwitcher, type Person } from './People';
 import { SelfHome, SelfQuiz, SelfResultView, SelfWish } from './SelfPurity';
 import { emptySelf, quadOf, quads, score, type Move, type SelfState } from './self';
@@ -60,10 +61,13 @@ const storageKey = 'chokan/v1';
 let pendingSave: Promise<void> = Promise.resolve();
 
 export default function App() {
-  return <SafeAreaProvider><GlossProvider><Voyage /></GlossProvider></SafeAreaProvider>;
+  // オープニングの幕が上がりはじめるまで、下の画面の登場演出（順位の数え上げなど）を待たせる。
+  const [opening, setOpening] = useState<'play' | 'leaving' | 'done'>('play');
+  return <SafeAreaProvider><GlossProvider><Voyage hold={opening === 'play'} />
+    {opening !== 'done' && <Opening onReveal={() => setOpening('leaving')} onDone={() => setOpening('done')} />}</GlossProvider></SafeAreaProvider>;
 }
 
-function Voyage() {
+function Voyage({ hold }: { hold: boolean }) {
   const windowWidth = useWindowDimensions().width;
   const wide = windowWidth >= 720;
   const desktop = windowWidth >= 1000;
@@ -404,7 +408,7 @@ function Voyage() {
       {ready ? <>
         <ScrollView key={`${tab}-${todayVisit}`} {...({ dataSet: { screen: tab, layer: 'tab' } } as object)} style={[layout.scroll, detail && layout.hidden]} contentContainerStyle={[layout.content, desktop && layout.contentDesktop]}
           keyboardShouldPersistTaps="handled">
-          {ritual && profile ? null : body}
+          {hold || (ritual && profile) ? null : body}
         </ScrollView>
         {path.map((entry, index) => <ScrollView key={entry.kind + index} {...({ dataSet: { screen: entry.kind, layer: 'detail' } } as object)}
           style={[layout.scroll, index !== path.length - 1 && layout.hidden]} contentContainerStyle={entry.kind === 'explanation' ? { backgroundColor: '#f5f7fb', paddingBottom: 50 } : [layout.content, desktop && layout.contentDesktop]}

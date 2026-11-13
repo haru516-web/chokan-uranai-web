@@ -121,17 +121,6 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
     <View style={desktop ? { flexDirection: 'row', gap: 13, alignItems: 'stretch' } : S.stack}>
     <Door fill={desktop} color={C.gold} big badge="まずはこれ" kicker="占い" title="今日の運勢を占う" hint="生年月日と名前だけ・30秒" cta="占ってみる" onPress={create}
       art={<Float><GodAnimation forcePlay index={4} style={{ width: 104 }} /></Float>} />
-    <Door fill={desktop} color="#9fd8c7" kicker="自己診断" title="自己純度を測る" hint="名前も入力もなし・約1分" cta="診断する" onPress={startQuiz}
-      art={<Float>{iconArt.compass ? <Image source={iconArt.compass} style={{ width: 88, height: 88 }} contentFit="contain" accessible={false} /> : <Text style={styles.doorIcon}>🧭</Text>}</Float>} />
-    </View>
-    <DailyTarot today={today} savedDraw={tarotDraw} log={tarotLog} onDraw={onDrawTarot} personKey="guest" season={null} level={null} onCreate={create} />
-    <View style={S.row}>
-      <Pressable accessibilityRole="button" onPress={openQuestions} {...({ dataSet: { ui: 'tap' } } as object)} style={({ pressed }) => [S.card, styles.small, pressed && { opacity: .7 }]}>
-        {iconArt.question ? <Image source={iconArt.question} style={{ width: 40, height: 40 }} contentFit="contain" accessible={false} /> : <Text style={styles.smallIcon}>💭</Text>}<Text style={S.h3}>悩みから問いを読む</Text><Text style={S.tiny}>入力なし</Text>
-      </Pressable>
-      <Pressable accessibilityRole="button" onPress={openExplanation} {...({ dataSet: { ui: 'tap' } } as object)} style={({ pressed }) => [S.card, styles.small, pressed && { opacity: .7 }]}>
-        {iconArt.book ? <Image source={iconArt.book} style={{ width: 40, height: 40 }} contentFit="contain" accessible={false} /> : <Text style={styles.smallIcon}>📖</Text>}<Text style={S.h3}>仕組みを知る</Text><Text style={S.tiny}>図で説明</Text>
-      </Pressable>
     </View>
     <Fold title="今日の海をのぞく" hint="日付と月だけでわかる、今日の海のようす" open={fold === 'moon'} onToggle={() => toggle('moon')}>
       <Text style={S.tiny}>{c.yearPillar}　／　{OUTER[c.outer].n}　／　{STAGES[stageIndex].n}</Text>
@@ -164,8 +153,6 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
     </View>
     {!!shareMessage && <Text selectable accessibilityLiveRegion="polite" style={S.tiny}>{shareMessage}</Text>}
     {dayNavigation}
-    <DailyTarot today={today} savedDraw={tarotDraw} log={tarotLog} onDraw={onDrawTarot} personKey={'k' + profile.t.key}
-      season={seasonOf(profile.t.mod)} level={tarotLevel} />
     <PersonSwitcher people={people} activeId={activeId} onSwitch={onSwitch} onAdd={onAdd} onManage={onManage} />
 
     {(departureDay || tideChange || homecoming || revisit || currentQuestion) && <View style={S.stack}>
@@ -245,18 +232,8 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
       </Scene>}
     </View>
 
-    <Pressable accessibilityRole="button" onPress={selfLast ? goSelf : startQuiz} style={({ pressed }) => [styles.banner, pressed && { opacity: .8 }]}>
-      <Text style={{ fontSize: 30 }}>{selfLast ? selfLast.mark : '🧭'}</Text>
-      <View style={{ flex: 1 }}>
-        <Text style={[S.kicker, { color: '#9fd8c7' }]}>自己診断</Text>
-        <Text style={S.h3}>{selfLast ? '前回は「' + selfLast.name + '」。変化を見る' : 'あなたは自分で選べてる？（約1分）'}</Text>
-      </View>
-      <Text style={[S.h2, { color: '#9fd8c7' }]}>›</Text>
-    </Pressable>
-
     <Text style={S.h2}>次はどうする？</Text>
     <NextLinks items={[
-      { icon: '🧭', label: '自分の判断を見つめる（自己診断）', hint: '8つの場面を直感で選ぶ・約1分', onPress: goSelf },
       { icon: '💭', label: '今の気持ちに近い問いを読む', hint: '悩みから選べます', onPress: openQuestions },
       { icon: '📊', label: 'この日の160名札の順位', hint: '全タイプの中での位置', onPress: () => ranks(date) },
       { icon: '🖼️', label: '潮札を画像で共有', onPress: shareTideCard },
