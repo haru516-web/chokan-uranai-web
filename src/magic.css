@@ -252,3 +252,6 @@
   animation: glow-run var(--glow-dur, 6s) linear var(--glow-delay, 0s) infinite;
 }
 [data-glow-card]::after { padding: 5px; filter: blur(6px); opacity: .85; }
+
+/* 年・月・日のカードが、順に弾んで現れる */
+[data-gd="pop"] { animation: gd-pop .6s cubic-bezier(.2, .9, .3, 1.2) both; }

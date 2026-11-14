@@ -71,16 +71,14 @@ export function TideFlow({ profile, context, showCalendar }: {
   profile: Profile; context: ReturnType<typeof readDay>['context'];
   showCalendar: (date: Date, mode: 'current' | 'stage') => void;
 }) {
-  const [replay, setReplay] = useState(0);
   return <Card>
     <View style={styles.flow}>
       <Text style={[S.h2, styles.center]} accessibilityRole="header">運勢の流れ</Text>
       <Text style={[S.tiny, styles.center]}>外側は十二支で巡る年の海流、内側は月と、約半月ごとの海況です。</Text>
-      <TideWheel key={replay} pastOnly context={context} profile={profile}
+      <TideWheel pastOnly context={context} profile={profile}
         onYear={year => showCalendar(solarMonthStartDate(year, context.solarMonth), 'current')}
         onStage={stage => showCalendar(solarStageStartDate(context.solarYear, stage), 'stage')}
         onMonth={month => showCalendar(new Date(Date.UTC(context.Y, month - 1, 1)), 'stage')} />
-      <Button quiet onPress={() => setReplay(value => value + 1)}>▶ もう一度回す</Button>
     </View>
   </Card>;
 }

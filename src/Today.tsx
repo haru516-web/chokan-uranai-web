@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import type { ReactNode } from 'react';
-import { currents, iconArt, scenes, stages, tierArt } from './art';
+import { currents, iconArt, residentArt, scenes, stages, tierArt } from './art';
 import { Image } from './web/image';
 import { LayeredReading } from './DailyReading';
-import { addDays, calendarEvents, dateKey, dateLabel, readDay, shortDate, tierColors, tiers, type Profile } from './domain';
+import { addDays, calendarEvents, dateKey, dateLabel, readDay, residentIndex, shortDate, tierColors, tiers, type Profile } from './domain';
 import { BornSea, NameReadingDetails, TypeTraits } from './NameReading';
 import { SelectedQuestionReading } from './Questions';
 import { TideFlow } from './ResidentCard';
@@ -68,7 +68,6 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
   const isFullMoon = events.some(event => event.includes('満月'));
   const isToday = offset === 0;
   const resident = profile && ownResident(profile);
-  const o = resident ? 1 : 0; // 「あなたのタイプ」の章が先頭にあるぶん、以降の章番号をずらす
   const currentQuestion = isToday && profile ? selectedQuestion : undefined;
   const revisit = question && previous && question.id !== currentQuestion?.question.id ? question : null;
   const departureDay = isToday && events.includes('私の出航日') && (!previous || !previous.title.startsWith('出航日'));
@@ -183,6 +182,26 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
       {currentQuestion && <SelectedQuestionReading question={currentQuestion.question} profile={profile} />}
     </View>}
 
+    {resident && <View key={'type-' + activeId} style={styles.typeSection}>
+      <View style={[S.card, glow(SEASON[profile.t.mod].col), styles.typeHero]}>
+        <View style={styles.typeTop}>
+          <View style={[styles.portrait, { borderColor: SEASON[profile.t.mod].col }]}>
+            <Image source={residentArt[residentIndex(profile.t)]} accessible={false} style={styles.portraitImg} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+            <Text style={[S.kicker, { color: SEASON[profile.t.mod].col }]}>あなたのタイプ　{labelOf(profile.t)}</Text>
+            <Text accessibilityRole="header" style={styles.typeTitle}>{resident.band}</Text>
+            <Text style={styles.typeSub}>{resident.subtitle}</Text>
+          </View>
+        </View>
+        <Text style={styles.typeHook}>{resident.hook}</Text>
+        <Text style={styles.detail}>{resident.inner}</Text>
+      </View>
+      <TypeTraits entry={resident} />
+      <Button quiet onPress={() => setShowName(!showName)}>{showName ? '名札の決まり方を閉じる' : '名札の決まり方を詳しく見る'}</Button>
+      {showName && <NameReadingDetails profile={profile} />}
+    </View>}
+
     <View style={styles.bookHead}>
       <Text style={[S.kicker, { color: tierColor }]}>{dateLabel(c)}</Text>
       <Text accessibilityRole="header" style={styles.bookTitle}>{dayWord}の鑑定書</Text>
@@ -190,14 +209,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
     </View>
 
     <View key={'story' + seenKey}>
-      {resident && <Scene index={0} color={SEASON[profile.t.mod].col} kicker={'あなたのタイプ　' + labelOf(profile.t)} title={resident.band + '　' + resident.subtitle} lead={resident.hook} next={dayWord + 'の海'}>
-        <Text style={styles.detail}>{resident.inner}</Text>
-        <TypeTraits entry={resident} />
-        <Button quiet onPress={() => setShowName(!showName)}>{showName ? '名札の決まり方を閉じる' : '名札の決まり方を詳しく見る'}</Button>
-        {showName && <NameReadingDetails profile={profile} />}
-      </Scene>}
-
-      <Scene index={o} color={tierColor} kicker={dayWord + 'の海'} title={outlook.title + 'の日'} lead={fortune.sea} next="四つの運勢">
+      <Scene index={0} color={tierColor} kicker={dayWord + 'の海'} title={outlook.title + 'の日'} lead={fortune.sea} next="四つの運勢">
         {tierArt[reading.layers.day] && <View style={[S.card, { borderColor: tierColor + '88' }]}><Art source={tierArt[reading.layers.day]!} height={190} label={outlook.title + 'の海'} /></View>}
         <Text style={styles.detail}>{outlook.detail}</Text>
         <Meter title="自分が進む力" value={reading.force.go} color={tierColor} caption={goStrong ? '強い' : '控えめ'} />
@@ -209,28 +221,28 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
         {!!events.length && <Chips>{events.map(event => <Chip key={event}>{event}</Chip>)}</Chips>}
       </Scene>
 
-      <Scene index={o + 1} color={fortune.best.color} kicker="仕事・恋愛・金運・健康" title={'いちばんは「' + fortune.best.label + '」'} lead={'4つのうち、' + fortune.best.label + 'がいちばん輝く日。★の数で、得意と不得意が分かります。'} next="三つの潮が重なる">
+      <Scene index={1} color={fortune.best.color} kicker="仕事・恋愛・金運・健康" title={'いちばんは「' + fortune.best.label + '」'} lead={'4つのうち、' + fortune.best.label + 'がいちばん輝く日。★の数で、得意と不得意が分かります。'} next="三つの潮が重なる">
         <FortuneAreas fortune={fortune} dayWord={dayWord} hideSea />
       </Scene>
 
-      <Scene index={o + 2} color={tierColors[reading.layers.year]} kicker="年・月・日" title={'年は' + tiers[reading.layers.year] + '、月は' + tiers[reading.layers.block]} lead={reading.layers.text} next={dayWord + 'のお守り'}>
+      <Scene index={2} color={tierColors[reading.layers.year]} kicker="年・月・日" title={'年は' + tiers[reading.layers.year] + '、月は' + tiers[reading.layers.block]} lead={reading.layers.text} next={dayWord + 'のお守り'}>
         <LayeredReading reading={reading} isToday={isToday}>
           <Text style={S.tiny}>次の潮替わり　{dateKey(next.date)} ／ あと{next.days}日</Text>
         </LayeredReading>
         <TideFlow profile={profile} context={c} showCalendar={openCalendar} />
       </Scene>
 
-      <Scene index={o + 3} color={fortune.lucky.color.hex} kicker="ラッキーカラー・方角・時間" title={fortune.lucky.color.name + 'を、身につけて'} lead={'方角は' + fortune.lucky.direction + '、いい時間は' + fortune.lucky.time + '。'} next="月と潮">
+      <Scene index={3} color={fortune.lucky.color.hex} kicker="ラッキーカラー・方角・時間" title={fortune.lucky.color.name + 'を、身につけて'} lead={'方角は' + fortune.lucky.direction + '、いい時間は' + fortune.lucky.time + '。'} next="月と潮">
         <LuckyCard fortune={fortune} dayWord={dayWord} />
       </Scene>
 
-      <Scene index={o + 4} last={!tomorrow} color="#c1d2ef" kicker={dayWord + 'の月'} title={c.moon + '・' + c.phaseTide} lead={isNewMoon ? '新月。始めたいことを、一つだけ選ぶ夜です。' : isFullMoon ? '満月。いま手元にあるものを、確かめる夜です。' : '月の形と距離が、' + dayWord + 'の潮の強さを決めています。'} next={tomorrow ? '明日の潮' : undefined}>
+      <Scene index={4} last={!tomorrow} color="#c1d2ef" kicker={dayWord + 'の月'} title={c.moon + '・' + c.phaseTide} lead={isNewMoon ? '新月。始めたいことを、一つだけ選ぶ夜です。' : isFullMoon ? '満月。いま手元にあるものを、確かめる夜です。' : '月の形と距離が、' + dayWord + 'の潮の強さを決めています。'} next={tomorrow ? '明日の潮' : undefined}>
         {moonCard}
         <Button quiet onPress={() => setShowScore(!showScore)}>{showScore ? '点数の内訳を閉じる' : '順位の計算を、点数の内訳まで見る'}</Button>
         {showScore && <ReadingReasons reading={reading} />}
       </Scene>
 
-      {tomorrow && <Scene index={o + 5} last color={['#efd393', '#b6dfc4', '#c1d2ef', '#ff5a4d', '#e0245e'][tomorrow.level]} kicker="予告" title="明日の潮は……">
+      {tomorrow && <Scene index={5} last color={['#efd393', '#b6dfc4', '#c1d2ef', '#ff5a4d', '#e0245e'][tomorrow.level]} kicker="予告" title="明日の潮は……">
         <TomorrowCard tomorrow={tomorrow} />
       </Scene>}
     </View>
@@ -328,5 +340,13 @@ const styles = StyleSheet.create({
   bookHead: { alignItems: 'center', gap: 2, paddingTop: 14, paddingBottom: 6 },
   bookTitle: { color: C.ink, fontSize: 30, lineHeight: 42, fontFamily: rounded, fontWeight: '900', letterSpacing: 4 },
   detail: { color: C.muted, fontSize: 16, lineHeight: 28 },
+  typeSection: { gap: 12 },
+  typeHero: { padding: 16, gap: 12 },
+  typeTop: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  portrait: { width: 84, height: 84, borderRadius: 42, borderWidth: 2, overflow: 'hidden', backgroundColor: '#0f1830' },
+  portraitImg: { width: '100%', height: '100%' } as never,
+  typeTitle: { color: C.ink, fontSize: 26, lineHeight: 34, fontFamily: rounded, fontWeight: '900' },
+  typeSub: { color: C.ink, fontSize: 17, lineHeight: 24, fontWeight: '800', opacity: .9 },
+  typeHook: { color: C.ink, fontSize: 17, lineHeight: 29, fontFamily: rounded, fontWeight: '700' },
   reason: { gap: 4, padding: 12, borderRadius: 14, backgroundColor: '#111a31', borderWidth: 1, borderColor: C.line },
 });
