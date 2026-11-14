@@ -5,7 +5,7 @@ import { currents, iconArt, residentArt, scenes, stages, tierArt } from './art';
 import { Image } from './web/image';
 import { LayeredReading } from './DailyReading';
 import { addDays, calendarEvents, dateKey, dateLabel, readDay, residentIndex, shortDate, tierColors, tiers, type Profile } from './domain';
-import { BornSea, NameReadingDetails, TypeTraits } from './NameReading';
+import { BornSea, NameReadingDetails, TypeFortunes, TypeTraits } from './NameReading';
 import { SelectedQuestionReading } from './Questions';
 import { TideFlow } from './ResidentCard';
 import { ctxFor, DAY_STAGES, FIVE_PHASES, labelOf, OUTER, SEASON, STAGES, stageFor } from './scoring';
@@ -197,6 +197,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
         <Text style={styles.typeHook}>{resident.hook}</Text>
         <Text style={styles.detail}>{resident.inner}</Text>
       </View>
+      <TypeFortunes entry={resident} />
       <TypeTraits entry={resident} />
       <Button quiet onPress={() => setShowName(!showName)}>{showName ? '名札の決まり方を閉じる' : '名札の決まり方を詳しく見る'}</Button>
       {showName && <NameReadingDetails profile={profile} />}
