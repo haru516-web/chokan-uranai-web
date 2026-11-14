@@ -130,7 +130,7 @@
 .opening[data-leaving="true"] { animation: opening-out .8s ease-in both; }
 @keyframes opening-out { 0% { opacity: 1; filter: brightness(1); } 40% { filter: brightness(1.35); } 100% { opacity: 0; filter: brightness(1.5); } }
 .opening-god { animation: fx-float 3.4s ease-in-out infinite, opening-god-in 1.1s 1.15s cubic-bezier(.2,.8,.2,1) both; }
-@keyframes opening-god-in { 0% { opacity: 0; scale: .6; filter: brightness(3) blur(8px); } 100% { opacity: 1; scale: 1; filter: drop-shadow(0 0 18px #eacc8c); } }
+@keyframes opening-god-in { 0% { opacity: 0; filter: brightness(3) blur(8px) drop-shadow(0 0 0 #eacc8c); } 100% { opacity: 1; filter: brightness(1) blur(0px) drop-shadow(0 0 18px #eacc8c); } }
 .opening-read { gap: 6px; }
 .opening-kicker { margin: 0; color: #bac6dd; font-size: 13px; font-weight: 700; letter-spacing: .12em; animation: ritual-rise .8s 1.5s both; }
 .opening-title { margin: 0; display: flex; gap: .16em; font-size: clamp(38px, 11vw, 56px); line-height: 1.25; font-weight: 900; letter-spacing: .08em; }
