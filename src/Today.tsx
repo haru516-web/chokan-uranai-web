@@ -185,7 +185,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
     {resident && <View key={'type-' + activeId} style={styles.typeSection}>
       <View style={[S.card, glow(SEASON[profile.t.mod].col), styles.typeHero]}>
         <View style={styles.typeTop}>
-          <View style={[styles.portrait, { borderColor: SEASON[profile.t.mod].col }]}>
+          <View style={[styles.portrait, { borderColor: SEASON[profile.t.mod].col, backgroundImage: `radial-gradient(circle at 50% 42%, #f4f8ff 0%, ${SEASON[profile.t.mod].col}aa 70%, ${SEASON[profile.t.mod].col}66 100%)` } as object]}>
             <Image source={residentArt[residentIndex(profile.t)]} accessible={false} style={styles.portraitImg} />
           </View>
           <View style={{ flex: 1, minWidth: 0, gap: 3 }}>

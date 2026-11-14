@@ -12,7 +12,19 @@ Use case illustration-story. Wide 3:2 painted app home backdrop for a Japanese c
 
 ### 海の住人
 
-Use case illustration-story. Single square 4x4 contact sheet for a polished Japanese coastal folklore game, 16 DIFFERENT collectible sea spirit illustrations, 4 rows 4 columns EXACT even grid. Each cell has a single small readable spirit silhouette centered with generous padding and a full bleed softly textured color background. No visible grid borders, no text, no overlaps. Handmade Japanese washi watercolor, whimsical but elegant, big expressive black eyes, gold ink accents. Row 1 pale mint spring: pale shrimp carrying a seed, shell spirit with sprout, small seabird with folded map, coral seahorse with tiny lantern. Row 2 sunny aqua summer: cheerful jumping fish, round pink crab, winged manta ray, indigo glowing jellyfish. Row 3 warm apricot autumn: orange round shell creature, gold starfish, sea turtle carrying a basket, violet octopus with an ink bottle. Row 4 frost blue winter: white seal pup, blue hermit crab, silver narwhal, midnight whale with constellation markings. Crisp color blocking, rich visual texture, no lettering, no symbols at the edges.
+図鑑の16タイプは、通常の神様の幼い姿を共通の基準として保つ。季節の神様に合わせたマント色を使い、深さはその色の明るさで表す。各タイプを個別に生成し、`assets/art/resident-01.webp`〜`resident-16.webp` に1024×1024の透過WebPで収録する。
+
+- 共通の姿: 正面向きで中央に全身を置く。大きめの尖ったフード、真っ黒な空洞の顔、子供らしい短い白い首布、胸の小さな紋章1つ、丸みのある円錐マント。全タイプで同じ大きさと姿勢にする。
+- 描かないもの: 足・脚・手・腕、マントの内側・裾の裏・裏地・隙間、フードの奥の構造。裾は閉じた単色の面にし、輪郭線・外枠・縁取りを付けない。柄、尾びれ、羽、花飾り、フリル、小物や背景の水辺も描かない。
+- 季節と胸の紋章: 春は若葉色と桜、夏は珊瑚〜朱色と太陽、秋は琥珀色と楓、冬は氷青色と雪の結晶。紋章は各季節で同じ小さな1つに統一する。
+- 深さの表現: 浅瀬を最も明るく、沿岸、沖合の順に濃くし、深海を最も暗くする。季節ごとの色相は保ったままマントの色だけで差を付け、背景は完全に透過する。横に浮かべる小物や深さを示す情景は使わない。
+
+| 番号 | 季節 | 深さ | 色の流れ |
+|---:|---|---|---|
+| 01〜04 | 春 | 浅瀬→深海 | 淡い若葉色→深い森緑 |
+| 05〜08 | 夏 | 浅瀬→深海 | 明るい珊瑚色→暗い朱・えんじ色 |
+| 09〜12 | 秋 | 浅瀬→深海 | 明るい琥珀色→暗い茶琥珀色 |
+| 13〜16 | 冬 | 浅瀬→深海 | 淡い氷青色→暗い藍色 |
 
 ### 海流と海況
 

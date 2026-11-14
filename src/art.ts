@@ -29,13 +29,8 @@ export const godArt = ['winter', 'spring', 'summer', 'autumn', 'origin'].map(nam
 export const harbor = find(artFiles, 'harbor.webp');
 export const seal = find(artFiles, 'app-icon.png');
 export const godSheets = ['winter', 'spring', 'summer', 'autumn', 'origin'].map(name => find(deityFiles, 'sheet-' + name + '.webp'));
-// 図鑑の住人は、神をモチーフにした新デザイン（assets/design-concepts/deity-residents/resident-XX-<季節>-<深さ>.webp）。
-const deityResidentFiles = import.meta.glob('../assets/design-concepts/deity-residents/*.webp', { eager: true, import: 'default', query: '?url' }) as Record<string, string>;
-export const residentArt = Array.from({ length: 16 }, (_, i) => {
-  const id = 'resident-' + String(i + 1).padStart(2, '0');
-  const entry = Object.entries(deityResidentFiles).find(([path]) => path.split('/').pop()!.startsWith(id + '-'));
-  return entry ? entry[1] : find(artFiles, id + '.webp');
-});
+// 図鑑の住人は、神様の幼い姿（assets/art/resident-01〜16.webp、透過）。
+export const residentArt = Array.from({ length: 16 }, (_, i) => find(artFiles, 'resident-' + String(i + 1).padStart(2, '0') + '.webp'));
 // 海流は新しい12の順（子〜亥）。絵を作り直し中のあいだは、近い生き物の既存の絵を仮に使う（珊瑚→亀、牡蠣→烏賊）。
 // 新しい絵は current2-01〜12.webp、海況は stage2-01〜24.webp として置くと、自動で差し替わる。
 const currentFallback = [3, 8, 10, 0, 4, 7, 2, 1, 9, 6, 5, 11];
