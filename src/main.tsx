@@ -4,8 +4,10 @@ import App from './App';
 import './styles.css';
 import './magic.css';
 import { startMagic } from './magic';
+import { startCardGlow } from './cardGlow';
 
 startMagic();
+startCardGlow();
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Missing #root');

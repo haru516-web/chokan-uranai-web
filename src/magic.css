@@ -239,3 +239,16 @@
 /* 星が左から順に満ちていく（遅れは星ごとに style で指定するため !important を使わない） */
 @keyframes fx-fill { 0% { opacity: 0; transform: scale(.2) rotate(-80deg); } 55% { opacity: 1; transform: scale(1.55) rotate(10deg); } 80% { transform: scale(.92) rotate(-2deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
 [data-fx="fill"] { animation: fx-fill .55s cubic-bezier(.3, 1.2, .5, 1) both; }
+
+/* ===== カードの縁：全体がほんのり光り、明るい光が縁をなぞって一周する ===== */
+@property --glow-a { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+@keyframes glow-run { to { --glow-a: 360deg; } }
+[data-glow-card]::before, [data-glow-card]::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; box-sizing: border-box;
+  padding: 1.5px;
+  background: conic-gradient(from var(--glow-a), rgba(234, 204, 140, .38) 0deg, rgba(234, 204, 140, .38) 215deg, rgba(255, 232, 160, .95) 300deg, #fff9e0 335deg, rgba(234, 204, 140, .38) 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: glow-run var(--glow-dur, 6s) linear var(--glow-delay, 0s) infinite;
+}
+[data-glow-card]::after { padding: 5px; filter: blur(6px); opacity: .85; }

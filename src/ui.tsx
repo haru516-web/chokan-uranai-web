@@ -32,7 +32,9 @@ export const S = StyleSheet.create({
   h3: { color: C.ink, fontSize: 18, lineHeight: 27, fontWeight: '700' },
   kicker: { color: C.gold, fontSize: 12, lineHeight: 18, fontWeight: '800', letterSpacing: 2 },
   tiny: { color: C.muted, fontSize: 13, lineHeight: 20 },
-  card: { backgroundColor: C.panel, borderColor: C.line, borderWidth: 1, borderRadius: 20, overflow: 'hidden' },
+  card: { backgroundColor: C.panel, borderColor: C.line, borderWidth: 1, borderRadius: 20, overflow: 'hidden',
+    // 縁を、やわらかく光らせる。
+    ...({ boxShadow: '0 0 0 1px rgba(234, 204, 140, .22), 0 0 24px rgba(234, 204, 140, .22), inset 0 0 18px rgba(234, 204, 140, .08)' } as object) },
   pad: { padding: 17, gap: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
