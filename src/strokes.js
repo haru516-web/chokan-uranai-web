@@ -24,10 +24,14 @@ export function strokeOf(c){
   if(KANJI[c]) return {n:KANJI[c],kind:"kanji"};
   return null;
 }
+/* 深さは、総画数に応じて 1.0〜5.5 の 10 段階を細かく繰り返す。
+   もとの 35 画の幅を 3 分割した 12 画を 1 周とし、周期の中を均等に 10 段階へ刻む。
+   位相（DEPTH_SHIFT）は、総画数 27 画（例：晴輝）がこれまでどおり 4.5 になるよう合わせてある。 */
+var DEPTH_CYCLE=12, DEPTH_SHIFT=6;
+var DEPTHS=[1.0,1.5,2.0,2.5,3.0,3.5,4.0,4.5,5.0,5.5];
 function numFromTotal(t){
-  if(t<=9)return 1.0; if(t<=13)return 1.5; if(t<=16)return 2.0; if(t<=18)return 2.5;
-  if(t<=21)return 3.0; if(t<=23)return 3.5; if(t<=26)return 4.0; if(t<=29)return 4.5;
-  if(t<=34)return 5.0; return 5.5;
+  var r=((t+DEPTH_SHIFT)%DEPTH_CYCLE+DEPTH_CYCLE)%DEPTH_CYCLE;
+  return DEPTHS[Math.floor(r*DEPTHS.length/DEPTH_CYCLE)];
 }
 function binCounts(digits){
   var z=0,o=0,i,j,b;
