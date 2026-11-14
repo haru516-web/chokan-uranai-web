@@ -5,9 +5,9 @@
 作業用ブランチは `codex/new-sea-art`。**メインの作業フォルダでは作業せず、必ずワークツリーを作ってその中で作業する。**
 
 ```bash
-# リポジトリの外に、専用のワークツリーを作る（ブランチは既にある）
-git worktree add ../chokan-uranai-web-new-sea-art codex/new-sea-art
-cd ../chokan-uranai-web-new-sea-art
+# リポジトリ内の .worktrees/ に、専用のワークツリーを作る（ブランチは既にある）
+git worktree add .worktrees/new-sea-art codex/new-sea-art
+cd .worktrees/new-sea-art
 ```
 
 - 画像の追加・コミットは、このワークツリーの中だけで行う。元のフォルダ（`chokan-uranai-web`）の変更中のファイルには触らない。
@@ -15,7 +15,7 @@ cd ../chokan-uranai-web-new-sea-art
 - 画像は 1:1 の `webp` に変換して置く（既存の画像と同じ形式）。ファイル名は下の表のとおり。
 - 数枚ごと（または 12 枚の海流が終わった時点）でコミットする。メッセージ例：`art: add current2 sea current illustrations`。
 - 終わったら、ワークツリーから `git push -u origin codex/new-sea-art` で押し上げる。メインのブランチには直接マージしない。
-- 作業が終わったら `git worktree remove ../chokan-uranai-web-new-sea-art` で片づける。
+- 作業が終わったら `git worktree remove .worktrees/new-sea-art` で片づける。
 
 置き場所は `assets/art/`。ファイル名を合わせると、アプリが自動で差し替えます。
 - 海流：`current2-01.webp` 〜 `current2-12.webp`（子〜亥の順）
