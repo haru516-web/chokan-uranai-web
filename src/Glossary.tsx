@@ -7,6 +7,23 @@ import { aliases, glossary, type Term } from './terms';
 export type SheetRow = { mark: string; label: string; text: string; color?: string };
 export type Sheet = Term & { rows?: SheetRow[]; color?: string };
 
+// 一度でも開いた用語は見た目を弱め、初回ヒントも消す（端末内に保存）。
+const READ_KEY = 'chokan.gloss.read';
+const readSet = (() => {
+  try { return new Set<string>(JSON.parse(localStorage.getItem(READ_KEY) ?? '[]')); } catch { return new Set<string>(); }
+})();
+const listeners = new Set<() => void>();
+function markRead(id: string) {
+  if (readSet.has(id)) return;
+  readSet.add(id);
+  try { localStorage.setItem(READ_KEY, JSON.stringify([...readSet])); } catch { /* 保存できなくても動く */ }
+  listeners.forEach(fn => fn());
+}
+function useReadVersion() {
+  const [, bump] = useState(0);
+  useEffect(() => { const fn = () => bump(n => n + 1); listeners.add(fn); return () => { listeners.delete(fn); }; }, []);
+}
+
 const Ctx = createContext<(sheet: Sheet | string) => void>(() => {});
 /** 用語ID（glossary のキー）か、その場で組み立てた内容を渡すとポップが開く。 */
 export const useGloss = () => useContext(Ctx);
@@ -17,6 +34,7 @@ export function GlossProvider({ children }: { children: ReactNode }) {
   const closeButton = useRef<HTMLButtonElement>(null);
   const open = useCallback((next: Sheet | string) => {
     const value = typeof next === 'string' ? glossary[next] : next;
+    if (typeof next === 'string' && value) markRead(next);
     if (value) { setClosing(false); setSheet(value); }
   }, []);
   const close = useCallback(() => {
@@ -64,11 +82,27 @@ const words = Object.keys(aliases).sort((a, b) => b.length - a.length);
 const pattern = new RegExp('(' + words.join('|') + ')', 'g');
 const termStyle = {
   textDecorationLine: 'underline', textDecorationStyle: 'dotted', textDecorationColor: '#eacc8c', cursor: 'help',
+  color: '#f3d9a0', backgroundColor: 'rgba(234, 204, 140, .14)', borderRadius: 5, paddingHorizontal: 2,
 } as unknown as TextStyle;
+const readStyle = { color: 'inherit', backgroundColor: 'transparent' } as unknown as TextStyle;
+const infoStyle = { fontSize: 11, color: '#eacc8c', fontWeight: '800' } as unknown as TextStyle;
+
+/** 解説つきの言葉の印（ⓘ）。既読なら出さない。 */
+function Info({ read }: { read: boolean }) {
+  return read ? null : <Text accessible={false} style={infoStyle}>ⓘ</Text>;
+}
+
+/** 「金色の言葉をタップで解説」の一行ヒント。一度でも解説を開いたら出なくなる。 */
+export function GlossHint() {
+  useReadVersion();
+  if (readSet.size > 0) return null;
+  return <Text style={{ fontSize: 12, color: '#eacc8c' }}>ⓘ 金色の言葉をタップすると、やさしい解説が出ます</Text>;
+}
 
 /** 文章の中の用語を、タップで説明が出るリンクにする（同じ用語は最初の1回だけ）。 */
 export function Gloss({ children, style, skip }: { children: string; style?: StyleProp<TextStyle>; skip?: string[] }) {
   const open = useGloss();
+  useReadVersion();
   const parts = useMemo(() => {
     const seen = new Set<string>(skip);
     return children.split(pattern).map(part => {
@@ -80,7 +114,7 @@ export function Gloss({ children, style, skip }: { children: string; style?: Sty
   }, [children, skip]);
   return <Text style={style}>
     {parts.map((part, index) => part.id
-      ? <Text key={index} accessibilityRole="button" accessibilityLabel={part.text + 'の説明を開く'} onPress={() => open(part.id!)} style={termStyle}>{part.text}</Text>
+      ? <Text key={index} accessibilityRole="button" accessibilityLabel={part.text + 'の説明を開く'} onPress={() => open(part.id!)} style={[termStyle, readSet.has(part.id) && readStyle]}>{part.text}<Info read={readSet.has(part.id)} /></Text>
       : part.text)}
   </Text>;
 }
@@ -88,5 +122,6 @@ export function Gloss({ children, style, skip }: { children: string; style?: Sty
 /** 用語ひとつを、タップできる言葉として置く。 */
 export function TermText({ id, children, style }: { id: string; children?: string; style?: StyleProp<TextStyle> }) {
   const open = useGloss();
-  return <Text accessibilityRole="button" accessibilityLabel={(children ?? id) + 'の説明を開く'} onPress={() => open(id)} style={[style, termStyle]}>{children ?? id}</Text>;
+  useReadVersion();
+  return <Text accessibilityRole="button" accessibilityLabel={(children ?? id) + 'の説明を開く'} onPress={() => open(id)} style={[style, termStyle, readSet.has(id) && readStyle]}>{children ?? id}<Info read={readSet.has(id)} /></Text>;
 }

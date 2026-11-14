@@ -4,6 +4,7 @@ import Svg, { Circle, Defs, G, Line, Path, Polygon, Polyline, RadialGradient, St
 import { cycleFor, cycleTier, jstToday, tiers, type Profile } from './domain';
 import { blockScoreOf, ctxFor, labelOf, OUTER, personalStage, STAGES, stageFor, yearScoreOf, type SeaContext } from './scoring';
 import { C, S } from './ui';
+import { clamp01, easeOutCubic, useScrollLink } from './useScrollLink';
 
 const spokes = Array.from({ length: 12 }, (_, index) => index);
 const center = 150;
@@ -18,36 +19,82 @@ function wedge(inner: number, outer: number, from: number, to: number) {
     ' L' + point(inner, to).join(' ') + ' A' + inner + ' ' + inner + ' 0 0 0 ' + point(inner, from).join(' ') + ' Z';
 }
 
+/** 月の満ち欠けの形（0 新月 … 180 満月 … 360）。半径 r の円の中で、光っている部分だけの path を返す。 */
+function litPath(ph: number, r: number) {
+  const k = Math.cos(ph * Math.PI / 180);
+  const rx = (r * Math.abs(k)).toFixed(2);
+  return 'M0 ' + -r + ' A' + r + ' ' + r + ' 0 0 1 0 ' + r + ' A' + rx + ' ' + r + ' 0 0 ' + (k > 0 ? 0 : 1) + ' 0 ' + -r + ' Z';
+}
+
+const cls = (name: string) => ({ className: name }) as object;
+const delayed = (ms: number) => ({ style: { animationDelay: ms + 'ms' } }) as object;
+
+/** スクロール連動。近づくにつれて球が現れ、線が描かれ、月が軌道を回って今日の位置へ。輪はスクロール量に合わせて回る。 */
 export function SeaGlobe({ context }: { context: SeaContext }) {
   const gradient = 'sea' + useId().replace(/[^a-z0-9]/gi, '');
+  const [ref, p, y] = useScrollLink();
+  const q = easeOutCubic(clamp01(p / 0.85));
   const points = spokes.map(i => point(i % 2 ? 104 : 86, i * 30));
-  return <View accessible accessibilityRole="image" accessibilityLabel={OUTER[context.outer].n + '、海況 ' + STAGES[context.stage].n} style={styles.globe}>
+  // 月は、軌道の上を「月の形」のまま回ってきて、今日の位置に止まる。地球に近いほど内側を通る。
+  const moonR = 88 + Math.max(0, Math.min(1, (context.dist - 356400) / (406700 - 356400))) * 16;
+  const draw = clamp01(p / 0.8);
+  return <View ref={ref as never} accessible accessibilityRole="image" accessibilityLabel={OUTER[context.outer].n + '、海況 ' + STAGES[context.stage].n + '、月齢 ' + context.age.toFixed(1)}
+    style={[styles.globe, { opacity: clamp01(p * 2.2), transform: [{ scale: 0.72 + 0.28 * q }, { rotate: (1 - q) * -14 + 'deg' }] }]}>
     <Svg width="100%" height="100%" viewBox="22 22 256 256">
-      <Defs><RadialGradient id={gradient} cx="36%" cy="30%" r="75%">
-        <Stop offset="0" stopColor="#6388ce" />
-        <Stop offset=".55" stopColor="#2e4d97" />
-        <Stop offset="1" stopColor="#101e4a" />
-      </RadialGradient></Defs>
-      <Circle cx={center} cy={center} r="72" fill={'url(#' + gradient + ')'} stroke="#8096d2" strokeWidth=".55" />
-      {[38, 57, 116, 123].map(radius => <Circle key={radius} cx={center} cy={center} r={radius} stroke="#afc2ed" strokeOpacity={radius > 100 ? .38 : .16} strokeWidth=".7" strokeDasharray="1.5 3" fill="none" />)}
+      <Defs>
+        <RadialGradient id={gradient} cx="36%" cy="30%" r="75%">
+          <Stop offset="0" stopColor="#6388ce" />
+          <Stop offset=".55" stopColor="#2e4d97" />
+          <Stop offset="1" stopColor="#101e4a" />
+        </RadialGradient>
+        <RadialGradient id={gradient + 'm'} cx="40%" cy="35%" r="70%">
+          <Stop offset="0" stopColor="#fffbe8" />
+          <Stop offset="1" stopColor="#e9d9a2" />
+        </RadialGradient>
+      </Defs>
+      <G {...cls('sg-sphere')}>
+        <Circle cx={center} cy={center} r="72" fill={'url(#' + gradient + ')'} stroke="#8096d2" strokeWidth=".55" />
+      </G>
+      {[38, 57].map(radius => <Circle key={radius} cx={center} cy={center} r={radius} stroke="#afc2ed" strokeOpacity=".16" strokeWidth=".7" strokeDasharray="1.5 3" fill="none" />)}
+      <G transform={'rotate(' + y * 0.08 + ' ' + center + ' ' + center + ')'}><Circle cx={center} cy={center} r="116" stroke="#afc2ed" strokeOpacity=".38" strokeWidth=".7" strokeDasharray="1.5 3" fill="none" /></G>
+      <G transform={'rotate(' + -y * 0.12 + ' ' + center + ' ' + center + ')'}><Circle cx={center} cy={center} r="123" stroke="#afc2ed" strokeOpacity=".38" strokeWidth=".7" strokeDasharray="1.5 3" fill="none" /></G>
       {[0, 90, 180, 270].map(angle => {
-        const [x, y] = point(123, angle);
-        return <Line key={angle} x1={center} y1={center} x2={x} y2={y} stroke="#aabbe3" strokeWidth=".5" strokeOpacity=".35" />;
+        const [x, y2] = point(123, angle);
+        return <Line key={angle} x1={center} y1={center} x2={x} y2={y2} stroke="#aabbe3" strokeWidth=".5" strokeOpacity={.35 * clamp01(p * 2)} />;
       })}
-      <Polyline points={[...points, points[0]].map(p => p.join(',')).join(' ')} fill="none" stroke="#d2def7" strokeOpacity=".66" strokeWidth=".85" />
+      <Polyline points={[...points, points[0]].map(pt => pt.join(',')).join(' ')} fill="none" stroke="#d2def7" strokeOpacity=".66" strokeWidth=".85" pathLength={1} strokeDasharray="1" strokeDashoffset={1 - draw} />
       {spokes.map(i => {
-        const [x, y] = point(116, i * 30);
+        const [x, y2] = point(116, i * 30);
         const [sx, sy] = points[i];
+        const here = i === context.outer, stage = i === Math.floor(context.stage / 2);
         return <G key={i}>
-          <Circle cx={x} cy={y} r={i === context.outer ? 5.2 : 2} fill={i === context.outer ? C.gold : '#7790bf'} />
-          {i === context.outer && <Circle cx={x} cy={y} r="8.5" stroke={C.gold} strokeWidth=".8" fill="none" />}
-          <Circle cx={sx} cy={sy} r={i === Math.floor(context.stage / 2) ? 3.8 : 1.7} fill="#e1ebff" />
-          {i === Math.floor(context.stage / 2) && <Circle cx={sx} cy={sy} r="8" stroke="#e1ebff" strokeWidth=".8" fill="none" />}
+          <Circle cx={x} cy={y2} r={here ? 5.2 : 2} fill={here ? C.gold : '#7790bf'} />
+          {here && <Circle cx={x} cy={y2} r="8.5" stroke={C.gold} strokeWidth=".8" fill="none" {...cls('sg-ping')} />}
+          <Circle cx={sx} cy={sy} r={stage ? 3.8 : 1.7} fill="#e1ebff" />
+          {stage && <Circle cx={sx} cy={sy} r="8" stroke="#e1ebff" strokeWidth=".8" fill="none" {...cls('sg-ping')} {...delayed(900)} />}
         </G>;
       })}
-      <Path d="M150 135 L153 147 L165 150 L153 153 L150 165 L147 153 L135 150 L147 147 Z" fill="#e8d29a" />
+      <G {...cls('sg-star')}><Path d="M150 135 L153 147 L165 150 L153 153 L150 165 L147 153 L135 150 L147 147 Z" fill="#e8d29a" /></G>
+      <G transform={'rotate(' + -520 * (1 - q) + ' ' + center + ' ' + center + ')'}>
+        <G transform={'rotate(' + context.ph + ' ' + center + ' ' + center + ')'}>
+          <G transform={'translate(' + center + ' ' + (center - moonR) + ')'}>
+            <Circle r="11" fill="#fff6cf" opacity=".16" {...cls('sg-moon-halo')} />
+            <Circle r="6.4" fill="#232d52" stroke="#c9d6f5" strokeWidth=".5" strokeOpacity=".7" />
+            <G transform={context.ph > 180 ? 'scale(-1 1)' : undefined}><Path d={litPath(context.ph, 6.4)} fill={'url(#' + gradient + 'm)'} /></G>
+          </G>
+        </G>
+      </G>
     </Svg>
   </View>;
+}
+
+/** 月齢と距離。スクロールに合わせて数字が増え、戻すと減る。 */
+export function MoonFacts({ context }: { context: SeaContext }) {
+  const [ref, p] = useScrollLink();
+  const t = easeOutCubic(clamp01(p / 0.85));
+  const age = (context.age * t).toFixed(1);
+  const dist = Math.round(context.dist * (0.6 + 0.4 * t)).toLocaleString('ja-JP');
+  return <Text ref={ref as never} style={[S.body, { opacity: clamp01(p * 2.5) }]}>月齢 {age}／地球から約 {dist} km（{context.tide}）</Text>;
 }
 
 // 凱風・順風・凪・荒波・轟沈の色。輪に色を載せて、年・月ごとの調子が一目でわかるようにする。
@@ -172,10 +219,22 @@ export function TideWheel({ context, profile, onMonth, onStage, onYear, animate 
   </View>;
 }
 
-export function Meter({ title, value, color = C.gold, caption }: { title: string; value: number; color?: string; caption?: string }) {
-  return <View style={styles.meter}>
-    <View style={S.between}><Text style={S.body}>{title}</Text>{caption && <Text style={[S.tiny, { color }]}>{caption}</Text>}</View>
-    <View style={styles.track}><View {...({ dataSet: { ui: 'meter' } } as object)} style={{ width: (Math.max(0, Math.min(1, value)) * 100) + '%', height: '100%', backgroundColor: color }} /></View>
+/** 見えた瞬間に、左から該当の位置まで一気に伸びる横線。先端が光り、ラベルは伸び切るころに現れる。 */
+export function Meter({ title, value, color = C.gold, caption, delay = 0 }: { title: string; value: number; color?: string; caption?: string; delay?: number }) {
+  const [ref, seen] = useInView(true);
+  const pct = (Math.max(0, Math.min(1, value)) * 100) + '%';
+  const ease = `1.4s cubic-bezier(.16, 1, .3, 1) ${delay}ms`;
+  const asStyle = (s: object) => s as never;
+  return <View ref={ref as never} style={styles.meter}>
+    <View style={S.between}>
+      <Text style={S.body}>{title}</Text>
+      {caption && <Text style={[S.tiny, { color }, asStyle({ opacity: seen ? 1 : 0, transition: `opacity .5s ease-out ${delay + 900}ms` })]}>{caption}</Text>}
+    </View>
+    <View style={styles.track}>
+      <View style={asStyle({ width: seen ? pct : '0%', height: '100%', borderRadius: 2, backgroundColor: color, transition: 'width ' + ease })} />
+      <View style={asStyle({ position: 'absolute', top: -3, left: seen ? pct : '0%', width: 10, height: 10, marginLeft: -5, borderRadius: 5, backgroundColor: color, opacity: seen ? 1 : 0,
+        boxShadow: `0 0 10px 2px ${color}cc`, transition: 'left ' + ease + ', opacity .3s ease-out ' + delay + 'ms' })} />
+    </View>
   </View>;
 }
 
@@ -183,6 +242,6 @@ const styles = StyleSheet.create({
   globe: { width: '100%', maxWidth: 228, aspectRatio: 1, alignSelf: 'center' },
   wheel: { width: '100%', maxWidth: 560, aspectRatio: 1, alignSelf: 'center' },
   meter: { gap: 4, paddingVertical: 3 },
-  track: { height: 4, backgroundColor: '#35415b', borderRadius: 2, overflow: 'hidden' },
+  track: { height: 4, backgroundColor: '#35415b', borderRadius: 2 },
 });
 

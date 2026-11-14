@@ -40,7 +40,6 @@
 [data-ui="tab"] { position: relative; }
 [data-ui="tab"][data-active="true"]::after { content: ""; position: absolute; left: 16%; right: 16%; bottom: -3px; height: 3px; border-radius: 3px; background: var(--accent); box-shadow: 0 0 14px 2px var(--accent); animation: fx-pop .4s cubic-bezier(.2,.8,.2,1) both; }
 [data-ui="tab"][data-active="true"] [data-ui="tab-mark"] { animation: fx-jump .55s cubic-bezier(.3,1.4,.5,1); text-shadow: 0 0 12px var(--accent); }
-[data-ui="meter"] { transform-origin: left center; animation: fx-grow 1s cubic-bezier(.2,.8,.2,1) both; }
 [data-ui="field"] { transition: border-color .2s ease, box-shadow .25s ease; }
 [data-ui="field"]:focus { border-color: #eacc8c !important; box-shadow: 0 0 0 3px rgba(234,204,140,.18), 0 0 26px rgba(234,204,140,.22); outline: none; }
 [data-ui="field"][data-ok="true"] { border-color: #9fd8c7 !important; }
@@ -153,3 +152,90 @@
 .tarot-fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .tarot-fx-back { z-index: -1; }
 .tarot-fx-front { z-index: 2; }
+
+/* ===== ガイド：順番に現れる演出（鋭い出だし・オーバーシュート・ピタッと着地） ===== */
+@keyframes gd-left { 0% { opacity: 0; transform: translateX(-110px) skewX(-10deg); filter: brightness(1.9); } 55% { opacity: 1; transform: translateX(9px) skewX(2deg); filter: brightness(1.15); } 78% { transform: translateX(-3px); } 100% { opacity: 1; transform: none; filter: none; } }
+@keyframes gd-right { 0% { opacity: 0; transform: translateX(110px) skewX(10deg); filter: brightness(1.9); } 55% { opacity: 1; transform: translateX(-9px) skewX(-2deg); filter: brightness(1.15); } 78% { transform: translateX(3px); } 100% { opacity: 1; transform: none; filter: none; } }
+@keyframes gd-drop { 0% { opacity: 0; transform: translateY(-120px); animation-timing-function: cubic-bezier(.6, 0, 1, .7); } 42% { opacity: 1; transform: translateY(0) scaleY(.9) scaleX(1.04); animation-timing-function: cubic-bezier(.2, .8, .3, 1); } 58% { transform: translateY(-12px) scaleY(1.02); animation-timing-function: cubic-bezier(.6, 0, 1, .7); } 72% { transform: translateY(0) scaleY(.97) scaleX(1.01); } 84% { transform: translateY(-3px); } 100% { opacity: 1; transform: none; } }
+@keyframes gd-pop { 0% { opacity: 0; transform: scale(.35) rotate(-6deg); } 50% { opacity: 1; transform: scale(1.14) rotate(2deg); } 72% { transform: scale(.96) rotate(-1deg); } 100% { opacity: 1; transform: none; } }
+@keyframes gd-char { 0% { opacity: 0; transform: translateY(-46px) scale(1.5); filter: brightness(2); } 55% { opacity: 1; transform: translateY(3px) scale(.94); filter: none; } 100% { opacity: 1; transform: none; } }
+@keyframes gd-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes gd-zoom { 0% { transform: scale(1.35); filter: brightness(1.8) saturate(1.5); } 60% { transform: scale(.98); filter: none; } 100% { transform: none; } }
+@keyframes gd-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(234, 204, 140, .6); } 50% { box-shadow: 0 0 0 8px rgba(234, 204, 140, 0); } }
+@keyframes gd-wash { 0% { opacity: 0; transform: translateY(-40px); } 100% { opacity: 1; transform: none; } }
+[data-gd="wash"] { animation: gd-wash .7s cubic-bezier(.16, 1, .3, 1) both; }
+[data-gd="list"] > * { animation: gd-left .55s cubic-bezier(.16, 1, .3, 1) both; }
+[data-gd="list"] > :nth-child(3n+2) { animation-name: gd-right; }
+[data-gd="list"] > :nth-child(3n) { animation-name: gd-drop; animation-duration: .7s; }
+[data-gd="list"] > [data-gd="title"] { animation: none !important; }
+[data-gd="list"] > [data-gd="grid"] { animation: none !important; }
+[data-gd="char"] { display: inline-block; animation: gd-char .5s cubic-bezier(.16, 1, .3, 1) both; }
+[data-gd="grid"] > * { animation: gd-pop .55s cubic-bezier(.16, 1, .3, 1) both; }
+[data-gd="grid"] > :nth-child(4n+2) { animation-name: gd-right; }
+[data-gd="grid"] > :nth-child(4n+3) { animation-name: gd-drop; animation-duration: .7s; }
+[data-gd="pulse"] { animation: gd-pulse 1.4s ease-out infinite; }
+.gd-bob { animation: gd-bob 2.2s cubic-bezier(.45, 0, .55, 1) infinite; }
+.gd-zoom { animation: gd-zoom .7s cubic-bezier(.16, 1, .3, 1) both; }
+[data-gd="list"] > :nth-child(1) { animation-delay: 40ms; }
+[data-gd="list"] > :nth-child(2) { animation-delay: 95ms; }
+[data-gd="list"] > :nth-child(3) { animation-delay: 215ms; }
+[data-gd="list"] > :nth-child(4) { animation-delay: 270ms; }
+[data-gd="list"] > :nth-child(5) { animation-delay: 390ms; }
+[data-gd="list"] > :nth-child(6) { animation-delay: 445ms; }
+[data-gd="list"] > :nth-child(7) { animation-delay: 565ms; }
+[data-gd="list"] > :nth-child(8) { animation-delay: 620ms; }
+[data-gd="list"] > :nth-child(9) { animation-delay: 740ms; }
+[data-gd="list"] > :nth-child(10) { animation-delay: 795ms; }
+[data-gd="list"] > :nth-child(11) { animation-delay: 915ms; }
+[data-gd="list"] > :nth-child(12) { animation-delay: 970ms; }
+[data-gd="list"] > :nth-child(13) { animation-delay: 1090ms; }
+[data-gd="list"] > :nth-child(14) { animation-delay: 1145ms; }
+[data-gd="grid"] > :nth-child(1) { animation-delay: 380ms; }
+[data-gd="grid"] > :nth-child(2) { animation-delay: 440ms; }
+[data-gd="grid"] > :nth-child(3) { animation-delay: 550ms; }
+[data-gd="grid"] > :nth-child(4) { animation-delay: 610ms; }
+[data-gd="grid"] > :nth-child(5) { animation-delay: 720ms; }
+[data-gd="grid"] > :nth-child(6) { animation-delay: 780ms; }
+[data-gd="grid"] > :nth-child(7) { animation-delay: 890ms; }
+[data-gd="grid"] > :nth-child(8) { animation-delay: 950ms; }
+@keyframes gd-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  [data-gd="list"] > *, [data-gd="grid"] > *, [data-gd="char"], [data-gd="wash"] { animation-name: gd-fade !important; animation-duration: .35s !important; }
+  [data-gd="pulse"], .gd-bob, .gd-zoom { animation: none !important; }
+}
+
+/* ===== ページ先頭へ戻るボタン ===== */
+.to-top { position: fixed; z-index: 900; bottom: max(18px, env(safe-area-inset-bottom)); right: max(14px, calc((100vw - 780px) / 2 + 14px)); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; width: 58px; height: 58px; border-radius: 50%; border: 1px solid #eacc8c; background: rgba(16, 23, 42, .92); color: #eacc8c; font-family: inherit; cursor: pointer; backdrop-filter: blur(6px); box-shadow: 0 6px 22px rgba(0, 0, 0, .45), 0 0 0 0 rgba(234, 204, 140, .4); opacity: 0; transform: translateY(24px) scale(.6); pointer-events: none; transition: opacity .2s ease-out, transform .45s cubic-bezier(.34, 1.56, .64, 1); -webkit-tap-highlight-color: transparent; }
+.to-top[data-show="true"] { opacity: 1; transform: none; pointer-events: auto; }
+.to-top span { font-size: 22px; line-height: 20px; font-weight: 900; }
+.to-top small { font-size: 10px; line-height: 12px; font-weight: 800; }
+.to-top:active { transform: scale(.88); transition-duration: .08s; }
+.to-top:focus-visible { outline: 3px solid #eacc8c; outline-offset: 3px; }
+
+/* ===== ラッキーカラーの天体：手前に止まった色の下に、光だまりが広がる ===== */
+@keyframes oz-glow { 0% { opacity: 0; scale: .3; } 60% { opacity: 1; scale: 1.15; } 100% { opacity: .9; scale: 1; } }
+@keyframes oz-name { from { opacity: 0; translate: -18px 0; } to { opacity: 1; translate: 0 0; } }
+[data-oz="glow"] { animation: oz-glow .9s cubic-bezier(.2, .9, .3, 1.2) 2.7s both; }
+[data-oz="name"] { animation: oz-name .6s cubic-bezier(.16, 1, .3, 1) 2.95s both; }
+@media (prefers-reduced-motion: reduce) {
+  [data-oz="glow"] { animation: none !important; opacity: .9 !important; }
+  [data-oz="name"] { animation: none !important; opacity: 1 !important; }
+}
+
+/* ===== 今日の月（海の天球）：スクロール連動は JS、ここは常に流れる環境の動き（瞬き・波紋・脈動） ===== */
+@keyframes sg-twinkle { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+@keyframes sg-ping { 0% { transform: scale(.7); opacity: .95; } 100% { transform: scale(2.1); opacity: 0; } }
+@keyframes sg-star { 0%, 100% { transform: scale(1) rotate(0deg); } 50% { transform: scale(1.22) rotate(45deg); } }
+@keyframes sg-halo { 0%, 100% { opacity: .1; transform: scale(1); } 50% { opacity: .32; transform: scale(1.35); } }
+@keyframes sg-sphere { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.18); } }
+.sg-twinkle { animation: sg-twinkle 2.4s ease-in-out infinite; }
+.sg-ping, .sg-star, .sg-moon-halo { transform-box: fill-box; transform-origin: center; }
+.sg-ping { animation: sg-ping 2.2s ease-out infinite; }
+.sg-star { animation: sg-star 4.5s ease-in-out infinite; }
+.sg-moon-halo { animation: sg-halo 3s ease-in-out infinite; }
+.sg-sphere { animation: sg-sphere 6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .sg-twinkle, .sg-ping, .sg-star, .sg-moon-halo, .sg-sphere { animation: none !important; } }
+
+/* 星が左から順に満ちていく（遅れは星ごとに style で指定するため !important を使わない） */
+@keyframes fx-fill { 0% { opacity: 0; transform: scale(.2) rotate(-80deg); } 55% { opacity: 1; transform: scale(1.55) rotate(10deg); } 80% { transform: scale(.92) rotate(-2deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
+[data-fx="fill"] { animation: fx-fill .55s cubic-bezier(.3, 1.2, .5, 1) both; }

@@ -9,12 +9,12 @@ import { BornSea, NameReadingDetails, TypeTraits } from './NameReading';
 import { SelectedQuestionReading } from './Questions';
 import { TideFlow } from './ResidentCard';
 import { ctxFor, DAY_STAGES, FIVE_PHASES, labelOf, OUTER, SEASON, STAGES, stageFor } from './scoring';
-import { Meter, SeaGlobe } from './TideCharts';
+import { Meter, MoonFacts, SeaGlobe } from './TideCharts';
 import { GodAnimation } from './GodAnimation';
 import { Scene } from './Story';
 import { fortuneFor, tomorrowFor } from './fortune';
 import { FortuneAreas, LuckyCard, TomorrowCard } from './FortuneDetail';
-import { Gloss, TermText, useGloss } from './Glossary';
+import { Gloss, GlossHint, TermText, useGloss } from './Glossary';
 import { PersonSwitcher, type Person } from './People';
 import { ResultPoster } from './ResultPoster';
 import { Float, glow, Sparkles } from './Visual';
@@ -106,8 +106,8 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
 
   const moonCard = <View style={S.stack}>
     <Text style={S.h3}>{c.moon}　·　{c.phaseTide}</Text>
-    <SeaGlobe context={c} />
-    <Text style={S.body}>月齢 {c.age.toFixed(1)}／地球から約 {Math.round(c.dist).toLocaleString('ja-JP')} km（{c.tide}）</Text>
+    <SeaGlobe key={c.Y + "-" + c.MO + "-" + c.DA} context={c} />
+    <MoonFacts key={c.Y + "-" + c.MO + "-" + c.DA} context={c} />
     {(isNewMoon || isFullMoon) && <Text style={S.body}>{isNewMoon ? '新月：これから始めたいことを一つ選ぶ節目です。' : '満月：いま手元にあるものを確かめる節目です。'}</Text>}
   </View>;
 
@@ -117,6 +117,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
       <Text style={S.kicker}>生年月日と名前でひらく、あなただけの海</Text>
       <Text accessibilityRole="header" style={styles.welcome}>今日のあなたの海は、{'\n'}凪か、荒波か。</Text>
       <Gloss style={S.body}>潮環占いは、年の海流・月の満ち欠け・あなたの名札を重ねて、今日の運勢を160通りの順位で読む占いです。</Gloss>
+      <GlossHint />
     </View>
     <View style={desktop ? { flexDirection: 'row', gap: 13, alignItems: 'stretch' } : S.stack}>
     <Door fill={desktop} color={C.gold} big badge="まずはこれ" kicker="占い" title="今日の運勢を占う" hint="生年月日と名前だけ・30秒" cta="占ってみる" onPress={create}
@@ -165,6 +166,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
         <Text style={[S.kicker, { color: C.gold }]}>✦ 今日だけの知らせ</Text>
         <Text style={S.h3}>潮替わり · {STAGES[stageIndex].n}</Text>
         <Gloss style={S.body}>{'いまの海況です。いま気になることを一つ選んでみましょう。'}</Gloss>
+        <GlossHint />
         <Button quiet onPress={openQuestions}>新しい問いを選ぶ</Button>
       </Card>}
       {homecoming && <Card>
@@ -191,7 +193,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
         {tierArt[reading.layers.day] && <View style={[S.card, { borderColor: tierColor + '88' }]}><Art source={tierArt[reading.layers.day]!} height={190} label={outlook.title + 'の海'} /></View>}
         <Text style={styles.detail}>{outlook.detail}</Text>
         <Meter title="自分が進む力" value={reading.force.go} color={tierColor} caption={goStrong ? '強い' : '控えめ'} />
-        <Meter title="周りを変える力" value={reading.force.change} color="#a8c4f0" caption={changeStrong ? '強い' : '控えめ'} />
+        <Meter title="周りを変える力" value={reading.force.change} color="#a8c4f0" caption={changeStrong ? '強い' : '控えめ'} delay={220} />
         <View style={styles.reason}>
           <TermText id="今日の一手" style={S.kicker}>{dayWord + 'の一手が、これになった理由'}</TermText>
           <Text style={S.body}>{goStrong && changeStrong ? '動くことも、人を巻き込むことも通りやすい日' : goStrong ? '自分のことは進むけれど、人を動かすのは難しい日' : changeStrong ? '自分で進めるより、人に頼るほうがうまくいく日' : '進むよりも、守って休むほうが得をする日'}。だから一手は<Text style={{ color: C.ink, fontWeight: '900' }}>「{outlook.action}」</Text>。</Text>
@@ -281,7 +283,7 @@ function ReadingReasons({ reading }: { reading: Reading }) {
     <Text accessibilityRole="header" style={S.kicker}>鑑定の根拠</Text>
     <Text style={S.h2}>二つの力と、点数の内訳</Text>
     <Meter title="自分が進む" value={force.go} caption={force.go >= .5 ? '好機' : '控えめ'} />
-    <Meter title="周りを変える" value={force.change} color="#a8c4f0" caption={force.change >= .5 ? '届きやすい' : '控えめ'} />
+    <Meter title="周りを変える" value={force.change} color="#a8c4f0" caption={force.change >= .5 ? '届きやすい' : '控えめ'} delay={220} />
     {factors.map(({ title, score, note }) => <View key={title} style={styles.factor}>
       <View style={S.between}><Text style={S.h3}>{title}</Text><Text style={[S.tiny, { color: score < 0 ? '#efb2b0' : C.gold }]}>{score > 0 ? '+' : ''}{score.toFixed(1)}点</Text></View>
       <Gloss style={S.body}>{note}</Gloss>

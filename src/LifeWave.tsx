@@ -113,7 +113,7 @@ function Answer({ mark, kicker, title, body, color, delay }: { mark: string; kic
     <Text style={[styles.answerMark, { color }]}>{mark}</Text>
     <View style={{ flex: 1, gap: 1 }}>
       <Text style={[S.kicker, { color }]}>{kicker}</Text>
-      <Text style={styles.answerTitle}>{title}</Text>
+      <Gloss style={styles.answerTitle}>{title}</Gloss>
       <Gloss style={styles.answerBody}>{body}</Gloss>
     </View>
   </View>;
@@ -195,7 +195,7 @@ export function LifeWave({ today, profile, questionId, initialYear, create, embe
       <View style={S.between}>
         <View>
           <Text style={S.kicker}>{selected}年{sel.age !== null ? '　·　' + sel.age + '歳の年' : ''}{selected === thisYear ? '　·　今年' : selected < thisYear ? '　·　過去' : '　·　これから'}</Text>
-          <Text style={[styles.yearTier, { color: tierColors[sel.level] }]} accessibilityRole="button" onPress={() => open(tiers[sel.level])}>{tiers[sel.level]}</Text>
+          <Text style={[styles.yearTier, { color: tierColors[sel.level] }]} accessibilityRole="button" onPress={() => open(tiers[sel.level])}>{tiers[sel.level]}<Text accessible={false} style={{ fontSize: 14, color: '#eacc8c' }}> ⓘ</Text></Text>
         </View>
         <View style={{ alignItems: 'flex-end' }}>
           <TermText id="海流" style={S.tiny}>年の海流</TermText>

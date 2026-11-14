@@ -22,12 +22,13 @@ import { findQuestion, type Reflection, type SavedQuestion } from './voyage';
 import { mainTabs, TabBar, type MainTab } from './PetNavigation';
 
 const detailTitles: Record<string, string> = {
-  explanation: '仕組みの解説', selfQuiz: '診断', selfResult: '診断の結果', selfWish: '意志を潮に乗せる', profile: '自分の海をひらく',
+  explanation: 'タイプ解説', selfQuiz: '診断', selfResult: '診断の結果', selfWish: '意志を潮に乗せる', profile: '自分の海をひらく',
   question: '問いを読む', compare: 'あの頃の海と比べる', homecoming: '帰郷の年', reflection: '振り返りを書く', trail: '問いの記録',
   share: '潮札を共有', myth: '潮環神話', pair: '相性を見る', resident: '住人の紹介', chapter: '神話を読む',
   note: '航海帳に記す', journal: '記録・設定', rank: '160名札の順位', people: '人の管理・リセット',
 };
-import { Explanation } from './Explanation';
+import { Guide } from './Guide';
+import { ToTop } from './ToTop';
 import { GlossProvider } from './Glossary';
 import { Ritual } from './Ritual';
 import { Opening } from './Opening';
@@ -286,7 +287,7 @@ function Voyage({ hold }: { hold: boolean }) {
   function detailBody(detail: Detail) {
     switch (detail.kind) {
       case 'explanation':
-        return <Explanation today={today} profile={profile} />;
+        return <Guide today={today} profile={profile} onClose={back} />;
       case 'selfQuiz':
         return <SelfQuiz done={finishQuiz} />;
       case 'selfResult': {
@@ -411,12 +412,13 @@ function Voyage({ hold }: { hold: boolean }) {
           {hold || (ritual && profile) ? null : body}
         </ScrollView>
         {path.map((entry, index) => <ScrollView key={entry.kind + index} {...({ dataSet: { screen: entry.kind, layer: 'detail' } } as object)}
-          style={[layout.scroll, index !== path.length - 1 && layout.hidden]} contentContainerStyle={entry.kind === 'explanation' ? { backgroundColor: '#f5f7fb', paddingBottom: 50 } : [layout.content, desktop && layout.contentDesktop]}
+          style={[layout.scroll, index !== path.length - 1 && layout.hidden]} contentContainerStyle={entry.kind === 'explanation' ? { flexGrow: 1 } : [layout.content, desktop && layout.contentDesktop]}
           keyboardShouldPersistTaps="handled">
           {detailBody(entry)}
         </ScrollView>)}
       </> : <View style={[layout.scroll, layout.content]}><Text style={S.body}>海図をひらいています…</Text></View>}
     </KeyboardAvoidingView>
+    <ToTop resetKey={tab + (detail ? detail.kind + path.length : "")} />
     {ritual && profile && <Ritual profile={profile} today={today} onDone={() => setRitual(false)} />}
   </SafeAreaView>;
 }
