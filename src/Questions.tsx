@@ -8,7 +8,7 @@ import { GodAnimation } from './GodAnimation';
 import { Gloss } from './Glossary';
 import { ResidentSymbol, TideMarks } from './ResidentCard';
 import { OUTER, STAGES, stageFor } from './scoring';
-import { Button, C, Card, Chip, Chips, display, rounded, S, Section, tapFx } from './ui';
+import { Button, C, Chip, Chips, display, rounded, S, Section, tapFx } from './ui';
 import { categories, featuredQuestions, findQuestion, ownResident, questions, residentLens, type Question } from './voyage';
 import { Float, fx, Sparkles, TypeText } from './Visual';
 
@@ -123,8 +123,6 @@ export function QuestionAnswer({ question, profile, today, personal, saved, togg
   question: Question; profile: Profile | null; today: Date; personal: boolean; saved: boolean; toggle: () => void;
   readOwn: () => void; browse: () => void; history: () => void; showToday: () => void;
 }) {
-  const [reaction, setReaction] = useState<'near' | 'different' | null>(null);
-  const [tried, setTried] = useState(false);
   const reading = personal && profile ? readDay(today, profile) : null;
   const look = lookOf(question);
   const lines = sentences(question.answer);
@@ -174,20 +172,6 @@ export function QuestionAnswer({ question, profile, today, personal, saved, togg
         </View>
       </Appear>
 
-      {/* 7. 今日の一手：札にして、試したら印をつける */}
-      <Appear style={[styles.ticket, tried ? asStyle({ borderColor: look.color, backgroundColor: look.color + '22' }) : {}]}>
-        <View style={S.between}>
-          <Text style={[S.kicker, { color: C.gold }]}>今日の一手</Text>
-          <Text style={S.tiny}>5分でできること</Text>
-        </View>
-        <Text style={styles.ticketText}>{question.action}</Text>
-        <Pressable {...tapFx} accessibilityRole="checkbox" accessibilityState={{ checked: tried }} onPress={() => setTried(!tried)}
-          style={[styles.try, tried && { backgroundColor: look.color, borderColor: look.color }]}>
-          <Text style={[styles.tryText, tried && { color: C.dark }]}>{tried ? '✓ やってみる、と決めた' : 'やってみる'}</Text>
-        </Pressable>
-        {tried && <Text {...fx('pop')} style={[S.tiny, { textAlign: 'center' }]}>小さな一手が、潮の向きを変えます。</Text>}
-      </Appear>
-
       <Button onPress={readOwn}>この問いを、私の海で読む　✦</Button>
     </>}
 
@@ -210,16 +194,6 @@ export function QuestionAnswer({ question, profile, today, personal, saved, togg
       <Button quiet onPress={showToday}>今日の海を見る</Button>
     </>}
 
-    <Card>
-      <Chips>
-        {!personal && <>
-          <Chip active={reaction === 'near'} onPress={() => setReaction(reaction === 'near' ? null : 'near')}>これは近い</Chip>
-          <Chip active={reaction === 'different'} onPress={() => setReaction(reaction === 'different' ? null : 'different')}>少し違う</Chip>
-        </>}
-        <Chip active={saved} onPress={toggle}>{saved ? '今日の保存を取り消す' : '残しておく'}</Chip>
-      </Chips>
-      <Text style={S.tiny}>{reaction === 'different' ? 'しっくりくる別の問いも選べます。' : '「残しておく」を選ぶと、今日の日付と問いがこの端末の記録に残ります。'}</Text>
-    </Card>
     <Button quiet onPress={browse}>別の問いを見る</Button>
   </View>;
 }
@@ -251,10 +225,6 @@ const styles = StyleSheet.create({
   follow: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 20, backgroundColor: '#111a31', borderWidth: 1, borderColor: C.line },
   followMark: { fontSize: 44, lineHeight: 52, fontFamily: display },
   followText: { color: C.ink, fontSize: 18, lineHeight: 28, fontWeight: '800' },
-  ticket: { gap: 10, padding: 16, borderRadius: 18, borderWidth: 1.5, borderStyle: 'dashed', borderColor: C.gold, backgroundColor: 'rgba(234,204,140,.07)' },
-  ticketText: { color: C.ink, fontSize: 19, lineHeight: 29, fontWeight: '900' },
-  try: { alignSelf: 'center', paddingHorizontal: 22, minHeight: 44, justifyContent: 'center', borderRadius: 22, borderWidth: 1.5, borderColor: C.gold },
-  tryText: { color: C.gold, fontSize: 15, fontWeight: '900' },
   personal: { padding: 17, gap: 10, borderWidth: 1.5 },
   pull: { color: C.ink, fontSize: 19, lineHeight: 30, fontFamily: rounded, fontWeight: '900' },
   layer: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6, borderTopWidth: 1, borderTopColor: C.line },
