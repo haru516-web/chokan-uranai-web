@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View, type GestureResponderEvent } from 'r
 import { tarotBack } from './art';
 import { dateKey } from './domain';
 import { Image } from './web/image';
-import { findTarot, seasonNames, tarotSpread, tarotTone, type Level, type Season, type TarotCard } from './tarotDeck';
+import { findTarot, seasonNames, tarotDeck, tarotSpread, tarotTone, type Level, type Season, type TarotCard } from './tarotDeck';
 import { Button, C, Heading, NextLinks, S } from './ui';
 import { startTarotFx } from './tarotFx';
 
@@ -72,8 +72,8 @@ type Flight = { card: TarotCard; dx: number; dy: number; s: number; w: number };
  * 今日の一枚。
  *  - 占いをしていなくても引ける（普遍の意味だけ）。
  *  - 占い済みなら、タイプの季節と今日の運勢に合わせた読みが加わる。
- * 伏せられた5枚から、気になる一枚をユーザーが選んで引く。選ぶと札が回りながら画面に近づき、大きく開く。
- * 場の5枚は日付と人から決まるので、開き直しても同じ。
+ * 伏せられた22枚（大アルカナ全部）から、気になる一枚をユーザーが選んで引く。選ぶと札が回りながら画面に近づき、大きく開く。
+ * 場の並び順は日付と人から決まるので、開き直しても同じ。
  */
 export function DailyTarot({ today, savedDraw, log, onDraw, personKey, season, level, onCreate }: {
   today: Date;
@@ -96,7 +96,7 @@ export function DailyTarot({ today, savedDraw, log, onDraw, personKey, season, l
     return () => clearTimeout(timer);
   }, [flight]);
 
-  const spread = card ? [] : tarotSpread(day, personKey, [...log].sort((a, b) => a.day.localeCompare(b.day)).map(entry => entry.cardId));
+  const spread = card ? [] : tarotSpread(day, personKey, [], tarotDeck.length);
 
   function pickCard(pick: TarotCard, event: GestureResponderEvent) {
     // 押した札の位置から、画面中央の大きな札へ。位置が取れなければ下から近づく。
@@ -143,11 +143,14 @@ export function DailyTarot({ today, savedDraw, log, onDraw, personKey, season, l
         <Text style={S.tiny}>今日のカードはこの端末に保存されています。次のカードは明日引けます。</Text>
       </View>
     </> : <>
-      <Text style={[S.tiny, { textAlign: 'center' }]}>伏せられた{spread.length}枚から、いま気になる一枚をタップして選びます。</Text>
+      <Text style={[S.tiny, { textAlign: 'center' }]}>伏せられた{spread.length}枚の中から、いま気になる一枚をタップして選びます。</Text>
       <View style={styles.spread}>
         {spread.map((pick, index) => <Pressable key={pick.id} accessibilityRole="button" accessibilityLabel={'カードを選ぶ（' + (index + 1) + '枚目）'}
-          onPress={event => pickCard(pick, event)} style={({ pressed }) => [styles.small, pressed && styles.pressed]}>
-          <CardBack caption={String(index + 1)} style={styles.fill} />
+          {...({ dataSet: { gd: 'pop' } } as object)}
+          onPress={event => pickCard(pick, event)} style={({ pressed }) => [styles.small, { animationDelay: 60 + index * 45 + 'ms' } as object, pressed && styles.pressed]}>
+          <View {...({ dataSet: { gd: 'sway' } } as object)} style={{ animationDelay: 1300 + index * 120 + 'ms' } as object}>
+            <CardBack caption={String(index + 1)} style={styles.fill} />
+          </View>
         </Pressable>)}
       </View>
       <Text style={[S.tiny, { textAlign: 'center' }]}>引けるのは1日1回です。入力やプロフィール登録は不要です。</Text>
@@ -188,8 +191,8 @@ const styles = StyleSheet.create({
   backImage: { aspectRatio: 2 / 3, borderRadius: 13, borderColor: C.gold, borderWidth: 1 },
   backInner: { flex: 1, borderRadius: 8, borderColor: '#88744f', borderWidth: 1, alignItems: 'center', justifyContent: 'space-between', paddingVertical: 13 },
   backCaption: { color: C.muted, fontSize: 12, letterSpacing: 2 },
-  spread: { flexDirection: 'row', justifyContent: 'center', gap: 8, width: '100%' },
-  small: { width: 0, flexGrow: 1, flexBasis: 0, maxWidth: 74 },
+  spread: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, width: '100%' },
+  small: { width: '14.2%', flexGrow: 0, flexShrink: 0, maxWidth: 74 },
   ringSmall: { width: 30, height: 30, borderRadius: 15, borderWidth: 1.5, borderColor: C.gold, alignItems: 'center', justifyContent: 'center' },
   ringCoreSmall: { width: 15, height: 15, borderRadius: 8, borderWidth: 1, borderColor: C.aqua },
   pressed: { opacity: .78, transform: [{ scale: .99 }] },

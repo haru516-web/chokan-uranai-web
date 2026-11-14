@@ -255,3 +255,14 @@
 
 /* 年・月・日のカードが、順に弾んで現れる */
 [data-gd="pop"] { animation: gd-pop .6s cubic-bezier(.2, .9, .3, 1.2) both; }
+
+/* タロットを選ぶ前：札が順に、波のように揺れる（22 枚を端から端へ、一巡したら少し休んで繰り返す） */
+@keyframes gd-sway {
+  0%   { transform: translateY(0) rotate(0deg); filter: none; }
+  7%   { transform: translateY(-9px) rotate(-5deg); filter: brightness(1.45) saturate(1.2); }
+  15%  { transform: translateY(2px) rotate(3.5deg); filter: brightness(1.15); }
+  23%  { transform: translateY(-3px) rotate(-1.5deg); filter: none; }
+  31%  { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+[data-gd="sway"] { animation: gd-sway 5.2s cubic-bezier(.3, .7, .3, 1) infinite; transform-origin: 50% 90%; will-change: transform; }
