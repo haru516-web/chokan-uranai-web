@@ -152,16 +152,8 @@ export function Atlas({ profile, favorites, open, myth, pair, create }: {
   profile: Profile | null; favorites: number[]; open: OpenResident; myth: () => void; pair: () => void; create: () => void;
 }) {
   const { item: columnWidth } = useColumns();
-  const [season, setSeason] = useState<number | null>(null);
-  const [depth, setDepth] = useState<number | null>(null);
-  const [onlySaved, setOnlySaved] = useState(false);
-  const [query, setQuery] = useState('');
   const own = profile ? residentIndex(profile.t) : -1;
-  const visible = residents.map((resident, index) => ({ ...resident, index })).filter(resident => {
-    return (season === null || Math.floor(resident.index / 4) === season) &&
-      (depth === null || resident.index % 4 === depth) && (!onlySaved || favorites.includes(resident.index)) &&
-      [resident.band, resident.subtitle].some(text => text.includes(query.trim()));
-  });
+  const visible = residents.map((resident, index) => ({ ...resident, index }));
   return <View style={S.stack}>
     <Section title="四季の神様" note="16のタイプを季節ごとに見守る、四柱の神様。" />
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 }}>
@@ -174,17 +166,6 @@ export function Atlas({ profile, favorites, open, myth, pair, create }: {
     </View>
     <Heading tag="16タイプ" title="あなたはどのタイプ？" body="気になるタイプをタップ。考え方や人との関わり方が読めます。" />
     {profile ? <Button onPress={() => open(own)}>自分のタイプを見る　›</Button> : <Button onPress={create}>自分のタイプを調べる（約30秒）　›</Button>}
-    <TextInput accessibilityLabel="占いタイプを検索" value={query} onChangeText={setQuery}
-      style={S.field} placeholder="例：冬の深海、番人" placeholderTextColor={C.muted} />
-    <Chips>
-      <Chip active={season === null} onPress={() => setSeason(null)}>すべての季節</Chip>
-      {['春', '夏', '秋', '冬'].map((name, i) => <Chip key={name} active={season === i} onPress={() => setSeason(season === i ? null : i)}>{name}</Chip>)}
-    </Chips>
-    <Chips>
-      {['浅瀬', '沿岸', '沖合', '深海'].map((name, i) => <Chip key={name} active={depth === i} onPress={() => setDepth(depth === i ? null : i)}>{name}</Chip>)}
-      <Chip active={onlySaved} onPress={() => setOnlySaved(!onlySaved)}>☆ お気に入り</Chip>
-    </Chips>
-    <Text style={S.tiny}>{visible.length} / 16　·　お気に入り {favorites.length}件</Text>
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 }}>
       {visible.map(resident => <Pressable {...tapFx} key={resident.id} accessibilityRole="button" onPress={() => open(resident.index)}
         accessibilityLabel={[resident.band, resident.subtitle, resident.index === own ? 'あなたのタイプ' : ''].filter(Boolean).join('、')}
@@ -198,7 +179,6 @@ export function Atlas({ profile, favorites, open, myth, pair, create }: {
         <Text style={[S.tiny, { padding: 11 }]}>{resident.summary}</Text>
       </Pressable>)}
     </View>
-    {visible.length === 0 && <Card><Text style={S.body}>条件に合うタイプが見つかりません。</Text><Button quiet onPress={() => { setSeason(null); setDepth(null); setOnlySaved(false); setQuery(''); }}>絞り込みをリセット</Button></Card>}
     <Button quiet onPress={pair}>二人の海をみる</Button>
     <Section title="潮環の世界" />
     <Tile source={scenes[0]} subtitle="潮環神話" title="見られなかった海" onPress={myth} />

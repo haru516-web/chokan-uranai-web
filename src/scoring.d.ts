@@ -30,6 +30,7 @@ export function solarStageStartDate(solarYear: number, stage: number): Date;
 export function personalStage(solarYear: number, stage: number, type: SeaType): number;
 export function stageFor(context: SeaContext, type: SeaType | null | undefined): number;
 export function monthStagesFor(solarYear: number, month: number, type: SeaType | null | undefined): { n: string; d: string; second: { n: string; d: string } };
+export function relationOf(person: number, environment: number): { kind: string; score: number; description: string };
 export function fivePhaseRelation(type: SeaType, element: number): { kind: string; score: number; description: string };
 export function labelOf(type: SeaType): string;
 export function dayTable(context: SeaContext): { rows: RankRow[]; byKey: Record<number, RankRow>; mean: number };

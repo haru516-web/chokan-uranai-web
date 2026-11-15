@@ -266,3 +266,21 @@
   100% { transform: translateY(0) rotate(0deg); }
 }
 [data-gd="sway"] { animation: gd-sway 5.2s cubic-bezier(.3, .7, .3, 1) infinite; transform-origin: 50% 90%; will-change: transform; }
+
+/* 相性の儀式。鑑定の儀式（.ritual）の中央に、二人のタイプを置く。輪が閉じるたびに二人が近づき、嵐が割れたら重なる。 */
+.pair-ritual .ritual-god { background: radial-gradient(circle, color-mix(in srgb, var(--tint) 20%, #0c1226) 0, rgba(8, 12, 28, .9) 62%, rgba(8, 12, 28, 0) 72%); }
+.pair-faces { position: relative; width: 100%; height: 100%; }
+.pair-face { position: absolute; top: 16%; width: 52%; aspect-ratio: 1; object-fit: contain; filter: drop-shadow(0 0 14px var(--tint));
+  transition: left .95s cubic-bezier(.2, .8, .2, 1), filter .6s; animation: pair-face-in 1s cubic-bezier(.2, .8, .2, 1) both; }
+.pair-face-b { animation-delay: .25s; }
+@keyframes pair-face-in { 0% { opacity: 0; transform: translateY(14px) scale(.8); filter: blur(8px) brightness(2.4); } 100% { opacity: 1; transform: none; filter: drop-shadow(0 0 14px var(--tint)); } }
+.pair-faces[data-step="0"] .pair-face-a { left: -12%; } .pair-faces[data-step="0"] .pair-face-b { left: 60%; }
+.pair-faces[data-step="1"] .pair-face-a { left: -4%; }  .pair-faces[data-step="1"] .pair-face-b { left: 52%; }
+.pair-faces[data-step="2"] .pair-face-a { left: 4%; }   .pair-faces[data-step="2"] .pair-face-b { left: 44%; }
+.pair-faces[data-step="3"] .pair-face-a { left: 10%; }  .pair-faces[data-step="3"] .pair-face-b { left: 38%; }
+.pair-faces[data-step="4"] .pair-face-a { left: 14%; }  .pair-faces[data-step="4"] .pair-face-b { left: 34%; }
+.pair-faces[data-step="5"] .pair-face-a { left: 17%; filter: drop-shadow(0 0 26px #eacc8c) brightness(1.2); }
+.pair-faces[data-step="5"] .pair-face-b { left: 31%; filter: drop-shadow(0 0 26px #eacc8c) brightness(1.2); }
+.pair-flash { position: absolute; inset: 6%; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgba(255, 246, 220, .85) 0, rgba(240, 168, 192, .35) 40%, transparent 70%); animation: pair-flash .8s ease-out both; }
+@keyframes pair-flash { 0% { opacity: .9; transform: scale(.5); } 100% { opacity: 0; transform: scale(1.35); } }
+.pair-ritual[data-opened="true"] .ritual-god { filter: drop-shadow(0 0 40px #f0a8c0) brightness(1.2); scale: 1.12; }

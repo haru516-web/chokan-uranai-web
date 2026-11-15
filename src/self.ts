@@ -4,57 +4,58 @@
 export type Option = { text: string; p: number; s: number };
 export type Scene = { id: string; tag: string; scene: string; options: Option[] };
 
-// どの選択肢も「ありうる反応」として書く。正解が一目で分かる並びにしない。
+// テーマは「航海」。どの選択肢も「ありうる反応」として書く。正解が一目で分かる並びにしない。
 export const scenes: Scene[] = [
-  { id: 'trend', tag: '流行', scene: '周りで流行ってるものが気になった', options: [
-    { text: 'みんなが良いなら間違いない', p: 0, s: 0 },
-    { text: '流行りものは避ける', p: 1, s: 2 },
-    { text: '自分の好みか確かめる', p: 3, s: 3 },
-    { text: 'とりあえず試して決める', p: 3, s: 2 },
+  { id: 'trend', tag: '港選び', scene: '周りの船が、いっせいに同じ港へ向かっている', options: [
+    { text: 'みんなが行くなら安心', p: 0, s: 0 },
+    { text: '人気の港は避ける', p: 1, s: 2 },
+    { text: '自分の海図で行き先を確かめる', p: 3, s: 3 },
+    { text: 'とりあえず寄ってから決める', p: 3, s: 2 },
   ] },
-  { id: 'mocked', tag: '好きなもの', scene: '好きなものを笑われた', options: [
-    { text: '人前では隠すようになる', p: 0, s: 0 },
-    { text: '気にせず好きでいる', p: 2, s: 3 },
-    { text: 'なぜ好きか考え直す', p: 3, s: 2 },
+  { id: 'mocked', tag: '宝物', scene: '大切にしている宝を、ほかの船乗りに笑われた', options: [
+    { text: '船倉の奥に隠すようになる', p: 0, s: 0 },
+    { text: '気にせず積んだままにする', p: 2, s: 3 },
+    { text: 'なぜ大切なのか考え直す', p: 3, s: 2 },
     { text: '笑った人の話も聞いてみる', p: 2, s: 1 },
   ] },
-  { id: 'mentor', tag: '尊敬する人', scene: '尊敬する人に考えを否定された', options: [
-    { text: 'その人が言うなら正しい', p: 0, s: 0 },
-    { text: '納得できないので変えない', p: 1, s: 3 },
-    { text: '理由を聞いて自分で考える', p: 3, s: 3 },
-    { text: '答えは保留。時間をおく', p: 2, s: 2 },
+  { id: 'mentor', tag: '船長', scene: '尊敬する船長に、進路を否定された', options: [
+    { text: '船長が言うなら正しい', p: 0, s: 0 },
+    { text: '納得できないので進路は変えない', p: 1, s: 3 },
+    { text: '理由を聞いて、自分で海図を引き直す', p: 3, s: 3 },
+    { text: '答えは保留。しばらく様子を見る', p: 2, s: 2 },
   ] },
-  { id: 'love', tag: '恋愛', scene: '気になる人の好みは、自分と違った', options: [
-    { text: '相手が喜ぶならそれでいい', p: 1, s: 0 },
-    { text: '合わせるけど、本音は別', p: 0, s: 1 },
-    { text: '自分の好みも伝える', p: 3, s: 3 },
-    { text: '好きになれるか試してみる', p: 3, s: 2 },
+  { id: 'love', tag: '灯台', scene: '気になる船の針路は、自分とは違った', options: [
+    { text: '相手に合わせて進路を変える', p: 1, s: 0 },
+    { text: '合わせるけど、本当は別の港に行きたい', p: 0, s: 1 },
+    { text: '自分の行き先も伝える', p: 3, s: 3 },
+    { text: '同じ航路を、少し試してみる', p: 3, s: 2 },
   ] },
-  { id: 'unseen', tag: '誰も褒めない', scene: '誰にも褒められないけど、続けたいことがある', options: [
-    { text: '反応があれば続ける', p: 1, s: 1 },
-    { text: '役に立たないならやめる', p: 1, s: 1 },
-    { text: '評価されなくても続ける', p: 3, s: 3 },
-    { text: '誰かに話して意味を確かめる', p: 2, s: 2 },
+  { id: 'unseen', tag: '無人の海', scene: '誰にも見られない海で、続けたい航海がある', options: [
+    { text: '見ている人がいれば続ける', p: 1, s: 1 },
+    { text: '役に立たない航海ならやめる', p: 1, s: 1 },
+    { text: '誰にも見られなくても続ける', p: 3, s: 3 },
+    { text: '仲間に話して、意味を確かめる', p: 2, s: 2 },
   ] },
-  { id: 'sns', tag: 'SNS', scene: '投稿がまったく反応されなかった', options: [
-    { text: '反応される形に変える', p: 0, s: 0 },
+  { id: 'sns', tag: '狼煙', scene: '上げた狼煙に、どの船も気づかなかった', options: [
+    { text: '気づかれやすい色に変える', p: 0, s: 0 },
     { text: '何がズレたか自分で考える', p: 3, s: 2 },
-    { text: '落ち込むけど、また出す', p: 2, s: 2 },
+    { text: '落ち込むけど、また上げる', p: 2, s: 2 },
     { text: '自分が満足ならそれでいい', p: 3, s: 3 },
   ] },
-  { id: 'fail', tag: '失敗', scene: '自分で選んだことが失敗した', options: [
-    { text: '勧めた人のせいだと思う', p: 0, s: 0 },
-    { text: 'なぜ選んだか振り返る', p: 3, s: 3 },
+  { id: 'fail', tag: '座礁', scene: '自分で決めた進路で、船が座礁した', options: [
+    { text: '進路を勧めた人のせいだと思う', p: 0, s: 0 },
+    { text: 'なぜその進路を選んだか振り返る', p: 3, s: 3 },
     { text: '次は人の意見を多めに聞く', p: 1, s: 1 },
-    { text: '失敗も自分の選択と受け止める', p: 3, s: 2 },
+    { text: '失敗も自分の舵取りと受け止める', p: 3, s: 2 },
   ] },
-  { id: 'shift', tag: '価値観', scene: '新しい考え方に出会って、心が揺れた', options: [
-    { text: 'すぐ取り入れる', p: 0, s: 0 },
-    { text: '受け入れず距離をとる', p: 1, s: 2 },
-    { text: '揺れる自分を観察する', p: 2, s: 2 },
-    { text: '自分の基準に照らして考える', p: 3, s: 3 },
+  { id: 'shift', tag: '風向き', scene: '見知らぬ風が吹いて、心が揺れた', options: [
+    { text: 'すぐ帆の向きを変える', p: 0, s: 0 },
+    { text: '帆をたたんで、風を避ける', p: 1, s: 2 },
+    { text: '揺れる自分の船を観察する', p: 2, s: 2 },
+    { text: '自分の羅針盤に照らして考える', p: 3, s: 3 },
   ] },
 ];
+
 
 export type Quad = 'compass' | 'explorer' | 'anchor' | 'drift';
 export const quads: Record<Quad, { name: string; mark: string; line: string; ask: string; color: string }> = {
@@ -142,5 +143,5 @@ export const residentAsk = [
 export type SelfState = { results: SelfResult[]; checks: Check[]; moves: Move[]; wish: string };
 export const emptySelf: SelfState = { results: [], checks: [], moves: [], wish: '' };
 
-export const sceneIcons: Record<string, string> = { trend: '🛍️', mocked: '💬', mentor: '🧑‍🏫', love: '💘', unseen: '🌱', sns: '📱', fail: '🧩', shift: '🌊' };
+export const sceneIcons: Record<string, string> = { trend: '🏝️', mocked: '💎', mentor: '⛵', love: '🗼', unseen: '🌌', sns: '🔥', fail: '🪨', shift: '🌬️' };
 export const optionColors = ['#eacc8c', '#9fd8c7', '#a8c4f0', '#e3af92'];

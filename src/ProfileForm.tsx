@@ -5,7 +5,6 @@ import { harbor } from './art';
 import { GodAnimation } from './GodAnimation';
 import { TermText } from './Glossary';
 import { type Inputs, jstToday, unknownChars, validate } from './domain';
-import { SEASON } from './scoring';
 import { nameChars, strokeOf } from './strokes';
 import { Button, C, Card, Chip, Heading, S, ui } from './ui';
 import { Float, fx, Sparkles } from './Visual';
@@ -37,7 +36,6 @@ export function ProfileForm({ initial, persist, onSubmit, title, submitLabel }: 
   const dateOk = filled && year >= 1900 && date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day && date <= jstToday();
   const fieldOk = [parts[0].length === 4 && year >= 1900 && year <= jstToday().getUTCFullYear(), !!parts[1] && month >= 1 && month <= 12, !!parts[2] && day >= 1 && day <= 31];
   const dateHint = !filled ? '' : dateOk ? '' : month < 1 || month > 12 ? '月は1〜12で入力してください。' : year < 1900 ? '1900年以降の年を入力してください。' : date > jstToday() ? '今日までの日付を入力してください。' : 'その日付は暦にありません。';
-  const season = dateOk ? SEASON[(year + month + day) % 4] : null;
   const chars = nameChars(name.trim());
   const unknown = unknownChars(name);
   const strokes = chars.map(char => strokeOf(char)?.n ?? Number(manual[char] || 0));
@@ -71,12 +69,11 @@ export function ProfileForm({ initial, persist, onSubmit, title, submitLabel }: 
         <Heading tag="YOUR TIDE CARD" title={title ?? '潮札をつくる'} />
         <Text style={[S.body, styles.introText]}>入力は2つだけ。生年月日と下の名前から、今日の運勢を読みます。</Text>
       </View>
-      <Float style={styles.guide}><GodAnimation forcePlay index={season ? SEASON.indexOf(season) : 4} style={{ width: '100%' }} /></Float>
+      <Float style={styles.guide}><GodAnimation forcePlay index={4} style={{ width: '100%' }} /></Float>
     </View>
     <Card>
       <View style={S.between}>
         <Text style={S.h3}><Text style={styles.step}>壱　</Text>生年月日</Text>
-        <Text style={S.tiny}><TermText id="季節" style={S.tiny} />が決まります</Text>
       </View>
       <View style={styles.dateRow}>
         {dateFields.map(({ label, example, length }, index) => (
@@ -99,13 +96,6 @@ export function ProfileForm({ initial, persist, onSubmit, title, submitLabel }: 
         ))}
       </View>
       {!!dateHint && <Text accessibilityRole="alert" style={[S.tiny, { color: C.error }]}>{dateHint}</Text>}
-      {season && <View key={season.n} {...fx('pop')} style={[styles.found, asStyle({ borderColor: season.col, backgroundImage: `linear-gradient(100deg, ${season.col}33, transparent)` })]}>
-        <Text style={[styles.foundMark, { color: season.col }]}>{season.n}</Text>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.foundTitle}>{season.n}の海に生まれた人</Text>
-          <Text style={S.tiny}>{season.act}ことに力が出る型です。</Text>
-        </View>
-      </View>}
 
       <View style={[S.between, styles.nameLabel]}>
         <Text style={S.h3}><Text style={styles.step}>弐　</Text>下の名前</Text>

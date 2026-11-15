@@ -73,7 +73,7 @@ export function labelOf(t){ return SEASON[t.mod].n+(t.A?" A":"")+(t.minus?"-":""
 function ringOf(stage,mod){ var r=Math.abs(stage-SEASON[mod].home*2); return Math.min(r,24-r)/2; }
 const GENERATES=[1,2,3,4,0];
 const CONTROLS=[2,3,4,0,1];
-function relationOf(person,environment){
+export function relationOf(person,environment){
   if(person===environment) return {kind:"同気",score:1.2,description:"同じ働きが重なります"};
   if(GENERATES[environment]===person) return {kind:"相生",score:1.8,description:"時の流れが基調を育てます"};
   if(GENERATES[person]===environment) return {kind:"流出",score:-0.6,description:"力を外へ渡す流れです"};

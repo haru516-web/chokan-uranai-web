@@ -1,7 +1,7 @@
 import { analyze, nameChars, strokeOf } from './strokes';
 import { NUMS, SEASON, STAGES, stageFor, axes, blockScoreOf, ctxFor, dayTable, fivePhaseRelation, personalFor, yearScoreOf, type SeaContext, type SeaType } from './scoring';
 import content from './content.json';
-import readingText from './reading-text.json';
+import { outlookText } from './dayText';
 
 const DAY = 86_400_000;
 export const jstToday = () => new Date(Math.floor((Date.now() + 9 * 3_600_000) / DAY) * DAY);
@@ -108,13 +108,9 @@ export function readDay(date: Date, profile: Profile) {
   const personalRank = Math.min(table.rows.length, 1 + table.rows.filter(entry => entry.score > personalScore).length);
   const level: Tier = row.rank <= 16 ? 0 : row.rank <= 56 ? 1 : row.rank <= 104 ? 2 : row.rank <= 144 ? 3 : 4;
   const force = axes(context, row);
-  const axis = force.go >= .5 ? (force.change >= .5 ? '11' : '10') : (force.change >= .5 ? '01' : '00');
-  const seed = context.seed + row.t.key;
-  // 日付と名札から、毎日ばらけるように文言を選ぶ（同じ人・同じ日なら必ず同じ）。
-  const pick = (salt: number, length: number) => (Math.imul(seed ^ (seed >>> 13), 0x9e3779b1 + salt * 2) >>> 8) % length;
-  const [line, detail] = readingText.MSG[axis][pick(1, readingText.MSG[axis].length)];
-  const action = readingText.HAND[axis][pick(7, readingText.HAND[axis].length)].replace(/^今日の一手：/, '');
-  const outlook = { title: tiers[level], color: tierColors[level], line, detail, action };
+  // 文章は候補から選ばず、この名札の今日の数値（順位の位置・8つの項目・二つの力）から組み立てる。
+  const { line, detail, action, basis } = outlookText(row, force);
+  const outlook = { title: tiers[level], color: tierColors[level], line, detail, action, basis };
   const cycle = cycleFor(profile.t);
   const year = cycleTier(yearScoreOf(context.solarYear, profile.t).score, cycle.years);
   const block = cycleTier(blockScoreOf(context.solarYear, context.solarMonth, profile.t).score, cycle.blocks);

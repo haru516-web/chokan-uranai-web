@@ -10,7 +10,7 @@ import { blankInputs, dateKey, jstToday, makeProfile, readDay, validate, type In
 import { QuestionTrail, ReflectionEditor } from './LifeChart';
 import { LifeWave, scrollToLifeCalendar } from './LifeWave';
 import { ProfileForm } from './ProfileForm';
-import { PairReading } from './PairReading';
+import { Compat } from './Compat';
 import { QuestionAnswer, QuestionSea } from './Questions';
 import { ShareTideCard } from './ResidentCard';
 import { Today } from './Today';
@@ -24,7 +24,7 @@ import { mainTabs, TabBar, type MainTab } from './PetNavigation';
 const detailTitles: Record<string, string> = {
   explanation: 'タイプ解説', selfQuiz: '診断', selfResult: '診断の結果', selfWish: '意志を潮に乗せる', profile: '自分の海をひらく',
   question: '問いを読む', compare: 'あの頃の海と比べる', homecoming: '帰郷の年', reflection: '振り返りを書く', trail: '問いの記録',
-  share: '潮札を共有', myth: '潮環神話', pair: '相性を見る', resident: '住人の紹介', chapter: '神話を読む',
+  share: '潮札を共有', myth: '潮環神話', resident: '住人の紹介', chapter: '神話を読む',
   note: '航海帳に記す', journal: '記録・設定', rank: '160名札の順位', people: '人の管理・リセット',
 };
 import { Guide } from './Guide';
@@ -50,7 +50,6 @@ type Detail =
   | { kind: 'trail'; id: string }
   | { kind: 'share' }
   | { kind: 'myth' }
-  | { kind: 'pair' }
   | { kind: 'resident'; index: number }
   | { kind: 'chapter'; index: number }
   | { kind: 'note'; day: string }
@@ -278,10 +277,11 @@ function Voyage({ hold }: { hold: boolean }) {
       openResult={id => open({ kind: 'selfResult', id })} goToday={() => go('today')}
       saveCheck={reason => updateSelf(value => ({ ...value, checks: [{ day, reason }, ...value.checks.filter(check => check.day !== day)].slice(0, 60) }))}
       saveAfter={(id, after) => updateSelf(value => ({ ...value, moves: value.moves.map(move => move.id === id ? { ...move, after } : move) }))} />,
+    match: <Compat profile={profile}people={people} create={editProfile} />,
     questions: <QuestionSea open={openQuestion} create={profile ? undefined : editProfile} />,
     chart: <LifeWave embedCalendar calendarFocus={calendarFocus} today={today} profile={profile} create={editProfile} openJournal={() => open({ kind: 'journal' })}
       write={writeReflection} showToday={() => go('today')} records={stored.reflections} edit={editReflection} />,
-    atlas: <Atlas create={editProfile} profile={profile} favorites={stored.favorites} open={openResident} myth={openMyth} pair={() => open({ kind: 'pair' })} />,
+    atlas: <Atlas create={editProfile} profile={profile} favorites={stored.favorites} open={openResident} myth={openMyth} pair={() => go('match')} />,
   }[tab];
 
   function detailBody(detail: Detail) {
@@ -303,7 +303,7 @@ function Voyage({ hold }: { hold: boolean }) {
           persist={detail.add ? false : active ? active.saved : true} submitLabel={detail.add ? 'この人を占う' : undefined}
           onSubmit={(next, remember) => saveProfile(next, remember, detail.questionId, detail.add)} />;
       case 'journal':
-        return <Journal profile={profile} notes={stored.notes} edit={editProfile} pair={() => open({ kind: 'pair' })} showToday={() => go('today')}
+        return <Journal profile={profile} notes={stored.notes} edit={editProfile} pair={() => go('match')} showToday={() => go('today')}
           questions={stored.questions} reflections={stored.reflections} openTrail={openTrail} editReflection={editReflection} openChart={() => go('chart')}
           create={() => openNote(dateKey(today))} openNote={openNote} goSelf={() => go('self')} selfCount={self.results.length}
           onForget={() => open({ kind: 'people' })} />;
@@ -370,8 +370,6 @@ function Voyage({ hold }: { hold: boolean }) {
             setPath([{ kind: 'journal' }]);
           }} />;
       }
-      case 'pair':
-        return <PairReading profile={profile} />;
       case 'rank':
         return <Ranking date={detail.date} profile={profile} />;
     }

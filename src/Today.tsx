@@ -5,7 +5,7 @@ import { currents, iconArt, residentArt, scenes, stages, tierArt } from './art';
 import { Image } from './web/image';
 import { LayeredReading } from './DailyReading';
 import { addDays, calendarEvents, dateKey, dateLabel, readDay, residentIndex, shortDate, tierColors, tiers, type Profile } from './domain';
-import { BornSea, NameReadingDetails, TypeTraits } from './NameReading';
+import { BornSea, NameReadingDetails, TypeFortunes, TypeTraits } from './NameReading';
 import { SelectedQuestionReading } from './Questions';
 import { TideFlow } from './ResidentCard';
 import { ctxFor, DAY_STAGES, FIVE_PHASES, labelOf, OUTER, SEASON, STAGES, stageFor } from './scoring';
@@ -106,8 +106,8 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
 
   const moonCard = <View style={S.stack}>
     <Text style={S.h3}>{c.moon}　·　{c.phaseTide}</Text>
-    <SeaGlobe key={c.Y + "-" + c.MO + "-" + c.DA} context={c} />
-    <MoonFacts key={c.Y + "-" + c.MO + "-" + c.DA} context={c} />
+    <SeaGlobe key={'globe-' + c.Y + '-' + c.MO + '-' + c.DA} context={c} />
+    <MoonFacts key={'facts-' + c.Y + '-' + c.MO + '-' + c.DA} context={c} />
     {(isNewMoon || isFullMoon) && <Text style={S.body}>{isNewMoon ? '新月：これから始めたいことを一つ選ぶ節目です。' : '満月：いま手元にあるものを確かめる節目です。'}</Text>}
   </View>;
 
@@ -197,6 +197,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
         <Text style={styles.typeHook}>{resident.hook}</Text>
         <Text style={styles.detail}>{resident.inner}</Text>
       </View>
+      <TypeFortunes entry={resident} />
       <TypeTraits entry={resident} />
       <Button quiet onPress={() => setShowName(!showName)}>{showName ? '名札の決まり方を閉じる' : '名札の決まり方を詳しく見る'}</Button>
       {showName && <NameReadingDetails profile={profile} />}
@@ -217,6 +218,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
         <View style={styles.reason}>
           <TermText id="今日の一手" style={S.kicker}>{dayWord + 'の一手が、これになった理由'}</TermText>
           <Text style={S.body}>{goStrong && changeStrong ? '動くことも、人を巻き込むことも通りやすい日' : goStrong ? '自分のことは進むけれど、人を動かすのは難しい日' : changeStrong ? '自分で進めるより、人に頼るほうがうまくいく日' : '進むよりも、守って休むほうが得をする日'}。だから一手は<Text style={{ color: C.ink, fontWeight: '900' }}>「{outlook.action}」</Text>。</Text>
+          {!!outlook.basis.length && <Text style={S.tiny}>今日この名札に効いている項目：{outlook.basis.slice(0, 4).map(item => item.label + (item.points >= 0 ? ' +' : ' −') + Math.abs(item.points).toFixed(1)).join('　／　')}（進む力 {Math.round(reading.force.go * 100)}・周りを変える力 {Math.round(reading.force.change * 100)}）</Text>}
         </View>
         {!!events.length && <Chips>{events.map(event => <Chip key={event}>{event}</Chip>)}</Chips>}
       </Scene>

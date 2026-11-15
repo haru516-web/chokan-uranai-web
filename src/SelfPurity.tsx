@@ -92,9 +92,9 @@ export function SelfHome({ state, profile, today, start, openResult, openWish, s
       <Text style={[S.h2, { color: C.gold }]}>›</Text>
     </Pressable>
     {!last && <View style={st.hero}>
-      <Text style={S.kicker}>自己診断</Text>
-      <Text accessibilityRole="header" style={st.heroTitle}>今の自分は、{'\n'}自分で選べてる？</Text>
-      <Text style={S.body}>8つの場面を、直感でタップ。約1分。</Text>
+      <Text style={S.kicker}>自己診断 ・ 航海編</Text>
+      <Text accessibilityRole="header" style={st.heroTitle}>あなたの航海、{'\n'}舵を握っているのは誰？</Text>
+      <Text style={S.body}>海で起きる8つの出来事を、直感でタップ。約1分。</Text>
       <Button onPress={start}>はじめる　›</Button>
       <Text style={S.tiny}>名前も生年月日も要りません。正解はありません。</Text>
     </View>}
@@ -218,7 +218,7 @@ export function SelfQuiz({ done }: { done: (answers: number[]) => void }) {
         <Text style={S.kicker}>{index + 1} / {scenes.length}　{scene.tag}</Text>
         <Text accessibilityRole="header" style={[st.scene, { textAlign: "center" }]}>{scene.scene}</Text>
       </View>
-      <Text style={S.tiny}>こんなとき、近いのは？</Text>
+      <Text style={S.tiny}>あなたの船なら、近いのは？</Text>
       <View style={{ gap: 10 }}>
         {scene.options.map((option, i) => <Big key={option.text} dot={optionColors[i]} selected={picked === i} onPress={() => pick(i)}>{option.text}</Big>)}
       </View>

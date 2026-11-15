@@ -1,4 +1,7 @@
-import { Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { iconArt } from './art';
+import { Image } from './web/image';
+import typeFortunes from './typeFortunes.json';
 import { content, type Profile } from './domain';
 import readingText from './reading-text.json';
 import { TideMarks, TypeBadges } from './ResidentCard';
@@ -20,6 +23,44 @@ export function BornSea({ profile }: { profile: Profile }) {
     <TypeBadges profile={profile} />
   </Card>;
 }
+
+const AREAS = [
+  { id: 'love', label: '恋愛運', color: '#f0a8c0', glyph: '♡' },
+  { id: 'marriage', label: '結婚運', color: '#c9b6ef', glyph: '❖' },
+  { id: 'money', label: '金運', color: '#b6dfc4', glyph: '◎' },
+  { id: 'work', label: '仕事運', color: '#eacc8c', glyph: '⚓' },
+] as const;
+
+/** タイプ別の恋愛運・結婚運・金運・仕事運。タイプ（住人）ごとに固定の読み。 */
+export function TypeFortunes({ entry }: { entry: typeof residents[number] }) {
+  const data = (typeFortunes as Record<string, Record<string, string[]>>)[entry.id];
+  if (!data) return null;
+  return <>
+    <Text accessibilityRole="header" style={S.kicker}>{entry.band}の、運のかたち</Text>
+    {AREAS.map(area => {
+      const [head, text, tip] = data[area.id];
+      const icon = (iconArt as Record<string, string | undefined>)[area.id];
+      return <View key={area.id} style={[S.card, S.pad, { borderColor: area.color + '66' }]}>
+        <View style={styles.head}>
+          <View style={[styles.icon, { backgroundColor: area.color + '26', borderColor: area.color + '88' }]}>
+            {icon ? <Image source={icon} style={{ width: 28, height: 28 }} contentFit="contain" accessible={false} /> : <Text style={{ color: area.color, fontSize: 18, fontWeight: '900' }}>{area.glyph}</Text>}
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={[S.kicker, { color: area.color }]}>{area.label}</Text>
+            <Text style={S.h3}>{head}</Text>
+          </View>
+        </View>
+        <Text style={S.body}>{text}</Text>
+        <Text style={[S.tiny, { color: area.color }]}>ひとこと　{tip}</Text>
+      </View>;
+    })}
+  </>;
+}
+
+const styles = StyleSheet.create({
+  head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  icon: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+});
 
 export function TypeTraits({ entry }: { entry: typeof residents[number] }) {
   const traits = [
