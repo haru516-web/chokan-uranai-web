@@ -1,11 +1,16 @@
-﻿// 相性タブ。自分のタイプと相手のタイプを選ぶと、恋愛・結婚・仕事・友情の相性を読む。
-// 相手は、保存した人からも、16タイプの一覧からも選べる。自分のタイプから見た16タイプ全員の順位も出る。
+﻿// 相性タブ。自分と相手を読み合わせて、恋愛・結婚・仕事・友情の相性を出す。
+// 相手の選び方は二通りあり、どちらも同じ画面で並んでいる。
+//   ・名前と生年月日で選ぶ … 占いと同じ入力。深さの数値・「−」「A」・生まれ年の十二支・生まれた日の月・名前の五行まで使う。
+//   ・タイプで選ぶ         … 16タイプから選ぶ。季節と深さの帯だけで読む。
+// どちらも、自分の側は占いの結果（名札の数値）をそのまま使う。
+import { Premium } from './Premium';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { residentArt } from './art';
 import { CompatRitual } from './CompatRitual';
-import { DEPTH_NAMES, SEASON_NAMES, compat, depthOfResident, levelOf, rankAll, seasonOfResident } from './pairing';
-import { makeProfile, residentIndex, type Profile } from './domain';
+import { PartnerForm } from './PartnerForm';
+import { AREAS, DEPTH_NAMES, SEASON_NAMES, compat, levelOf, rankAll, seasonOfResident, sideOfProfile, sideOfType, type Compat as CompatResult, type Side } from './pairing';
+import { makeProfile, type Inputs, type Profile } from './domain';
 import type { Person } from './People';
 import { labelOf, SEASON } from './scoring';
 import { Button, C, Chip, Chips, Heading, S, Section, tapFx } from './ui';
@@ -14,6 +19,10 @@ import residents from './residents.json';
 
 const seasonColor = (index: number) => SEASON[(index + 1) % 4].col;
 const stars = (count: number) => '★'.repeat(count) + '☆'.repeat(5 - count);
+const signed = (value: number) => (value >= 0 ? '+' : '−') + Math.abs(value).toFixed(1);
+
+type Target = { kind: 'type'; index: number } | { kind: 'person'; profile: Profile };
+const sideOfTarget = (target: Target): Side => target.kind === 'type' ? sideOfType(target.index) : sideOfProfile(target.profile);
 
 /** 16タイプの選択盤。行が季節、列が深さ。 */
 function TypeGrid({ value, own, onPick }: { value: number | null; own?: number | null; onPick: (index: number) => void }) {
@@ -38,12 +47,12 @@ function TypeGrid({ value, own, onPick }: { value: number | null; own?: number |
   </View>;
 }
 
-function Face({ index, caption }: { index: number; caption: string }) {
+function Face({ side, caption }: { side: Side; caption: string }) {
   return <View style={styles.face}>
-    <View style={[styles.faceCircle, { borderColor: seasonColor(seasonOfResident(index)) }]}>
-      <Image source={residentArt[index]} accessible={false} style={{ width: '100%', height: '100%' }} />
+    <View style={[styles.faceCircle, { borderColor: seasonColor(side.season) }]}>
+      <Image source={residentArt[side.index]} accessible={false} style={{ width: '100%', height: '100%' }} />
     </View>
-    <Text style={styles.faceBand}>{residents[index].band}</Text>
+    <Text style={styles.faceBand}>{residents[side.index].band}</Text>
     <Text style={S.tiny}>{caption}</Text>
   </View>;
 }
@@ -52,15 +61,14 @@ function Bar({ value, color }: { value: number; color: string }) {
   return <View style={styles.barTrack}><View style={[styles.barFill, { width: value + '%', backgroundColor: color }]} /></View>;
 }
 
-function PairResult({ a, b }: { a: number; b: number }) {
-  const result = compat(a, b);
-  const { first, second } = result;
+function PairResult({ result }: { result: CompatResult }) {
+  const { first, second, a, b } = result;
   return <View style={S.stack}>
     <View style={[S.card, S.pad, { alignItems: 'center', gap: 12 }]}>
       <View style={styles.faces}>
-        <Face index={a} caption={first.subtitle} />
+        <Face side={a} caption={a.detail ? a.detail.name + 'さん' : first.subtitle} />
         <Text style={styles.times}>×</Text>
-        <Face index={b} caption={second.subtitle} />
+        <Face side={b} caption={b.detail ? b.detail.name + 'さん' : second.subtitle} />
       </View>
       <Text style={S.kicker}>{result.season.relation}</Text>
       <Text accessibilityRole="header" style={[S.h2, { textAlign: 'center' }]}>{result.season.title}</Text>
@@ -70,11 +78,11 @@ function PairResult({ a, b }: { a: number; b: number }) {
       {result.sameType && <Text style={S.tiny}>同じタイプ同士です。似ているところと、似すぎて重なるところの両方が出ます。</Text>}
     </View>
 
-    <View style={[S.card, S.pad]}>
-      <Text style={S.kicker}>深さの組み合わせ　{DEPTH_NAMES[depthOfResident(a)]} × {DEPTH_NAMES[depthOfResident(b)]}</Text>
+    <Premium id="compatDetail"><View style={[S.card, S.pad]}>
+      <Text style={S.kicker}>深さの組み合わせ　{a.num.toFixed(1)} × {b.num.toFixed(1)}（差 {result.diff.toFixed(1)}）</Text>
       <Text style={S.h3}>{result.depth.title}</Text>
       <Text style={S.body}>{result.depth.text}</Text>
-    </View>
+    </View></Premium>
 
     {result.areas.map(area => <View key={area.id} style={[S.card, S.pad, { borderColor: area.color + '66' }]}>
       <View style={S.between}>
@@ -82,8 +90,21 @@ function PairResult({ a, b }: { a: number; b: number }) {
         <Text style={[S.tiny, { color: area.color }]}>{area.score}　{area.level.name}</Text>
       </View>
       <Bar value={area.score} color={area.color} />
-      <Text style={S.body}>{area.text}</Text>
+      <Premium id="compatAreaText" compact><Text style={S.body}>{area.text}</Text></Premium>
     </View>)}
+
+    <Premium id="compatDetail"><View style={S.stack}>
+
+    <View style={[S.card, S.pad]}>
+      <Text style={S.kicker}>点数の内訳（基準点に足した点数）</Text>
+      <Text style={S.tiny}>基準点は季節の組み合わせから。恋愛 {result.season.base[0]}・結婚 {result.season.base[1]}・仕事 {result.season.base[2]}・友情 {result.season.base[3]}。ここに、下の項目を足しています。</Text>
+      {result.terms.map(term => <View key={term.id} style={styles.term}>
+        <Text style={S.h3}>{term.label}</Text>
+        <Text style={S.body}>{term.note}</Text>
+        <Text style={S.tiny}>{AREAS.map(area => area.label + ' ' + signed(term.points[area.id])).join('　／　')}</Text>
+      </View>)}
+      {!result.detailed && <Text style={S.tiny}>相手を「タイプ」だけで選んだので、深さ（タイプの中央値）以外は入れていません。名前と生年月日で選ぶと、「−」「A」・生まれ年の十二支・生まれた日の月・名前の五行も加わり、同じタイプの相手でも結果が変わります。</Text>}
+    </View>
 
     <View style={[S.card, S.pad]}>
       <Text style={S.kicker}>二人の読み</Text>
@@ -96,67 +117,96 @@ function PairResult({ a, b }: { a: number; b: number }) {
       <Text style={S.h3}>二人の一手</Text>
       <Text style={S.body}>{result.season.tip}</Text>
     </View>
+    </View></Premium>
     <Text style={S.tiny}>相性の良し悪しを決めるものではなく、会話のきっかけです。点数が低くても、違いを知っていれば関係は育てられます。</Text>
   </View>;
 }
 
-/** 相性は、占いをしたあとにだけ開く。「あなた」は、占いの結果のタイプに自動で対応する。選ぶのは相手だけ。 */
+/** 相性は、占いをしたあとにだけ開く。「あなた」は、占いの結果の名札にそのまま対応する。選ぶのは相手だけ。 */
 export function Compat({ profile, people, create }: { profile: Profile | null; people: Person[]; create: () => void }) {
-  const [other, setOther] = useState<number | null>(null);
-  const [ritual, setRitual] = useState<{ a: number; b: number } | null>(null);   // 儀式の最中の二人
-  const [read, setRead] = useState<{ a: number; b: number } | null>(null);       // 儀式を終えて、結果を出している二人
-  const self = profile ? residentIndex(profile.t) : null;
-  const own = self;
-  const shown = self !== null && other !== null && read?.a === self && read.b === other;
-  const begin = (a: number, b: number) => { setOther(b); setRead(null); setRitual({ a, b }); };
+  const [mode, setMode] = useState<'person' | 'type'>('person');
+  const [target, setTarget] = useState<Target | null>(null);
+  const [ritual, setRitual] = useState<CompatResult | null>(null);   // 儀式の最中の二人
+  const [read, setRead] = useState<CompatResult | null>(null);       // 儀式を終えて、結果を出している二人
+  const own = profile ? sideOfProfile(profile) : null;
+
+  const begin = (next: Target) => {
+    if (!own) return;
+    setTarget(next);
+    setRead(null);
+    setRitual(compat(own, sideOfTarget(next)));
+  };
   const finishRitual = () => {
     if (ritual) setRead(ritual);
     setRitual(null);
     // 結果の見出しまで、ゆっくり降りていく。
     setTimeout(() => document.getElementById('pair-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
   };
-  const ranking = self === null ? [] : rankAll(self);
-  const friends = people.filter(person => person.inputs.name !== profile?.name).map(person => ({ person, index: residentIndex(makeProfile(person.inputs).t) }));
+  const choose = (next: Target) => { setTarget(next); setRead(null); };
+  const switchMode = (next: 'person' | 'type') => { setMode(next); setTarget(null); setRead(null); };
+  const submitPartner = (inputs: Inputs) => begin({ kind: 'person', profile: makeProfile(inputs) });
+
+  const ranking = own ? rankAll(own) : [];
+  const friends = people.filter(person => person.inputs.name !== profile?.name).map(person => ({ person, profile: makeProfile(person.inputs) }));
 
   // 占いをする前は、相性は開けない。
-  if (self === null) return <View style={S.stack}>
-    <Heading tag="COMPATIBILITY" title="二人の相性" body="相性は、あなたの海を占ってからひらけます。占いの結果のタイプが、そのまま「あなた」になります。" />
+  if (!profile || !own) return <View style={S.stack}>
+    <Heading tag="COMPATIBILITY" title="二人の相性" body="相性は、あなたの海を占ってからひらけます。占いの結果の名札が、そのまま「あなた」になります。" />
     <View style={[S.card, S.pad, { alignItems: 'center', gap: 12 }]}>
       <Text style={styles.lockMark}>✦</Text>
       <Text style={S.h3}>まず、あなたの海を占いましょう</Text>
-      <Text style={[S.body, { textAlign: 'center' }]}>生年月日と下の名前から、あなたのタイプが決まります。占いのあとに、ここで相手のタイプを選ぶと、二人の相性を読めます。</Text>
+      <Text style={[S.body, { textAlign: 'center' }]}>生年月日と下の名前から、あなたの名札が決まります。占いのあとに、ここで相手を選ぶと、二人の相性を読めます。</Text>
       <Button onPress={create}>占ってみる　›</Button>
     </View>
   </View>;
 
+  const typeTarget = target?.kind === 'type' ? target.index : null;
+  const friendTarget = target?.kind === 'person' ? target.profile : null;
   return <View style={S.stack}>
-    <Heading tag="COMPATIBILITY" title="二人の相性" body="あなたのタイプは、占いの結果のままです。相手のタイプを選ぶと、恋愛・結婚・仕事・友情の相性を読みます。16タイプ×16タイプ、136通りすべてに固有の読みがあります。" />
+    <Heading tag="COMPATIBILITY" title="二人の相性" body="相手は、名前と生年月日でも、16タイプからでも選べます。名前と生年月日で選ぶと、深さの数値や「−」「A」、生まれ年や生まれた日の月まで使って、二人だけの点数を出します。" />
 
     <View style={[S.card, S.pad, { flexDirection: 'row', alignItems: 'center', gap: 14 }]}>
-      <View style={[styles.faceCircle, { borderColor: seasonColor(seasonOfResident(self)) }]}><Image source={residentArt[self]} accessible={false} style={{ width: '100%', height: '100%' }} /></View>
+      <View style={[styles.faceCircle, { borderColor: seasonColor(own.season) }]}><Image source={residentArt[own.index]} accessible={false} style={{ width: '100%', height: '100%' }} /></View>
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={S.kicker}>あなたのタイプ　{labelOf(profile!.t)}</Text>
-        <Text style={S.h3}>{residents[self].band}</Text>
-        <Text style={S.tiny}>{residents[self].subtitle}</Text>
+        <Text style={S.kicker}>あなたの名札　{labelOf(profile.t)}</Text>
+        <Text style={S.h3}>{residents[own.index].band}</Text>
+        <Text style={S.tiny}>{residents[own.index].subtitle}　·　深さ {profile.t.num.toFixed(1)}</Text>
       </View>
     </View>
 
-    <Section title="相手のタイプ" note="保存した人か、16タイプの中から選べます。" />
-    {!!friends.length && <Chips>
-      {friends.map(({ person, index }) => <Chip key={person.id} active={other === index} onPress={() => setOther(index)}>{'🙂 ' + person.inputs.name}</Chip>)}
-    </Chips>}
-    <TypeGrid value={other} own={own} onPick={setOther} />
+    <Section title="相手の選び方" note="どちらを選んでも、同じように相性を読めます。" />
+    <Chips>
+      <Chip active={mode === 'person'} onPress={() => switchMode('person')}>名前と生年月日で選ぶ</Chip>
+      <Chip active={mode === 'type'} onPress={() => switchMode('type')}>16タイプから選ぶ</Chip>
+    </Chips>
 
-    {other !== null && !shown && <Button onPress={() => begin(self, other)}>この二人の相性を読む　✦</Button>}
-    {other === null && <Text style={S.tiny}>相手のタイプを選ぶと、読みをひらけます。</Text>}
-    {shown && <View nativeID="pair-result"><PairResult a={self} b={other} /></View>}
-    {ritual && <CompatRitual a={ritual.a} b={ritual.b} onDone={finishRitual} />}
+    {mode === 'person' && <View style={S.stack}>
+      {!!friends.length && <>
+        <Text style={S.tiny}>保存した人から選ぶ</Text>
+        <Chips>
+          {friends.map(({ person, profile: friend }) => <Chip key={person.id} active={friendTarget?.name === friend.name && friendTarget.Y === friend.Y && friendTarget.M === friend.M && friendTarget.D === friend.D} onPress={() => choose({ kind: 'person', profile: friend })}>{'🙂 ' + person.inputs.name}</Chip>)}
+        </Chips>
+        {friendTarget && !read && <Button onPress={() => begin({ kind: 'person', profile: friendTarget })}>この二人の相性を読む　✦</Button>}
+        <Text style={S.tiny}>または、新しく入力する</Text>
+      </>}
+      <PartnerForm onSubmit={submitPartner} />
+    </View>}
 
-    {shown && <View style={S.stack}>
-      <Section title={residents[self].band + 'から見た、全タイプとの相性'} note="総合点の高い順。タップすると、その相手との読みが開きます。" />
+    {mode === 'type' && <View style={S.stack}>
+      <Text style={S.tiny}>季節と深さの帯だけで読みます。数値まで使うなら、名前と生年月日で選んでください。</Text>
+      <TypeGrid value={typeTarget} own={own.index} onPick={index => choose({ kind: 'type', index })} />
+      {typeTarget !== null && !read && <Button onPress={() => begin({ kind: 'type', index: typeTarget })}>この二人の相性を読む　✦</Button>}
+      {typeTarget === null && <Text style={S.tiny}>相手のタイプを選ぶと、読みをひらけます。</Text>}
+    </View>}
+
+    {read && <View nativeID="pair-result"><PairResult result={read} /></View>}
+    {ritual && <CompatRitual result={ritual} onDone={finishRitual} />}
+
+    {read && <View style={S.stack}>
+      <Section title={residents[own.index].band + 'から見た、全タイプとの相性'} note="あなたの名札の数値と、各タイプの深さの帯で読んだ総合点の高い順。タップすると、その相手との読みが開きます。" />
       <View style={[S.card, { padding: 6 }]}>
-        {ranking.map(({ index, total }, rank) => <Pressable key={index} {...tapFx} accessibilityRole="button" onPress={() => begin(self, index)}
-          style={({ pressed }) => [styles.rankRow, other === index && { backgroundColor: seasonColor(seasonOfResident(index)) + '1f' }, pressed && { opacity: .7 }]}>
+        {ranking.map(({ index, total }, rank) => <Pressable key={index} {...tapFx} accessibilityRole="button" onPress={() => { setMode('type'); begin({ kind: 'type', index }); }}
+          style={({ pressed }) => [styles.rankRow, typeTarget === index && { backgroundColor: seasonColor(seasonOfResident(index)) + '1f' }, pressed && { opacity: .7 }]}>
           <Text style={styles.rankNo}>{rank + 1}</Text>
           <View style={[styles.rankImg, { borderColor: seasonColor(seasonOfResident(index)) }]}><Image source={residentArt[index]} accessible={false} style={{ width: '100%', height: '100%' }} /></View>
           <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
@@ -190,6 +240,7 @@ const styles = StyleSheet.create({
   total: { fontSize: 52, lineHeight: 60, fontWeight: '900' },
   totalUnit: { fontSize: 16, color: C.muted, fontWeight: '700' },
   lockMark: { color: C.gold, fontSize: 34, lineHeight: 40 },
+  term: { borderTopWidth: 1, borderTopColor: C.line, paddingTop: 8, gap: 3 },
   barTrack: { height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,.08)', overflow: 'hidden' },
   barFill: { height: 8, borderRadius: 4 },
   rankRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 8, borderRadius: 14 },

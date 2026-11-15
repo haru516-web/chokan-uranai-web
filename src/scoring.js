@@ -21,7 +21,7 @@ export const SEASON=[
  {n:"夏",element:1,ang:90,home:4,act:"広げる",col:"#ffb26b",moon:"上弦の頃"},
  {n:"秋",element:3,ang:180,home:9,act:"実らせる",col:"#f2c979",moon:"満月の頃"}
 ];
-export { FIVE_PHASES, SOLAR_MONTH_TERMS, solarMonthStartDate, solarStageStartDate };
+export { BRANCHES, BRANCH_ELEMENTS, FIVE_PHASES, SOLAR_MONTH_TERMS, solarMonthStartDate, solarStageStartDate };
 export const NUMS=[1,1.5,2,2.5,3,3.5,4,4.5,5,5.5];
 var TIDE_AMP={"最接近":1,"近い":.78,"ふつう":.55,"遠い":.32,"最遠":.1};   /* strength of the tide-raising pull by Earth-Moon distance (independent of the moon's shape) */
 var WD=["日","月","火","水","木","金","土"];
@@ -73,7 +73,7 @@ export function labelOf(t){ return SEASON[t.mod].n+(t.A?" A":"")+(t.minus?"-":""
 function ringOf(stage,mod){ var r=Math.abs(stage-SEASON[mod].home*2); return Math.min(r,24-r)/2; }
 const GENERATES=[1,2,3,4,0];
 const CONTROLS=[2,3,4,0,1];
-function relationOf(person,environment){
+export function relationOf(person,environment){
   if(person===environment) return {kind:"同気",score:1.2,description:"同じ働きが重なります"};
   if(GENERATES[environment]===person) return {kind:"相生",score:1.8,description:"時の流れが基調を育てます"};
   if(GENERATES[person]===environment) return {kind:"流出",score:-0.6,description:"力を外へ渡す流れです"};

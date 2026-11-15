@@ -152,16 +152,8 @@ export function Atlas({ profile, favorites, open, myth, pair, create }: {
   profile: Profile | null; favorites: number[]; open: OpenResident; myth: () => void; pair: () => void; create: () => void;
 }) {
   const { item: columnWidth } = useColumns();
-  const [season, setSeason] = useState<number | null>(null);
-  const [depth, setDepth] = useState<number | null>(null);
-  const [onlySaved, setOnlySaved] = useState(false);
-  const [query, setQuery] = useState('');
   const own = profile ? residentIndex(profile.t) : -1;
-  const visible = residents.map((resident, index) => ({ ...resident, index })).filter(resident => {
-    return (season === null || Math.floor(resident.index / 4) === season) &&
-      (depth === null || resident.index % 4 === depth) && (!onlySaved || favorites.includes(resident.index)) &&
-      [resident.band, resident.subtitle].some(text => text.includes(query.trim()));
-  });
+  const visible = residents.map((resident, index) => ({ ...resident, index }));
   return <View style={S.stack}>
     <Section title="四季の神様" note="16のタイプを季節ごとに見守る、四柱の神様。" />
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 }}>
@@ -174,17 +166,6 @@ export function Atlas({ profile, favorites, open, myth, pair, create }: {
     </View>
     <Heading tag="16タイプ" title="あなたはどのタイプ？" body="気になるタイプをタップ。考え方や人との関わり方が読めます。" />
     {profile ? <Button onPress={() => open(own)}>自分のタイプを見る　›</Button> : <Button onPress={create}>自分のタイプを調べる（約30秒）　›</Button>}
-    <TextInput accessibilityLabel="占いタイプを検索" value={query} onChangeText={setQuery}
-      style={S.field} placeholder="例：冬の深海、番人" placeholderTextColor={C.muted} />
-    <Chips>
-      <Chip active={season === null} onPress={() => setSeason(null)}>すべての季節</Chip>
-      {['春', '夏', '秋', '冬'].map((name, i) => <Chip key={name} active={season === i} onPress={() => setSeason(season === i ? null : i)}>{name}</Chip>)}
-    </Chips>
-    <Chips>
-      {['浅瀬', '沿岸', '沖合', '深海'].map((name, i) => <Chip key={name} active={depth === i} onPress={() => setDepth(depth === i ? null : i)}>{name}</Chip>)}
-      <Chip active={onlySaved} onPress={() => setOnlySaved(!onlySaved)}>☆ お気に入り</Chip>
-    </Chips>
-    <Text style={S.tiny}>{visible.length} / 16　·　お気に入り {favorites.length}件</Text>
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 }}>
       {visible.map(resident => <Pressable {...tapFx} key={resident.id} accessibilityRole="button" onPress={() => open(resident.index)}
         accessibilityLabel={[resident.band, resident.subtitle, resident.index === own ? 'あなたのタイプ' : ''].filter(Boolean).join('、')}
@@ -198,7 +179,6 @@ export function Atlas({ profile, favorites, open, myth, pair, create }: {
         <Text style={[S.tiny, { padding: 11 }]}>{resident.summary}</Text>
       </Pressable>)}
     </View>
-    {visible.length === 0 && <Card><Text style={S.body}>条件に合うタイプが見つかりません。</Text><Button quiet onPress={() => { setSeason(null); setDepth(null); setOnlySaved(false); setQuery(''); }}>絞り込みをリセット</Button></Card>}
     <Button quiet onPress={pair}>二人の海をみる</Button>
     <Section title="潮環の世界" />
     <Tile source={scenes[0]} subtitle="潮環神話" title="見られなかった海" onPress={myth} />
@@ -271,32 +251,29 @@ export function Chapter({ index, read, done, open }: { index: number; read: bool
   </View>;
 }
 
-export function Journal({ profile, notes, edit, pair, create, openNote, showToday, onForget, questions, reflections, openTrail, editReflection, openChart, goSelf, selfCount }: {
+export function Journal({ profile, notes, edit, pair, create, openNote, showToday, onForget, questions, reflections, openTrail, editReflection, openChart }: {
   profile: Profile | null; notes: Note[]; edit: () => void; pair: () => void; create: () => void;
   openNote: (day: string) => void; showToday: () => void; onForget: () => void;
   questions: SavedQuestion[]; reflections: Reflection[]; openTrail: (id: string) => void;
-  editReflection: (record: Reflection) => void; openChart: () => void; goSelf: () => void; selfCount: number;
+  editReflection: (record: Reflection) => void; openChart: () => void;
 }) {
-  const [confirm, setConfirm] = useState(false);
   const [fold, setFold] = useState<'data' | 'about' | null>(null);
   const resident = profile && ownResident(profile);
   const trails = [...new Set([...questions.map(entry => entry.id), ...reflections.flatMap(record => record.questionId ? [record.questionId] : [])])];
-  const empty = !notes.length && !trails.length && !reflections.length && !selfCount;
+  const empty = !notes.length && !trails.length && !reflections.length;
   return <View style={S.stack}>
-    <Heading tag="記録" title="あなたの記録" body="考えたこと・残した問い・自己純度の変化が、ここに集まります。" />
+    <Heading tag="記録" title="あなたの記録" body="考えたこと・残した問い・振り返りが、ここに集まります。" />
     <Button onPress={create}>今日のことを書く　›</Button>
     <Chips>
       <Chip active={notes.length > 0}>{`日記 ${notes.length}`}</Chip>
       <Chip active={trails.length > 0}>{`問い ${trails.length}`}</Chip>
       <Chip active={reflections.length > 0}>{`振り返り ${reflections.length}`}</Chip>
-      <Chip active={selfCount > 0}>{`自己純度 ${selfCount}回`}</Chip>
     </Chips>
     {empty && <Card>
       <Text style={S.h3}>まだ何も残っていません</Text>
-      <Text style={S.body}>占いや診断のあとに「記録する」を押すと、ここに並びます。</Text>
+      <Text style={S.body}>占いのあとに「記録する」を押すと、ここに並びます。</Text>
     </Card>}
     <NextLinks items={[
-      { label: '自己純度の変化を見る', hint: selfCount ? selfCount + '回分の記録' : '1分の診断からはじめる', onPress: goSelf },
       { label: '今日の占いを見る', onPress: showToday },
       { label: '過去の年を振り返って記録する', hint: '人生の流れから、あの頃の出来事を残せます', onPress: openChart },
     ]} />

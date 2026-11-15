@@ -71,8 +71,8 @@ export function Chips({ children }: { children: ReactNode }) {
   return <View style={{ flexDirection: 'row', gap: 7, flexWrap: 'wrap' }}>{children}</View>;
 }
 
-export function Heading({ tag, title, body }: { tag: string; title: string; body?: string }) {
-  return <View style={{ gap: 3 }}><Text style={S.kicker}>{tag}</Text><Text accessibilityRole="header" style={S.title}>{title}</Text>{body && <Gloss style={S.body}>{body}</Gloss>}</View>;
+export function Heading({ tag, title, body }: { tag?: string; title: string; body?: string }) {
+  return <View style={{ gap: 3 }}>{!!tag && <Text style={S.kicker}>{tag}</Text>}<Text accessibilityRole="header" style={S.title}>{title}</Text>{body && <Gloss style={S.body}>{body}</Gloss>}</View>;
 }
 
 export function Section({ title, note }: { title: string; note?: string }) {

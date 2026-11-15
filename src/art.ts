@@ -31,11 +31,7 @@ export const seal = find(artFiles, 'app-icon.png');
 export const godSheets = ['winter', 'spring', 'summer', 'autumn', 'origin'].map(name => find(deityFiles, 'sheet-' + name + '.webp'));
 // 図鑑の住人は、神様の幼い姿（assets/art/resident-01〜16.webp、透過）。
 export const residentArt = Array.from({ length: 16 }, (_, i) => find(artFiles, 'resident-' + String(i + 1).padStart(2, '0') + '.webp'));
-// 海流は新しい12の順（子〜亥）。絵を作り直し中のあいだは、近い生き物の既存の絵を仮に使う（珊瑚→亀、牡蠣→烏賊）。
-// 新しい絵は current2-01〜12.webp、海況は stage2-01〜24.webp として置くと、自動で差し替わる。
-const currentFallback = [3, 8, 10, 0, 4, 7, 2, 1, 9, 6, 5, 11];
-export const currents = Array.from({ length: 12 }, (_, i) =>
-  optional('current2-' + String(i + 1).padStart(2, '0') + '.webp') ?? find(artFiles, 'current-' + String(currentFallback[i] + 1).padStart(2, '0') + '.webp'));
-export const stages = Array.from({ length: 24 }, (_, i) =>
-  optional('stage2-' + String(i + 1).padStart(2, '0') + '.webp') ?? find(artFiles, 'stage-' + String(Math.floor(i / 2) + 1).padStart(2, '0') + '.webp'));
+// 海流は12の順（子〜亥）、海況は24。絵は current2-01〜12.webp / stage2-01〜24.webp。
+export const currents = Array.from({ length: 12 }, (_, i) => find(artFiles, 'current2-' + String(i + 1).padStart(2, '0') + '.webp'));
+export const stages = Array.from({ length: 24 }, (_, i) => find(artFiles, 'stage2-' + String(i + 1).padStart(2, '0') + '.webp'));
 export const scenes = Array.from({ length: 8 }, (_, i) => find(artFiles, 'scene-' + String(i + 1).padStart(2, '0') + '.webp'));

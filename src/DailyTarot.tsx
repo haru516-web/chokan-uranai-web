@@ -112,13 +112,30 @@ export function DailyTarot({ today, savedDraw, log, onDraw, personKey, season, l
     onDraw(pick.id);
   }
 
+  function reopen(event: GestureResponderEvent) {
+    if (!card) return;
+    const target = (event as unknown as { currentTarget?: { getBoundingClientRect?: () => DOMRect } }).currentTarget;
+    const rect = target?.getBoundingClientRect?.();
+    const vw = typeof window === 'undefined' ? 390 : window.innerWidth;
+    const vh = typeof window === 'undefined' ? 780 : window.innerHeight;
+    const w = Math.min(vw * .72, 300);
+    setFlight(rect
+      ? { card, dx: rect.left + rect.width / 2 - vw / 2, dy: rect.top + rect.height / 2 - vh / 2, s: rect.width / w, w }
+      : { card, dx: 0, dy: vh * .35, s: .25, w });
+    setLanded(false);
+  }
+
   return <View style={[S.card, styles.panel]}>
     <Text style={S.kicker}>ONE ORACLE · 今日の一枚</Text>
     <Text style={S.h2}>潮環の神様から、今日のカード</Text>
     <Text style={S.body}>問いをひとつ心に思い浮かべてから、一枚引いてみましょう。</Text>
 
     {card ? <>
-      <CardFront card={card} />
+      <Pressable accessibilityRole="button" accessibilityLabel="カードを大きく表示する" onPress={reopen}
+        style={({ pressed }) => pressed && styles.pressed}>
+        <CardFront card={card} />
+      </Pressable>
+      <Text style={[S.tiny, { color: C.aqua }]}>カードをタップすると、大きく表示します</Text>
       <View style={styles.reading}>
         <Text style={S.kicker}>{card.no} · {card.en} · {card.deity}</Text>
         <Text style={styles.arcana}>{card.arcana}</Text>

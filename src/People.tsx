@@ -47,7 +47,7 @@ export function PeopleManager({ people, activeId, select, remove, add, resetAll 
     <Button onPress={add}>＋ 別の人を占う</Button>
     <Card>
       <Text style={S.h3}>すべてのデータをリセット</Text>
-      <Text style={S.body}>登録した人、記録、診断の結果、お気に入りをすべて消して、最初の状態に戻します。元には戻せません。</Text>
+      <Text style={S.body}>登録した人、記録、お気に入りをすべて消して、最初の状態に戻します。元には戻せません。</Text>
       {confirm === 'all'
         ? <Chips><Chip onPress={() => setConfirm(null)}>やめる</Chip><Chip active onPress={() => { resetAll(); setConfirm(null); }}>すべて削除する</Chip></Chips>
         : <Button quiet onPress={() => setConfirm('all')}>リセットする</Button>}

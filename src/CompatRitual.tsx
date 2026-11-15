@@ -3,14 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { residentArt, ritualBg } from './art';
-import { DEPTH_NAMES, SEASON_NAMES, compat, depthOfResident, seasonOfResident } from './pairing';
+import { SEASON_NAMES, type Compat } from './pairing';
 import { hexToRgb, RING_COUNT, startStorm } from './ritualStorm';
-import residents from './residents.json';
 
 const TINT = '#f0a8c0';
-const GAP_NAMES = ['同じ深さ', '近い深さ', '違う深さ', '深さの両端'];
 
-export function CompatRitual({ a, b, onDone }: { a: number; b: number; onDone: () => void }) {
+export function CompatRitual({ result, onDone }: { result: Compat; onDone: () => void }) {
+  const { a, b } = result;
   const [done, setDone] = useState(0);
   const [opened, setOpened] = useState(false);
   const [leaving, setLeaving] = useState(false);
@@ -20,13 +19,12 @@ export function CompatRitual({ a, b, onDone }: { a: number; b: number; onDone: (
   const finish = useRef(onDone);
   finish.current = onDone;
 
-  const result = compat(a, b);
   const best = [...result.areas].sort((x, y) => y.score - x.score)[0];
   const steps = [
-    { label: '二人の季節を重ねる', value: SEASON_NAMES[seasonOfResident(a)] + ' × ' + SEASON_NAMES[seasonOfResident(b)], result: result.season.relation.split('（')[0] },
-    { label: '二人の深さを測る', value: DEPTH_NAMES[depthOfResident(a)] + ' × ' + DEPTH_NAMES[depthOfResident(b)], result: GAP_NAMES[result.gap] },
+    { label: '二人の季節を重ねる', value: SEASON_NAMES[a.season] + ' × ' + SEASON_NAMES[b.season], result: result.season.relation.split('（')[0] },
+    { label: '二人の深さを測る', value: a.num.toFixed(1) + ' × ' + b.num.toFixed(1), result: '差 ' + result.diff.toFixed(1) },
     { label: '四つの運を読む', value: '恋愛・結婚・仕事・友情', result: best.label + 'が強い' },
-    { label: '二つの潮を結ぶ', value: residents[a].band + ' と ' + residents[b].band, result: result.total + '点' },
+    { label: '二つの潮を結ぶ', value: result.first.band + ' と ' + result.second.band, result: result.total + '点' },
   ];
   const now = steps[Math.min(done, RING_COUNT - 1)];
 
@@ -61,8 +59,8 @@ export function CompatRitual({ a, b, onDone }: { a: number; b: number; onDone: (
     <canvas ref={canvas} className="ritual-sky" aria-hidden="true" />
     <div className="ritual-god" aria-hidden="true">
       <div className="pair-faces" data-step={opened ? 5 : Math.min(done, 4)}>
-        <img className="pair-face pair-face-a" src={residentArt[a]} alt="" />
-        <img className="pair-face pair-face-b" src={residentArt[b]} alt="" />
+        <img className="pair-face pair-face-a" src={residentArt[a.index]} alt="" />
+        <img className="pair-face pair-face-b" src={residentArt[b.index]} alt="" />
         <span key={done} className="pair-flash" />
       </div>
     </div>

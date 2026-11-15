@@ -4,6 +4,7 @@ import { FIVE_PHASES, OUTER, STAGES, stageFor } from './scoring';
 import { Gloss } from './Glossary';
 import { Card, C, display, S } from './ui';
 import { useInView } from './FortuneDetail';
+import { Premium } from './Premium';
 import type { ReactNode } from 'react';
 
 type ReadingCardProps = { reading: ReturnType<typeof readDay>; isToday?: boolean; children?: ReactNode };
@@ -82,7 +83,7 @@ export function LayeredReading({ reading, isToday = true, children }: ReadingCar
     <View style={styles.chipRow}>
       {chips.map(([label, value]) => <View key={label} style={styles.chip}><Text style={styles.chipLabel}>{label}</Text><Text style={styles.chipValue}>{value}</Text></View>)}
     </View>
-    <Gloss style={S.body}>{layers.text}</Gloss>
+    <Premium id="layers"><Gloss style={S.body}>{layers.text}</Gloss></Premium>
     {children}
   </Card>;
 }
