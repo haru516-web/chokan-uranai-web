@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import type { ReactNode } from 'react';
+import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { iconArt } from './art';
 import { Image } from './web/image';
 import typeFortunes from './typeFortunes.json';
@@ -6,11 +7,20 @@ import { content, type Profile } from './domain';
 import readingText from './reading-text.json';
 import { TideMarks, TypeBadges } from './ResidentCard';
 import { labelOf, SEASON, STAGES } from './scoring';
+import { useInView } from './FortuneDetail';
 import { Meter } from './TideCharts';
 import { Card, S, Section } from './ui';
+import { fx } from './Visual';
 import { ownResident, residents } from './voyage';
 
 const seasonOrder = [1, 2, 3, 0];
+
+/** 画面に入った瞬間に、ポンと弾んで現れる枠（今日の「4つの運」の枠と同じ動き）。 */
+function Pop({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
+  const [ref, seen] = useInView<HTMLDivElement>();
+  return <View ref={ref as never} {...(seen ? fx('pop') : {})}
+    style={(seen ? { animationDelay: delay + 'ms' } : { opacity: 0 }) as unknown as ViewStyle}>{children}</View>;
+}
 
 export function BornSea({ profile }: { profile: Profile }) {
   const resident = ownResident(profile);
@@ -37,10 +47,10 @@ export function TypeFortunes({ entry }: { entry: typeof residents[number] }) {
   if (!data) return null;
   return <>
     <Text accessibilityRole="header" style={S.kicker}>{entry.band}の、運のかたち</Text>
-    {AREAS.map(area => {
+    {AREAS.map((area, index) => {
       const [head, text, tip] = data[area.id];
       const icon = (iconArt as Record<string, string | undefined>)[area.id];
-      return <View key={area.id} style={[S.card, S.pad, { borderColor: area.color + '66' }]}>
+      return <Pop key={area.id} delay={index * 60}><View style={[S.card, S.pad, { borderColor: area.color + '66' }]}>
         <View style={styles.head}>
           <View style={[styles.icon, { backgroundColor: area.color + '26', borderColor: area.color + '88' }]}>
             {icon ? <Image source={icon} style={{ width: 28, height: 28 }} contentFit="contain" accessible={false} /> : <Text style={{ color: area.color, fontSize: 18, fontWeight: '900' }}>{area.glyph}</Text>}
@@ -52,7 +62,7 @@ export function TypeFortunes({ entry }: { entry: typeof residents[number] }) {
         </View>
         <Text style={S.body}>{text}</Text>
         <Text style={[S.tiny, { color: area.color }]}>ひとこと　{tip}</Text>
-      </View>;
+      </View></Pop>;
     })}
   </>;
 }
@@ -69,7 +79,7 @@ export function TypeTraits({ entry }: { entry: typeof residents[number] }) {
     ['ひとつの問い', entry.question],
     ['試せること', entry.action],
   ];
-  return <>{traits.map(([title, text]) => <Card key={title}><Text style={S.h3}>{title}</Text><Text style={S.body}>{text}</Text></Card>)}</>;
+  return <>{traits.map(([title, text], index) => <Pop key={title} delay={index * 60}><Card><Text style={S.h3}>{title}</Text><Text style={S.body}>{text}</Text></Card></Pop>)}</>;
 }
 
 export function NameReadingDetails({ profile }: { profile: Profile }) {

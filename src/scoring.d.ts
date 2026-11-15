@@ -22,6 +22,8 @@ export const DAY_POINTS: number[];
 export const DAY_STAGES: { n: string; d: string }[];
 export const OUTER: { n: string; th: string; d: string }[];
 export const SEASON: { n: string; element: number; ang: number; act: string; col: string; moon: string; home: number }[];
+export const BRANCHES: string[];
+export const BRANCH_ELEMENTS: number[];
 export const FIVE_PHASES: { name: string; action: string }[];
 export const SOLAR_MONTH_TERMS: string[];
 export function ctxFor(date: Date): SeaContext;

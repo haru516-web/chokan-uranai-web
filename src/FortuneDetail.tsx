@@ -7,6 +7,7 @@ import { Image } from './web/image';
 import { Gloss, useGloss } from './Glossary';
 import { Art, C, rounded, S, display } from './ui';
 import { fx, Waves } from './Visual';
+import { Premium } from './Premium';
 import { clamp01, easeOutBack, easeOutCubic, useScrollLink } from './useScrollLink';
 
 const asStyle = (style: object) => style as unknown as ViewStyle;
@@ -69,7 +70,7 @@ export function FortuneAreas({ fortune, dayWord, hideSea }: { fortune: Fortune; 
         <Text style={S.h3}>{area.label}</Text>
         <Stars count={area.stars} color={area.color} play={seen} delay={300 + index * 110} />
         <Text style={S.tiny}>{area.point}点</Text>
-        <Text style={styles.areaText}>{area.text}</Text>
+        <Premium id="areaText" compact><Text style={styles.areaText}>{area.text}</Text></Premium>
       </View>)}
     </View>
   </View>;
@@ -149,6 +150,7 @@ export function LuckyCard({ fortune, dayWord }: { fortune: Fortune; dayWord: str
       </View>
     </View>
     <Text style={S.tiny}>{lucky.reason}色は、名札の深さの帯（浅い・中・深い）で選んでいます。</Text>
+    <Premium id="lucky">
     <View style={styles.luckyGrid}>
       {rows.map(row => <View key={row.label} style={styles.luckyCell}>
         <Text style={styles.luckyMark}>{row.mark}</Text>
@@ -158,6 +160,7 @@ export function LuckyCard({ fortune, dayWord }: { fortune: Fortune; dayWord: str
         </View>
       </View>)}
     </View>
+    </Premium>
   </Appear>;
 }
 

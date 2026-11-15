@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Platform, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { ReactNode } from 'react';
-import { currents, iconArt, residentArt, scenes, stages, tierArt } from './art';
+import { currents, godArt, iconArt, residentArt, scenes, stages, tierArt } from './art';
 import { Image } from './web/image';
 import { LayeredReading } from './DailyReading';
 import { addDays, calendarEvents, dateKey, dateLabel, readDay, residentIndex, shortDate, tierColors, tiers, type Profile } from './domain';
@@ -15,13 +15,16 @@ import { Scene } from './Story';
 import { fortuneFor, tomorrowFor } from './fortune';
 import { FortuneAreas, LuckyCard, TomorrowCard } from './FortuneDetail';
 import { Gloss, GlossHint, TermText, useGloss } from './Glossary';
-import { PersonSwitcher, type Person } from './People';
+import type { Person } from './People';
 import { ResultPoster } from './ResultPoster';
+import { createPortal } from 'react-dom';
+import { makePosterImage } from './posterImage';
 import { Float, glow, Sparkles } from './Visual';
 import { Art, Button, C, Card, Chip, Chips, Fold, NextLinks, S, Tile, display, rounded, useColumns } from './ui';
 import { findQuestion, nextTideChange, ownResident, revisitQuestion, type Question, type Reflection, type SavedQuestion } from './voyage';
 import { DailyTarot, type SavedTarotDraw } from './DailyTarot';
 import { seasonOf } from './tarotDeck';
+import { isLocked, Premium, setPlan, usePlan } from './Premium';
 
 type Reading = ReturnType<typeof readDay>;
 // 結果の演出は、その人・その日の初回だけフル再生。再訪は即表示（「もう一度」で再生できる）。
@@ -43,6 +46,8 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
 }) {
   const [offset, setOffset] = useState(0);
   const [shareMessage, setShareMessage] = useState('');
+  const plan = usePlan();
+  const [posterUrl, setPosterUrl] = useState<string | null>(null);
   const { desktop } = useColumns();
   const [fold, setFold] = useState<FoldId | null>(null);
   const [showScore, setShowScore] = useState(false);
@@ -81,20 +86,22 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
     setFold(null);
   }
 
-  async function share() {
+  async function saveImage() {
     if (!reading) return;
-    const message = ['潮環占い｜' + dateLabel(c), (resident ? resident.band + '（' + resident.subtitle + '）名札 ' + labelOf(reading.row.t) : labelOf(reading.row.t)) + '　' + reading.row.rank + '位／160 · ' + reading.outlook.title,
-      reading.outlook.line, '今日の一手　' + reading.outlook.action].join('\n');
+    setShareMessage('画像を作っています…');
+    const rank = reading.row.rank;
     try {
-      if (Platform.OS === 'web') {
-        if (navigator.share) await navigator.share({ text: message });
-        else if (navigator.clipboard) {
-          await navigator.clipboard.writeText(message);
-          setShareMessage('コピーしました。');
-        } else setShareMessage(message);
-      } else await Share.share({ message });
-    } catch (error) {
-      if (!(error instanceof Error && error.name === 'AbortError')) setShareMessage(message);
+      const blob = await makePosterImage({
+        color: ['#efd393', '#b6dfc4', '#c1d2ef', '#ff5a4d', '#e0245e'][rank <= 16 ? 0 : rank <= 56 ? 1 : rank <= 104 ? 2 : rank <= 144 ? 3 : 4],
+        level: rank <= 16 ? 0 : rank <= 56 ? 1 : rank <= 104 ? 2 : rank <= 144 ? 3 : 4,
+        godUrl: godArt[reading.row.t.mod], dateText: dateLabel(c),
+        personName: activePerson && !activePerson.me ? activePerson.inputs.name : undefined,
+        plate: labelOf(reading.row.t), band: resident?.band ?? '', rank, dayWord, line: reading.outlook.line, action: reading.outlook.action,
+      });
+      setShareMessage('');
+      setPosterUrl(URL.createObjectURL(blob));
+    } catch {
+      setShareMessage('画像を作成できませんでした。もう一度お試しください。');
     }
   }
 
@@ -148,11 +155,26 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
     </Pressable>
     <View style={styles.toolbar}>
       <Chip onPress={() => setReplay(value => value + 1)}>▶ もう一度</Chip>
-      <Chip onPress={() => { void share(); }}>共有</Chip>
+      {Platform.OS === 'web' && <Chip onPress={() => { void saveImage(); }}>🖼 画像で保存</Chip>}
     </View>
+    {posterUrl && typeof document !== 'undefined' && createPortal(<div role="dialog" aria-label="結果の画像" onClick={() => { URL.revokeObjectURL(posterUrl); setPosterUrl(null); }}
+      style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(8,12,24,.92)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: 16, overflowY: 'auto' }}>
+      <img src={posterUrl} alt="今日の運勢の画像" onClick={event => event.stopPropagation()} style={{ width: 'min(100%, 380px)', height: 'auto', borderRadius: 18 }} />
+      <div onClick={event => event.stopPropagation()} style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+        <a href={posterUrl} download="潮環占い-今日の運勢.png" style={{ padding: '12px 22px', borderRadius: 999, background: C.gold, color: '#1b2436', fontWeight: 900, fontSize: 16, textDecoration: 'none' }}>画像を保存</a>
+        {typeof navigator !== 'undefined' && !!navigator.canShare && <button type="button" style={{ padding: '12px 22px', borderRadius: 999, border: '1px solid ' + C.line, background: 'transparent', color: C.ink, fontWeight: 800, fontSize: 16 }}
+          onClick={() => { void fetch(posterUrl).then(response => response.blob()).then(blob => navigator.share({ files: [new File([blob], '潮環占い-今日の運勢.png', { type: 'image/png' })] })).catch(() => {}); }}>共有する</button>}
+        <button type="button" onClick={() => { URL.revokeObjectURL(posterUrl); setPosterUrl(null); }} style={{ padding: '12px 22px', borderRadius: 999, border: '1px solid ' + C.line, background: 'transparent', color: C.ink, fontWeight: 800, fontSize: 16 }}>閉じる</button>
+      </div>
+      <div style={{ color: C.muted, fontSize: 12 }}>保存できないときは、画像を長押ししてください。</div>
+    </div>, document.body)}
     {!!shareMessage && <Text selectable accessibilityLiveRegion="polite" style={S.tiny}>{shareMessage}</Text>}
     {dayNavigation}
-    <PersonSwitcher people={people} activeId={activeId} onSwitch={onSwitch} onAdd={onAdd} onManage={onManage} />
+    <Chips>
+      <Chip onPress={onManage}>⚙ 管理・削除</Chip>
+      <Chip active={plan === 'free'} onPress={() => setPlan('free')}>無料版</Chip>
+      <Chip active={plan === 'paid'} onPress={() => setPlan('paid')}>有料版</Chip>
+    </Chips>
 
     {(departureDay || tideChange || homecoming || revisit || currentQuestion) && <View style={S.stack}>
       {departureDay && <Card>
@@ -214,25 +236,34 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
         <Meter title="自分が進む力" value={reading.force.go} color={tierColor} caption={goStrong ? '強い' : '控えめ'} />
         <Meter title="周りを変える力" value={reading.force.change} color="#a8c4f0" caption={changeStrong ? '強い' : '控えめ'} delay={220} />
         <View style={styles.reason}>
-          <TermText id="今日の一手" style={S.kicker}>{dayWord + 'の一手が、これになった理由'}</TermText>
-          <Text style={S.body}>{goStrong && changeStrong ? '動くことも、人を巻き込むことも通りやすい日' : goStrong ? '自分のことは進むけれど、人を動かすのは難しい日' : changeStrong ? '自分で進めるより、人に頼るほうがうまくいく日' : '進むよりも、守って休むほうが得をする日'}。だから一手は<Text style={{ color: C.ink, fontWeight: '900' }}>「{outlook.action}」</Text>。</Text>
-          {!!outlook.basis.length && <Text style={S.tiny}>今日この名札に効いている項目：{outlook.basis.slice(0, 4).map(item => item.label + (item.points >= 0 ? ' +' : ' −') + Math.abs(item.points).toFixed(1)).join('　／　')}（進む力 {Math.round(reading.force.go * 100)}・周りを変える力 {Math.round(reading.force.change * 100)}）</Text>}
+          <TermText id="今日の一手" style={S.kicker}>{'なぜ、この一手なのか'}</TermText>
+          <Text style={S.body}>{goStrong && changeStrong ? '動くことも、人を巻き込むことも通りやすい日' : goStrong ? '自分のことは進むけれど、人を動かすのは難しい日' : changeStrong ? '自分で進めるより、人に頼るほうがうまくいく日' : '進むよりも、守って休むほうが得をする日'}。だから{dayWord}は、上の一手がいちばん合っています。</Text>
+          <Premium id="breakdown"><View style={{ gap: 10 }}>
+          <Text style={[S.kicker, { marginTop: 6 }]}>{dayWord}、あなたの海に効いていること</Text>
+          {reading.chosen.ranked.map(factor => <View key={factor.id} style={styles.factorRow}>
+            <Text style={[styles.factorSide, { color: factor.side === '追い風' ? '#b6dfc4' : factor.side === '向かい風' ? '#e3af92' : C.muted }]}>{factor.side}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.factorLabel}>{factor.label}</Text>
+              <Text style={S.tiny}>{factor.fact}</Text>
+            </View>
+          </View>)}
+          </View></Premium>
         </View>
         {!!events.length && <Chips>{events.map(event => <Chip key={event}>{event}</Chip>)}</Chips>}
       </Scene>
 
-      <Scene index={1} color={fortune.best.color} kicker="仕事・恋愛・金運・健康" title={'いちばんは「' + fortune.best.label + '」'} lead={'4つのうち、' + fortune.best.label + 'がいちばん輝く日。★の数で、得意と不得意が分かります。'} next="三つの潮が重なる">
+      <Scene index={1} color={fortune.best.color} kicker="仕事・恋愛・金運・健康" title={'いちばんは「' + fortune.best.label + '」'} lead={'4つのうち、' + fortune.best.label + 'がいちばん輝く日。好調度の高さで、得意と不得意が分かります。'} next="三つの潮が重なる">
         <FortuneAreas fortune={fortune} dayWord={dayWord} hideSea />
       </Scene>
 
-      <Scene index={2} color={tierColors[reading.layers.year]} kicker="年・月・日" title={'年は' + tiers[reading.layers.year] + '、月は' + tiers[reading.layers.block]} lead={reading.layers.text} next={dayWord + 'のお守り'}>
+      <Scene index={2} color={tierColors[reading.layers.year]} kicker="年・月・日" title={'年は' + tiers[reading.layers.year] + '、月は' + tiers[reading.layers.block]} lead={isLocked('layers', plan) ? undefined : reading.layers.text} next={dayWord + 'のお守り'}>
         <LayeredReading reading={reading} isToday={isToday}>
           <Text style={S.tiny}>次の潮替わり　{dateKey(next.date)} ／ あと{next.days}日</Text>
         </LayeredReading>
         <TideFlow profile={profile} context={c} showCalendar={openCalendar} />
       </Scene>
 
-      <Scene index={3} color={fortune.lucky.color.hex} kicker="ラッキーカラー・方角・時間" title={fortune.lucky.color.name + 'を、身につけて'} lead={'方角は' + fortune.lucky.direction + '、いい時間は' + fortune.lucky.time + '。'} next="月と潮">
+      <Scene index={3} color={fortune.lucky.color.hex} kicker="ラッキーカラー・方角・時間" title={fortune.lucky.color.name + 'を、身につけて'} lead={isLocked('lucky', plan) ? undefined : '方角は' + fortune.lucky.direction + '、いい時間は' + fortune.lucky.time + '。'} next="月と潮">
         <LuckyCard fortune={fortune} dayWord={dayWord} />
       </Scene>
 
@@ -243,7 +274,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
       </Scene>
 
       {tomorrow && <Scene index={5} last color={['#efd393', '#b6dfc4', '#c1d2ef', '#ff5a4d', '#e0245e'][tomorrow.level]} kicker="予告" title="明日の潮は……">
-        <TomorrowCard tomorrow={tomorrow} />
+        <Premium id="tomorrow"><TomorrowCard tomorrow={tomorrow} /></Premium>
       </Scene>}
     </View>
 
@@ -349,4 +380,7 @@ const styles = StyleSheet.create({
   typeSub: { color: C.ink, fontSize: 17, lineHeight: 24, fontWeight: '800', opacity: .9 },
   typeHook: { color: C.ink, fontSize: 17, lineHeight: 29, fontFamily: rounded, fontWeight: '700' },
   reason: { gap: 4, padding: 12, borderRadius: 14, backgroundColor: '#111a31', borderWidth: 1, borderColor: C.line },
+  factorRow: { flexDirection: 'row', gap: 10, paddingVertical: 4 },
+  factorSide: { width: 52, fontSize: 12, fontWeight: '900', paddingTop: 2 },
+  factorLabel: { color: C.ink, fontSize: 14, fontWeight: '800' },
 });

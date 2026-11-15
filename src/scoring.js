@@ -21,7 +21,7 @@ export const SEASON=[
  {n:"夏",element:1,ang:90,home:4,act:"広げる",col:"#ffb26b",moon:"上弦の頃"},
  {n:"秋",element:3,ang:180,home:9,act:"実らせる",col:"#f2c979",moon:"満月の頃"}
 ];
-export { FIVE_PHASES, SOLAR_MONTH_TERMS, solarMonthStartDate, solarStageStartDate };
+export { BRANCHES, BRANCH_ELEMENTS, FIVE_PHASES, SOLAR_MONTH_TERMS, solarMonthStartDate, solarStageStartDate };
 export const NUMS=[1,1.5,2,2.5,3,3.5,4,4.5,5,5.5];
 var TIDE_AMP={"最接近":1,"近い":.78,"ふつう":.55,"遠い":.32,"最遠":.1};   /* strength of the tide-raising pull by Earth-Moon distance (independent of the moon's shape) */
 var WD=["日","月","火","水","木","金","土"];

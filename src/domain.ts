@@ -2,6 +2,7 @@ import { analyze, nameChars, strokeOf } from './strokes';
 import { NUMS, SEASON, STAGES, stageFor, axes, blockScoreOf, ctxFor, dayTable, fivePhaseRelation, personalFor, yearScoreOf, type SeaContext, type SeaType } from './scoring';
 import content from './content.json';
 import { outlookText } from './dayText';
+import { chooseFactors, factorsFor } from './reasons';
 
 const DAY = 86_400_000;
 export const jstToday = () => new Date(Math.floor((Date.now() + 9 * 3_600_000) / DAY) * DAY);
@@ -111,6 +112,9 @@ export function readDay(date: Date, profile: Profile) {
   // 文章は候補から選ばず、この名札の今日の数値（順位の位置・8つの項目・二つの力）から組み立てる。
   const { line, detail, action, basis } = outlookText(row, force);
   const outlook = { title: tiers[level], color: tierColors[level], line, detail, action, basis };
+  // 画面の「内訳」用。全160タイプの平均とのずれから、各項目が追い風か向かい風かを並べる（占い文そのものは上の outlookText が決める）。
+  const factors = factorsFor(context, row, table.rows);
+  const chosen = chooseFactors(factors, level);
   const cycle = cycleFor(profile.t);
   const year = cycleTier(yearScoreOf(context.solarYear, profile.t).score, cycle.years);
   const block = cycleTier(blockScoreOf(context.solarYear, context.solarMonth, profile.t).score, cycle.blocks);
@@ -126,7 +130,7 @@ export function readDay(date: Date, profile: Profile) {
     dayRelation: fivePhaseRelation(profile.t, context.dayElement),
   };
   return { context, row, personal, personalRank, outlook, force, mean: table.mean,
-    fivePhase, layers: { year, block, day: level, text: layeredReading(year, block, level) } };
+    fivePhase, layers: { year, block, day: level, text: layeredReading(year, block, level) }, factors, chosen };
 }
 
 export const lifeFields = [
