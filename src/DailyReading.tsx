@@ -83,7 +83,7 @@ export function LayeredReading({ reading, isToday = true, children }: ReadingCar
     <View style={styles.chipRow}>
       {chips.map(([label, value]) => <View key={label} style={styles.chip}><Text style={styles.chipLabel}>{label}</Text><Text style={styles.chipValue}>{value}</Text></View>)}
     </View>
-    <Premium id="layers"><Gloss style={S.body}>{layers.text}</Gloss></Premium>
+    <Premium id="layers" lines={4}><Gloss style={S.body}>{layers.text}</Gloss></Premium>
     {children}
   </Card>;
 }

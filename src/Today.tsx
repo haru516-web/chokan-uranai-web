@@ -231,7 +231,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
         <View style={styles.reason}>
           <TermText id="今日の一手" style={S.kicker}>{'なぜ、この一手なのか'}</TermText>
           <Text style={S.body}>{goStrong && changeStrong ? '動くことも、人を巻き込むことも通りやすい日' : goStrong ? '自分のことは進むけれど、人を動かすのは難しい日' : changeStrong ? '自分で進めるより、人に頼るほうがうまくいく日' : '進むよりも、守って休むほうが得をする日'}。だから{dayWord}は、上の一手がいちばん合っています。</Text>
-          <Premium id="breakdown"><View style={{ gap: 10 }}>
+          <Premium id="breakdown" lines={8}><View style={{ gap: 10 }}>
           <Text style={[S.kicker, { marginTop: 6 }]}>{dayWord}、あなたの海に効いていること</Text>
           {reading.chosen.ranked.map(factor => <View key={factor.id} style={styles.factorRow}>
             <Text style={[styles.factorSide, { color: factor.side === '追い風' ? '#b6dfc4' : factor.side === '向かい風' ? '#e3af92' : C.muted }]}>{factor.side}</Text>
@@ -267,7 +267,7 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
       </Scene>
 
       {tomorrow && <Scene index={5} last color={['#efd393', '#b6dfc4', '#c1d2ef', '#ff5a4d', '#e0245e'][tomorrow.level]} kicker="予告" title="明日の潮は……">
-        <Premium id="tomorrow"><TomorrowCard tomorrow={tomorrow} /></Premium>
+        <Premium id="tomorrow" lines={9}><TomorrowCard tomorrow={tomorrow} /></Premium>
       </Scene>}
     </View>
 

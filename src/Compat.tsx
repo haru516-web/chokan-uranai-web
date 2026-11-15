@@ -84,7 +84,7 @@ function PeriodPanel({ periods, partnerName, onPickPerson }: { periods: PeriodRe
           {who}：<Text style={{ color: tierColors[tier as number], fontWeight: '900' }}>{tiers[tier as number]}</Text></Text>)}
       </View>
     </View>
-    <Premium id="compatPeriod"><View style={S.stack}>
+    <Premium id="compatPeriod" lines={9}><View style={S.stack}>
       <Text style={S.body}>{p.text}</Text>
       <Text style={S.kicker}>点数の内訳</Text>
       {p.terms.map(term => <View key={term.label} style={styles.term}>
@@ -112,7 +112,7 @@ function PairResult({ result, periods, partnerName, onPickPerson }: { result: Co
       {result.sameType && <Text style={S.tiny}>同じタイプ同士です。似ているところと、似すぎて重なるところの両方が出ます。</Text>}
     </View>
 
-    <Premium id="compatDetail"><View style={[S.card, S.pad]}>
+    <Premium id="compatDetail" lines={4}><View style={[S.card, S.pad]}>
       <Text style={S.kicker}>深さの組み合わせ　{a.num.toFixed(1)} × {b.num.toFixed(1)}（差 {result.diff.toFixed(1)}）</Text>
       <Text style={S.h3}>{result.depth.title}</Text>
       <Text style={S.body}>{result.depth.text}</Text>
@@ -124,12 +124,12 @@ function PairResult({ result, periods, partnerName, onPickPerson }: { result: Co
         <Text style={[S.tiny, { color: area.color }]}>{area.score}　{area.level.name}</Text>
       </View>
       <Bar value={area.score} color={area.color} />
-      <Premium id="compatAreaText" compact><Text style={S.body}>{area.text}</Text></Premium>
+      <Premium id="compatAreaText" compact lines={3}><Text style={S.body}>{area.text}</Text></Premium>
     </View>)}
 
     <PeriodPanel periods={periods} partnerName={partnerName} onPickPerson={onPickPerson} />
 
-    <Premium id="compatDetail"><View style={S.stack}>
+    <Premium id="compatDetail" lines={16}><View style={S.stack}>
 
     <View style={[S.card, S.pad]}>
       <Text style={S.kicker}>点数の内訳（基準点に足した点数）</Text>

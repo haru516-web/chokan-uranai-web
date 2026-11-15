@@ -1,8 +1,9 @@
 name: Deploy Web (all branches)
 
-# どのブランチを push しても、全ブランチをビルドして、ブランチごとのページとして並べて公開する。
-#   /                 … ブランチの一覧
-#   /<ブランチ名>/     … そのブランチの画面（"/" は "-" に置き換え）
+# どのブランチを push しても、全ブランチをビルドして公開する。
+#   /                 … 本番（main）。検索に出す設定・静的ページ・サイトマップつき
+#   /branches/        … ブランチの一覧（確認用）
+#   /<ブランチ名>/     … そのブランチの画面（"/" は "-" に置き換え）。検索には出さない（noindex）
 on:
   push:
     branches: ['**']
@@ -34,9 +35,25 @@ jobs:
           OUT="$GITHUB_WORKSPACE/_site"
           mkdir -p "$OUT"
           ROWS=""
+          RESERVED=" assets site questions types about privacy branches "
+          OWNER="$(echo "$GITHUB_REPOSITORY_OWNER" | tr 'A-Z' 'a-z')"
+          SITE_URL="https://$OWNER.github.io/${GITHUB_REPOSITORY#*/}/"
+          PROD_OK=0
+          # 本番：main を、サイトの根元（/）に、検索に出す設定でビルドする。
+          if git show-ref --verify --quiet refs/remotes/origin/main; then
+            wt="$RUNNER_TEMP/wt-production"
+            git worktree add --detach "$wt" refs/remotes/origin/main >/dev/null 2>&1
+            if [ -f "$wt/package.json" ] && [ -f "$wt/index.html" ]; then
+              echo "::group::build production (main) -> /"
+              if (cd "$wt" && npm ci --no-audit --no-fund && SITE_URL="$SITE_URL" SITE_INDEX=1 npx vite build --base ./ --outDir "$OUT" --emptyOutDir); then PROD_OK=1; else echo "::warning::build failed: production (main)"; fi
+              echo "::endgroup::"
+            fi
+            git worktree remove --force "$wt" >/dev/null 2>&1 || true
+          fi
           for ref in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin | grep -v '/HEAD$'); do
             branch="${ref#origin/}"
             slug="$(echo "$branch" | tr '/' '-')"
+            case "$RESERVED" in *" $slug "*) echo "::warning::skip reserved name: $slug"; continue ;; esac
             wt="$RUNNER_TEMP/wt-$slug"
             git worktree add --detach "$wt" "$ref" >/dev/null 2>&1 || continue
             if [ -f "$wt/package.json" ] && [ -f "$wt/index.html" ]; then
@@ -44,7 +61,7 @@ jobs:
               if (cd "$wt" && npm ci --no-audit --no-fund && npx vite build --base ./ --outDir "$OUT/$slug" --emptyOutDir); then
                 when="$(git log -1 --format=%cd --date=format:'%Y-%m-%d %H:%M' "$ref")"
                 subject="$(git log -1 --format=%s "$ref" | sed 's/&/\&amp;/g; s/</\&lt;/g')"
-                ROWS="$ROWS<a class=\"card\" href=\"./$slug/\"><b>$branch</b><span>$when</span><small>$subject</small></a>"
+                ROWS="$ROWS<a class=\"card\" href=\"../$slug/\"><b>$branch</b><span>$when</span><small>$subject</small></a>"
               else
                 echo "::warning::build failed: $branch"
               fi
@@ -52,7 +69,8 @@ jobs:
             fi
             git worktree remove --force "$wt" >/dev/null 2>&1 || true
           done
-          cat > "$OUT/index.html" <<HTML
+          mkdir -p "$OUT/branches"
+          cat > "$OUT/branches/index.html" <<HTML
           <!doctype html>
           <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
           <title>潮環占い｜ブランチ一覧</title>
@@ -67,6 +85,8 @@ jobs:
           $ROWS
           </body></html>
           HTML
+          # 本番（main）が作れなかったときは、これまでどおり、根元にブランチ一覧を置く。
+          if [ "$PROD_OK" != 1 ]; then sed 's#href="../#href="./#g' "$OUT/branches/index.html" > "$OUT/index.html"; fi
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v6
       - name: Upload site

@@ -75,7 +75,11 @@ function Voyage({ hold }: { hold: boolean }) {
   const [tab, setTab] = useState<MainTab>('today');
   const [path, setPath] = useState<Detail[]>([]);
   const [todayVisit, setTodayVisit] = useState(0);
-  const [selectedQuestionId, setSelectedQuestionId] = useState<string>();
+  // 静的ページ（/questions/…）の「この問いを読む」から、?question=Q01 で開いたときは、その問いを選んだ状態で始める。
+  const [selectedQuestionId, setSelectedQuestionId] = useState<string | undefined>(() => {
+    if (typeof window === 'undefined') return undefined;
+    return findQuestion(new URLSearchParams(window.location.search).get('question'))?.id;
+  });
   const [ritual, setRitual] = useState(false);
   const detail = path[path.length - 1];
   const active = people.find(person => person.id === activeId) ?? null;

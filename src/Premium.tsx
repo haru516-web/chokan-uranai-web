@@ -35,19 +35,24 @@ export function usePlan(): Plan {
   return useSyncExternalStore(listener => { listeners.add(listener); return () => { listeners.delete(listener); }; }, () => current, () => 'paid' as Plan);
 }
 
-/** 有料の場所。無料版ではぼかして、触れないようにし、鍵の案内を重ねる。 */
-export function Premium({ id, children, label = '有料版で読めます', compact, when = true }: { id: string; children: ReactNode; label?: string; compact?: boolean; when?: boolean }) {
+/** 無料版で、文字の代わりに置く、ぼかした帯の幅。本物の文字は、画面（DOM）に出さない。 */
+const BAR_WIDTHS = ['100%', '94%', '98%', '88%', '96%', '72%'];
+
+/** 有料の場所。無料版では、中身を画面に出さず、ぼかした帯と鍵の案内に置き換える。 */
+export function Premium({ id, children, label = '有料版で読めます', compact, when = true, lines = 4 }: { id: string; children: ReactNode; label?: string; compact?: boolean; when?: boolean; lines?: number }) {
   const plan = usePlan();
   const locked = when && isLocked(id, plan);
   if (!locked) return <>{children}</>;
   return <View style={styles.wrap}>
-    <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
-      style={{ filter: 'blur(7px)', opacity: 0.8, userSelect: 'none' } as unknown as ViewStyle}>{children}</View>
+    <View accessible={false} importantForAccessibility="no-hide-descendants" style={{ gap: compact ? 7 : 11, paddingVertical: compact ? 4 : 14, paddingHorizontal: compact ? 0 : 14, opacity: 0.8, filter: 'blur(3px)', userSelect: 'none' } as unknown as ViewStyle}>
+      {Array.from({ length: lines }, (_, index) => <View key={index} style={[styles.bar, { width: BAR_WIDTHS[index % BAR_WIDTHS.length] } as ViewStyle]} />)}
+    </View>
     <View style={styles.badge} pointerEvents="none"><Text style={[styles.badgeText, compact && { fontSize: 12, paddingHorizontal: 10, paddingVertical: 5 }]}>🔒 {compact ? '有料版' : label}</Text></View>
   </View>;
 }
 
 const styles = StyleSheet.create({
+  bar: { height: 13, borderRadius: 7, backgroundColor: 'rgba(186,198,221,.22)' },
   wrap: { position: 'relative', overflow: 'hidden', borderRadius: 18 },
   badge: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   badgeText: { color: C.ink, fontSize: 15, fontWeight: '900', backgroundColor: 'rgba(16,23,42,.82)', paddingHorizontal: 16, paddingVertical: 9, borderRadius: 999, overflow: 'hidden' },

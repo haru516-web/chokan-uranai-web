@@ -114,7 +114,7 @@ function Answer({ mark, kicker, title, body, color, delay, lock }: { mark: strin
     <Text style={[styles.answerMark, { color }]}>{mark}</Text>
     <View style={{ flex: 1, gap: 1 }}>
       <Text style={[S.kicker, { color }]}>{kicker}</Text>
-      <Premium id="lifeFuture" when={lock}>
+      <Premium id="lifeFuture" when={lock} lines={3}>
         <Gloss style={styles.answerTitle}>{title}</Gloss>
         <Gloss style={styles.answerBody}>{body}</Gloss>
       </Premium>
@@ -272,7 +272,7 @@ export function LifeWave({ today, profile, questionId, initialYear, create, embe
           <Text style={S.tiny}>{sel.theme}の年</Text>
         </View>
       </View>
-      <Premium id="lifeFuture" when={selected > thisYear}><Text style={styles.yearText}>{YEAR_TEXT[sel.level]}</Text></Premium>
+      <Premium id="lifeFuture" when={selected > thisYear} lines={2}><Text style={styles.yearText}>{YEAR_TEXT[sel.level]}</Text></Premium>
       <Text style={S.h3}>この年の12か月</Text>
       <View style={styles.months}>
         {blocks.map((block, i) => {

@@ -301,6 +301,12 @@ export function Journal({ profile, notes, edit, pair, create, openNote, showToda
       <Button quiet onPress={onForget}>人の管理・データのリセット</Button>
       <Button quiet onPress={pair}>二人の海をみる</Button>
     </Fold>
+    <Card>
+      <Text style={S.kicker}>規約・表記</Text>
+      <Text style={S.tiny}>
+        <a href="./terms/" style={{ color: C.gold }}>利用規約</a>　·　<a href="./privacy/" style={{ color: C.gold }}>プライバシーポリシー</a>　·　<a href="./tokushoho/" style={{ color: C.gold }}>特定商取引法に基づく表記</a>　·　<a href="./refund/" style={{ color: C.gold }}>返金の方針</a>
+      </Text>
+    </Card>
     <Fold title="潮環占いについて" hint="占いの位置づけ・出典" open={fold === 'about'} onToggle={() => setFold(fold === 'about' ? null : 'about')}>
       <Gloss style={S.body}>潮環占いは、四季・名前の画数・暦を使って自分の状況を見つめるための創作占いです。人生の予測や性格を測定する方法としては実証されていません。月相と節気の切り替えは日本時間正午の天文値、日の干支は日本時間の日付を基準にしています。十干・十二支・節気・五行の対応を暦上の参照枠にし、十二支と既存の海流の対応、四季型との五行照合、海況への反映は潮環独自の設計です。十二支の五行は一つに簡略化し、月干や時刻は扱いません。</Gloss>
       <Text style={S.tiny}>漢字の画数　KANJIDIC2 © EDRDG（CC BY-SA 4.0）　／　月の計算　Jean Meeus『Astronomical Algorithms』</Text>

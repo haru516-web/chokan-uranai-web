@@ -1,6 +1,7 @@
 import { addDays, cycleFor, cycleTier, dateKey, residentIndex, type Profile } from './domain';
 import questions from './questions.json';
 import residents from './residents.json';
+import siteMeta from './siteMeta.json';
 import { blockScoreOf, ctxFor, monthStagesFor, OUTER, solarMonthStartDate, yearScoreOf } from './scoring';
 
 export { questions, residents };
@@ -16,13 +17,7 @@ export type Reflection = {
   now: string;
 };
 
-export const categories = [
-  { id: 'self', name: '自分を見失うとき' },
-  { id: 'work', name: '仕事・創作・実力' },
-  { id: 'relation', name: '人との距離' },
-  { id: 'time', name: '時間・記憶・変化' },
-];
-export const featuredQuestions = ['Q01', 'Q04', 'Q08', 'Q14', 'Q16', 'Q20'];
+export const { categories, featuredQuestions } = siteMeta;
 export const findQuestion = (id: string | null | undefined) => questions.find(question => question.id === id);
 export const ownResident = (profile: Profile) => residents[residentIndex(profile.t)];
 export const headwind = '同じだけ漕いでも、同じ距離を進めるとは限らない。それを自分の怠慢だと決めつけなくていい。あなたには、ほかの人が追い風と呼ぶものが向かい風になり、逆に荒れた海で進みやすいときもある。';
