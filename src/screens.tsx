@@ -261,22 +261,20 @@ export function Journal({ profile, notes, edit, pair, create, openNote, showToda
   const [fold, setFold] = useState<'data' | 'about' | null>(null);
   const resident = profile && ownResident(profile);
   const trails = [...new Set([...questions.map(entry => entry.id), ...reflections.flatMap(record => record.questionId ? [record.questionId] : [])])];
-  const empty = !notes.length && !trails.length && !reflections.length && !selfCount;
+  const empty = !notes.length && !trails.length && !reflections.length;
   return <View style={S.stack}>
-    <Heading tag="記録" title="あなたの記録" body="考えたこと・残した問い・自己純度の変化が、ここに集まります。" />
+    <Heading tag="記録" title="あなたの記録" body="考えたこと・残した問い・振り返りが、ここに集まります。" />
     <Button onPress={create}>今日のことを書く　›</Button>
     <Chips>
       <Chip active={notes.length > 0}>{`日記 ${notes.length}`}</Chip>
       <Chip active={trails.length > 0}>{`問い ${trails.length}`}</Chip>
       <Chip active={reflections.length > 0}>{`振り返り ${reflections.length}`}</Chip>
-      <Chip active={selfCount > 0}>{`自己純度 ${selfCount}回`}</Chip>
     </Chips>
     {empty && <Card>
       <Text style={S.h3}>まだ何も残っていません</Text>
-      <Text style={S.body}>占いや診断のあとに「記録する」を押すと、ここに並びます。</Text>
+      <Text style={S.body}>占いのあとに「記録する」を押すと、ここに並びます。</Text>
     </Card>}
     <NextLinks items={[
-      { label: '自己純度の変化を見る', hint: selfCount ? selfCount + '回分の記録' : '1分の診断からはじめる', onPress: goSelf },
       { label: '今日の占いを見る', onPress: showToday },
       { label: '過去の年を振り返って記録する', hint: '人生の流れから、あの頃の出来事を残せます', onPress: openChart },
     ]} />

@@ -144,6 +144,7 @@ function Voyage({ hold }: { hold: boolean }) {
     setTimeout(apply, 80);
   };
   function go(next: MainTab) {
+    if (next === 'self') return; // 自己診断タブは公開していない。どの入口からも開かない。
     scrollMemory.current = [];
     scrollTo(0);
     setPath([]);
