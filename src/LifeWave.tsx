@@ -9,7 +9,7 @@ import { useInView } from './FortuneDetail';
 import { ReflectionCards } from './LifeChart';
 import { ctxFor, labelOf, SEASON } from './scoring';
 import { Calendar } from './screens';
-import { Button, C, Card, display, NextLinks, rounded, S } from './ui';
+import { Button, C, Card, display, rounded, S } from './ui';
 import { findQuestion, ownResident, periodFor, type Reflection } from './voyage';
 import { Float, fx, Sparkles } from './Visual';
 
@@ -220,8 +220,6 @@ export function LifeWave({ today, profile, questionId, initialYear, create, embe
         <Text style={S.kicker}>{blocks[chosen].date.getUTCMonth() + 1}月ごろ〜</Text>
         <Text style={S.h3}><Text style={{ color: tierColors[blocks[chosen].level] }}>{tiers[blocks[chosen].level]}</Text>　{MONTH_TEXT[blocks[chosen].level]}</Text>
         <Gloss style={S.body}>{'海況「' + blocks[chosen].stage.n + '」：' + blocks[chosen].stage.d + '。'}</Gloss>
-        {(selected < thisYear || (selected === thisYear && chosen <= c.solarMonth)) &&
-          <Button quiet onPress={() => write(blocks[chosen].date.getUTCFullYear(), blocks[chosen].date.getUTCMonth() + 1, questionId)}>この頃の出来事を記録する</Button>}
       </View>}
       <Text style={S.tiny}>{resident.band}（名札 {labelOf(person.t)}）として読んだ流れです。</Text>
     </View>}
@@ -235,11 +233,6 @@ export function LifeWave({ today, profile, questionId, initialYear, create, embe
       <Calendar key={calendarFocus?.key ?? 0} today={today} profile={profile} initial={calendarFocus ? { date: calendarFocus.date, mode: calendarFocus.mode } : undefined} />
     </View>}
 
-    <NextLinks items={[
-      ...(embedCalendar ? [{ icon: '🗓️', label: '運勢の輪・暦へ', hint: '今日までの海を、日付ごとに読み返す', onPress: scrollToLifeCalendar }] : []),
-      { icon: '🌊', label: '今日の占いへ', onPress: showToday },
-      ...(openJournal ? [{ icon: '📓', label: '記録・設定', hint: '残した問い・日記・データの管理', onPress: openJournal }] : []),
-    ]} />
     <Text style={S.tiny}>次の潮替わり　{dateKey(nextChange(today))}。流れは創作占いの象徴で、未来を約束するものではありません。</Text>
   </View>;
 }

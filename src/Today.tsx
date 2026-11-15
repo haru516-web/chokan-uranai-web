@@ -101,7 +101,6 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
   const dayNavigation = <View style={S.between}>
     <Chip onPress={() => selectDay(offset - 1)}>‹ 前の日</Chip>
     <Chip active={offset === 0} onPress={() => selectDay(0)}>今日</Chip>
-    <Text style={S.tiny}>明日の潮は、この下に ↓</Text>
   </View>;
 
   const moonCard = <View style={S.stack}>
@@ -150,7 +149,6 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
     <View style={styles.toolbar}>
       <Chip onPress={() => setReplay(value => value + 1)}>▶ もう一度</Chip>
       <Chip onPress={() => { void share(); }}>共有</Chip>
-      <Text style={[S.tiny, { flex: 1, textAlign: 'right' }]}>名札や順位をタップで解説</Text>
     </View>
     {!!shareMessage && <Text selectable accessibilityLiveRegion="polite" style={S.tiny}>{shareMessage}</Text>}
     {dayNavigation}
