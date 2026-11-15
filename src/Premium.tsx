@@ -13,6 +13,7 @@ export const PREMIUM_SECTIONS: string[] = [
   'tomorrow',  // 今日タブ・終「予告」（明日の潮）
   'compatAreaText', // 相性タブ・4つの相性の文（ラベルと点数とバーは無料）
   'lifeFuture',     // 人生タブ・未来の読み（次の追い風、これから1年の月、来年以降の年と今年の先の月）
+  'compatPeriod',   // 相性タブ・二人の今日・今月・今年の読みと内訳（点数と二人の段階は無料）
   'compatDetail',   // 相性タブ・深さの組み合わせ、点数の内訳、二人の読み
 ];
 

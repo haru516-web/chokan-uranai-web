@@ -248,7 +248,7 @@ function Voyage({ hold }: { hold: boolean }) {
     tarot: <TarotHome today={today} savedDraw={stored.tarotDraw} log={stored.tarotLog} onDraw={drawTarot}
       personKey={profile ? 'k' + profile.t.key : 'guest'} season={profile ? seasonOf(profile.t.mod) : null}
       level={profile ? readDay(today, profile).layers.day : null} onCreate={editProfile} goToday={() => go('today')} />,
-    match: <Compat profile={profile}people={people} create={editProfile} />,
+    match: <Compat profile={profile} people={people} create={editProfile} today={today} />,
     questions: <QuestionSea open={openQuestion} create={profile ? undefined : editProfile} />,
     chart: <LifeWave embedCalendar calendarFocus={calendarFocus} today={today} profile={profile} create={editProfile} openJournal={() => open({ kind: 'journal' })}
       write={writeReflection} showToday={() => go('today')} records={stored.reflections} edit={editReflection} />,

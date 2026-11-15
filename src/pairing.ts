@@ -36,6 +36,7 @@ const DEPTH_STEP = 1.5;
 const BAND_DEPTH = [1.5, 2.75, 3.75, 5];
 
 const clamp = (value: number) => Math.max(40, Math.min(98, Math.round(value)));
+export { clamp as clampScore, round1 };
 
 export const LEVELS = [
   { min: 86, name: 'ぴったり', stars: 5 },

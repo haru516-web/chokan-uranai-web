@@ -4,13 +4,14 @@
 //   ・タイプで選ぶ         … 16タイプから選ぶ。季節と深さの帯だけで読む。
 // どちらも、自分の側は占いの結果（名札の数値）をそのまま使う。
 import { Premium } from './Premium';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { residentArt } from './art';
 import { CompatRitual } from './CompatRitual';
 import { PartnerForm } from './PartnerForm';
 import { AREAS, DEPTH_NAMES, SEASON_NAMES, compat, levelOf, rankAll, seasonOfResident, sideOfProfile, sideOfType, type Compat as CompatResult, type Side } from './pairing';
-import { makeProfile, type Inputs, type Profile } from './domain';
+import { makeProfile, tierColors, tiers, type Inputs, type Profile } from './domain';
+import { periodCompat, type PeriodId, type PeriodReading } from './pairingPeriod';
 import type { Person } from './People';
 import { labelOf, SEASON } from './scoring';
 import { Button, C, Chip, Chips, Heading, S, Section, tapFx } from './ui';
@@ -61,7 +62,40 @@ function Bar({ value, color }: { value: number; color: string }) {
   return <View style={styles.barTrack}><View style={[styles.barFill, { width: value + '%', backgroundColor: color }]} /></View>;
 }
 
-function PairResult({ result }: { result: CompatResult }) {
+/** 二人の今日・今月・今年。点数と二人の段階は見せて、読みと内訳は有料にする。 */
+function PeriodPanel({ periods, partnerName, onPickPerson }: { periods: PeriodReading[] | null; partnerName: string; onPickPerson: () => void }) {
+  const [id, setId] = useState<PeriodId>('day');
+  if (!periods) return <View style={[S.card, S.pad]}>
+    <Text style={S.kicker}>二人の今日・今月・今年</Text>
+    <Text style={S.body}>いまは「タイプ」だけで読んでいるので、今日・今月・今年の相性は出せません。二人それぞれの、その期間の運勢を重ねて読むには、相手の生年月日と名前が要るためです。</Text>
+    <Text style={S.tiny}>名前と生年月日を使うと、このほかにも、深さの数値・「−」「A」・生まれ年の十二支・生まれた日の月・名前の五行を入れた、細かい内訳まで読めます。</Text>
+    <Button onPress={onPickPerson}>名前と生年月日で読み直す　›</Button>
+  </View>;
+  const p = periods.find(entry => entry.id === id) ?? periods[0];
+  return <View style={[S.card, S.pad]}>
+    <Text style={S.kicker}>二人の今日・今月・今年</Text>
+    <Chips>{periods.map(entry => <Chip key={entry.id} active={entry.id === p.id} onPress={() => setId(entry.id)}>{entry.label}</Chip>)}</Chips>
+    <View style={{ alignItems: 'center', gap: 6 }}>
+      <Text style={S.tiny}>{p.when}</Text>
+      <Text style={[styles.total, { color: C.gold }]}>{p.score}<Text style={styles.totalUnit}> / 100</Text></Text>
+      <Text style={[S.h3, { color: C.gold }]}>{stars(p.level.stars)}　{p.level.name}</Text>
+      <View style={{ flexDirection: 'row', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
+        {[['あなた', p.tiers[0]], [partnerName, p.tiers[1]]].map(([who, tier]) => <Text key={String(who)} style={S.tiny}>
+          {who}：<Text style={{ color: tierColors[tier as number], fontWeight: '900' }}>{tiers[tier as number]}</Text></Text>)}
+      </View>
+    </View>
+    <Premium id="compatPeriod"><View style={S.stack}>
+      <Text style={S.body}>{p.text}</Text>
+      <Text style={S.kicker}>点数の内訳</Text>
+      {p.terms.map(term => <View key={term.label} style={styles.term}>
+        <View style={S.between}><Text style={S.h3}>{term.label}</Text><Text style={[S.tiny, { color: C.gold }]}>{term.label === '二人の相性の総合点' ? term.points : signed(term.points)}</Text></View>
+        <Text style={S.tiny}>{term.note}</Text>
+      </View>)}
+    </View></Premium>
+  </View>;
+}
+
+function PairResult({ result, periods, partnerName, onPickPerson }: { result: CompatResult; periods: PeriodReading[] | null; partnerName: string; onPickPerson: () => void }) {
   const { first, second, a, b } = result;
   return <View style={S.stack}>
     <View style={[S.card, S.pad, { alignItems: 'center', gap: 12 }]}>
@@ -93,6 +127,8 @@ function PairResult({ result }: { result: CompatResult }) {
       <Premium id="compatAreaText" compact><Text style={S.body}>{area.text}</Text></Premium>
     </View>)}
 
+    <PeriodPanel periods={periods} partnerName={partnerName} onPickPerson={onPickPerson} />
+
     <Premium id="compatDetail"><View style={S.stack}>
 
     <View style={[S.card, S.pad]}>
@@ -123,7 +159,7 @@ function PairResult({ result }: { result: CompatResult }) {
 }
 
 /** 相性は、占いをしたあとにだけ開く。「あなた」は、占いの結果の名札にそのまま対応する。選ぶのは相手だけ。 */
-export function Compat({ profile, people, create }: { profile: Profile | null; people: Person[]; create: () => void }) {
+export function Compat({ profile, people, create, today }: { profile: Profile | null; people: Person[]; create: () => void; today: Date }) {
   const [mode, setMode] = useState<'person' | 'type'>('person');
   const [target, setTarget] = useState<Target | null>(null);
   const [ritual, setRitual] = useState<CompatResult | null>(null);   // 儀式の最中の二人
@@ -146,6 +182,7 @@ export function Compat({ profile, people, create }: { profile: Profile | null; p
   const switchMode = (next: 'person' | 'type') => { setMode(next); setTarget(null); setRead(null); };
   const submitPartner = (inputs: Inputs) => begin({ kind: 'person', profile: makeProfile(inputs) });
 
+  const periods = useMemo(() => read && profile && target?.kind === 'person' ? periodCompat(read, profile, target.profile, today) : null, [read, profile, target, today]);
   const ranking = own ? rankAll(own) : [];
   const friends = people.filter(person => person.inputs.name !== profile?.name).map(person => ({ person, profile: makeProfile(person.inputs) }));
 
@@ -174,7 +211,7 @@ export function Compat({ profile, people, create }: { profile: Profile | null; p
       </View>
     </View>
 
-    <Section title="相手の選び方" note="どちらを選んでも、同じように相性を読めます。" />
+    <View nativeID="partner-pick"><Section title="相手の選び方" note="名前と生年月日で選ぶと、今日・今月・今年の相性と、細かい内訳まで読めます。タイプだけで選ぶと、季節と深さの帯で読みます。" /></View>
     <Chips>
       <Chip active={mode === 'person'} onPress={() => switchMode('person')}>名前と生年月日で選ぶ</Chip>
       <Chip active={mode === 'type'} onPress={() => switchMode('type')}>16タイプから選ぶ</Chip>
@@ -199,7 +236,8 @@ export function Compat({ profile, people, create }: { profile: Profile | null; p
       {typeTarget === null && <Text style={S.tiny}>相手のタイプを選ぶと、読みをひらけます。</Text>}
     </View>}
 
-    {read && <View nativeID="pair-result"><PairResult result={read} /></View>}
+    {read && <View nativeID="pair-result"><PairResult result={read} periods={periods} partnerName={target?.kind === 'person' ? target.profile.name + 'さん' : ''}
+      onPickPerson={() => { switchMode('person'); setTimeout(() => document.getElementById('partner-pick')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80); }} /></View>}
     {ritual && <CompatRitual result={ritual} onDone={finishRitual} />}
 
     {read && <View style={S.stack}>
