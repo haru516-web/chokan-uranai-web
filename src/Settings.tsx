@@ -7,8 +7,8 @@ import { Button, C, Card, Chip, Chips, Heading, S } from './ui';
 const dateOf = (seconds: number) => new Date(seconds * 1000).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
 const links = [['利用規約', './terms/'], ['プライバシーポリシー', './privacy/'], ['特定商取引法に基づく表記', './tokushoho/'], ['返金の方針', './refund/']] as const;
 
-export function Settings({ openUpgrade, openJournal, openPeople, openGuide }: {
-  openUpgrade: () => void; openJournal: () => void; openPeople: () => void; openGuide: () => void;
+export function Settings({ openUpgrade, openJournal, openPeople }: {
+  openUpgrade: () => void; openJournal: () => void; openPeople: () => void;
 }) {
   const account = useAccount();
   const plan = usePlan();
@@ -48,11 +48,6 @@ export function Settings({ openUpgrade, openJournal, openPeople, openGuide }: {
       <Text style={S.tiny}>入力した内容は、この端末の中だけに保存されます。</Text>
       <Button quiet onPress={openJournal}>記録・日記を見る</Button>
       <Button quiet onPress={openPeople}>人の管理・データのリセット</Button>
-    </Card>
-
-    <Card>
-      <Text style={S.kicker}>使い方</Text>
-      <Button quiet onPress={openGuide}>使い方・解説</Button>
     </Card>
 
     <Card>

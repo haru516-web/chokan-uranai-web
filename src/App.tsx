@@ -284,7 +284,7 @@ function Voyage({ hold }: { hold: boolean }) {
       case 'upgrade':
         return <Upgrade />;
       case 'settings':
-        return <Settings openUpgrade={() => open({ kind: 'upgrade' })} openJournal={() => open({ kind: 'journal' })} openPeople={() => open({ kind: 'people' })} openGuide={() => open({ kind: 'explanation' })} />;
+        return <Settings openUpgrade={() => open({ kind: 'upgrade' })} openJournal={() => open({ kind: 'journal' })} openPeople={() => open({ kind: 'people' })} />;
       case 'profile':
         return <ProfileForm title={detail.add ? '友人・気になる人を占う' : 'あなたの海を、ひらきます。'} initial={detail.add ? blankInputs : inputs ?? blankInputs}
           persist={detail.add ? false : active ? active.saved : true} submitLabel={detail.add ? 'この人を占う' : undefined}
