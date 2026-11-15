@@ -20,7 +20,12 @@ export async function stripe(path, { method = 'GET', params, env = process.env }
   const query = method === 'GET' && pairs.length ? '?' + new URLSearchParams(pairs).toString() : '';
   const response = await fetch(BASE + path + query, {
     method,
-    headers: { Authorization: `Bearer ${key}`, ...(method === 'GET' ? {} : { 'Content-Type': 'application/x-www-form-urlencoded' }) },
+    headers: {
+      Authorization: `Bearer ${key}`,
+      // APIのバージョンを固定したいときだけ、環境変数 STRIPE_API_VERSION を入れる（入れなければ、アカウントの標準）。
+      ...(env.STRIPE_API_VERSION ? { 'Stripe-Version': env.STRIPE_API_VERSION } : {}),
+      ...(method === 'GET' ? {} : { 'Content-Type': 'application/x-www-form-urlencoded' }),
+    },
     body: method === 'GET' ? undefined : new URLSearchParams(pairs).toString(),
   });
   const body = await response.json().catch(() => ({}));

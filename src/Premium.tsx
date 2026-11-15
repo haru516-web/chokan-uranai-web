@@ -6,7 +6,7 @@ import { requestUpgrade } from './entitlement';
 import { usePlan, type Plan } from './plan';
 import { C } from './ui';
 
-export { setPlan, usePlan, type Plan } from './plan';
+export { usePlan, type Plan } from './plan';
 
 /** 有料版でだけ読める場所の名前。ここに無い名前の <Premium> は、無料版でもそのまま見える。 */
 export const PREMIUM_SECTIONS: string[] = [

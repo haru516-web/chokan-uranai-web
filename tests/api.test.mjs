@@ -17,6 +17,7 @@ const mockStripe = respond => {
     return new Response(JSON.stringify(body), { status });
   };
 };
+const nowSeconds = () => Math.floor(Date.now() / 1000);
 const request = (path, { method = 'GET', headers = {} } = {}) => new Request('https://example.test' + path, { method, headers });
 
 beforeEach(() => { calls = []; Object.assign(process.env, env); });
@@ -40,6 +41,17 @@ describe('token', () => {
 test('Stripe形式のエンコード（入れ子・配列）', () => {
   const pairs = encode({ mode: 'subscription', line_items: [{ price: 'p', quantity: 1 }], custom_text: { submit: { message: 'm' } }, expand: ['subscription'], skip: undefined });
   assert.deepEqual(pairs, [['mode', 'subscription'], ['line_items[0][price]', 'p'], ['line_items[0][quantity]', '1'], ['custom_text[submit][message]', 'm'], ['expand[0]', 'subscription']]);
+});
+
+describe('Stripe-Version', () => {
+  test('STRIPE_API_VERSION を入れたときだけ、ヘッダーに付く', async () => {
+    mockStripe(() => ({ body: { data: [] } }));
+    const { stripe } = await import('../api/_lib/stripe.js');
+    await stripe('/subscriptions', { env: { STRIPE_SECRET_KEY: 'sk_test_x', STRIPE_API_VERSION: '2099-01-01.test' } });
+    await stripe('/subscriptions', { env: { STRIPE_SECRET_KEY: 'sk_test_x' } });
+    assert.equal(calls[0].init.headers['Stripe-Version'], '2099-01-01.test');
+    assert.equal(calls[1].init.headers['Stripe-Version'], undefined);
+  });
 });
 
 describe('GET /api/config', () => {
@@ -81,12 +93,26 @@ describe('POST /api/checkout', () => {
 describe('GET /api/session', () => {
   const sessionId = 'cs_test_' + 'a'.repeat(20);
   test('購入が完了していれば、しるしを返す', async () => {
-    mockStripe(() => ({ body: { status: 'complete', mode: 'subscription', customer: 'cus_ABC123', subscription: { status: 'active' } } }));
+    mockStripe(() => ({ body: { created: nowSeconds(), status: 'complete', mode: 'subscription', customer: 'cus_ABC123', subscription: { status: 'active' } } }));
     const { GET } = await import('../api/session.js');
     const body = await (await GET(request('/api/session?session_id=' + sessionId))).json();
     assert.equal(body.active, true);
     assert.equal(verifyToken(body.token, env), 'cus_ABC123');
     assert.match(calls[0].url, /expand%5B0%5D=subscription/);
+  });
+  test('購入から30分より前のセッションは、しるしを出さない（URLが漏れても、あとから作れない）', async () => {
+    const { GET } = await import('../api/session.js');
+    for (const created of [nowSeconds() - 31 * 60, nowSeconds() - 86_400, undefined]) {
+      mockStripe(() => ({ body: { created, status: 'complete', mode: 'subscription', customer: 'cus_ABC123', subscription: { status: 'active' } } }));
+      const result = await (await GET(request('/api/session?session_id=' + sessionId))).json();
+      assert.equal(result.active, false);
+      assert.equal(result.token, undefined);
+    }
+  });
+  test('29分前のセッションは、しるしを出す', async () => {
+    mockStripe(() => ({ body: { created: nowSeconds() - 29 * 60, status: 'complete', mode: 'subscription', customer: 'cus_ABC123', subscription: { status: 'active' } } }));
+    const { GET } = await import('../api/session.js');
+    assert.equal((await (await GET(request('/api/session?session_id=' + sessionId))).json()).active, true);
   });
   test('未完了・未払い・キャンセル済みは、しるしを出さない', async () => {
     const { GET } = await import('../api/session.js');

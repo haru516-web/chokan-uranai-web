@@ -23,7 +23,7 @@ import { Float, glow } from './Visual';
 import { Art, Button, C, Card, Chip, Chips, Fold, NextLinks, S, Tile, display, rounded, useColumns } from './ui';
 import { findQuestion, nextTideChange, ownResident, revisitQuestion, type Question, type Reflection, type SavedQuestion } from './voyage';
 import { type SavedTarotDraw } from './DailyTarot';
-import { isLocked, Premium, setPlan, usePlan } from './Premium';
+import { isLocked, Premium, usePlan } from './Premium';
 
 type Reading = ReturnType<typeof readDay>;
 // 結果の演出は、その人・その日の初回だけフル再生。再訪は即表示（「もう一度」で再生できる）。
@@ -165,8 +165,6 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
     {dayNavigation}
     <Chips>
       <Chip onPress={onManage}>⚙ 管理・削除</Chip>
-      {import.meta.env.DEV && <Chip active={plan === 'free'} onPress={() => setPlan('free')}>開発：無料版</Chip>}
-      {import.meta.env.DEV && <Chip active={plan === 'paid'} onPress={() => setPlan('paid')}>開発：有料版</Chip>}
     </Chips>
 
     {(departureDay || tideChange || homecoming || revisit || currentQuestion) && <View style={S.stack}>
