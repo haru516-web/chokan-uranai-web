@@ -4,10 +4,12 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { resolveSite } from './site/env.mjs';
 
 const dist = resolve(process.env.DIST_DIR ?? 'dist');
-const siteUrl = process.env.SITE_URL ? process.env.SITE_URL.replace(/\/?$/, '/') : '';
-const index = process.env.SITE_INDEX === '1' && Boolean(siteUrl);
+const resolved = resolveSite();
+const siteUrl = resolved.siteUrl ? resolved.siteUrl.replace(/\/?$/, '/') : '';
+const index = resolved.index;
 const read = file => readFileSync(resolve(file), 'utf8');
 const json = file => JSON.parse(read(file));
 

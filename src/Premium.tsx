@@ -1,8 +1,12 @@
-// 無料版／有料版の切り替え（確認用）と、有料の場所を無料版でぼかす枠。
+// 有料の場所を、無料版で隠す枠。無料か有料かは plan.ts が持つ（公開ではサーバーの確認結果、手元の開発では切り替え）。
 // 有料にする場所は PREMIUM_SECTIONS に名前を足し、画面側で <Premium id="名前"> で包む。
-import { useSyncExternalStore, type ReactNode } from 'react';
-import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import type { ReactNode } from 'react';
+import { Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { requestUpgrade } from './entitlement';
+import { usePlan, type Plan } from './plan';
 import { C } from './ui';
+
+export { setPlan, usePlan, type Plan } from './plan';
 
 /** 有料版でだけ読める場所の名前。ここに無い名前の <Premium> は、無料版でもそのまま見える。 */
 export const PREMIUM_SECTIONS: string[] = [
@@ -17,23 +21,7 @@ export const PREMIUM_SECTIONS: string[] = [
   'compatDetail',   // 相性タブ・深さの組み合わせ、点数の内訳、二人の読み
 ];
 
-export type Plan = 'free' | 'paid';
-const KEY = 'chokan/plan';
-const listeners = new Set<() => void>();
-let current: Plan = 'paid';
-try { if (typeof window !== 'undefined' && window.localStorage.getItem(KEY) === 'free') current = 'free'; } catch { /* 保存できなくても動く */ }
-
-export function setPlan(next: Plan) {
-  current = next;
-  try { window.localStorage.setItem(KEY, next); } catch { /* 保存できなくても動く */ }
-  listeners.forEach(listener => listener());
-}
-
 export const isLocked = (id: string, plan: Plan) => plan === 'free' && PREMIUM_SECTIONS.includes(id);
-
-export function usePlan(): Plan {
-  return useSyncExternalStore(listener => { listeners.add(listener); return () => { listeners.delete(listener); }; }, () => current, () => 'paid' as Plan);
-}
 
 /** 無料版で、文字の代わりに置く、ぼかした帯の幅。本物の文字は、画面（DOM）に出さない。 */
 const BAR_WIDTHS = ['100%', '94%', '98%', '88%', '96%', '72%'];
@@ -43,12 +31,12 @@ export function Premium({ id, children, label = '有料版で読めます', comp
   const plan = usePlan();
   const locked = when && isLocked(id, plan);
   if (!locked) return <>{children}</>;
-  return <View style={styles.wrap}>
+  return <Pressable accessibilityRole="button" accessibilityLabel="有料版のご案内を開く" onPress={requestUpgrade} style={styles.wrap}>
     <View accessible={false} importantForAccessibility="no-hide-descendants" style={{ gap: compact ? 7 : 11, paddingVertical: compact ? 4 : 14, paddingHorizontal: compact ? 0 : 14, opacity: 0.8, filter: 'blur(3px)', userSelect: 'none' } as unknown as ViewStyle}>
       {Array.from({ length: lines }, (_, index) => <View key={index} style={[styles.bar, { width: BAR_WIDTHS[index % BAR_WIDTHS.length] } as ViewStyle]} />)}
     </View>
     <View style={styles.badge} pointerEvents="none"><Text style={[styles.badgeText, compact && { fontSize: 12, paddingHorizontal: 10, paddingVertical: 5 }]}>🔒 {compact ? '有料版' : label}</Text></View>
-  </View>;
+  </Pressable>;
 }
 
 const styles = StyleSheet.create({

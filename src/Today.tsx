@@ -165,8 +165,8 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
     {dayNavigation}
     <Chips>
       <Chip onPress={onManage}>⚙ 管理・削除</Chip>
-      <Chip active={plan === 'free'} onPress={() => setPlan('free')}>無料版</Chip>
-      <Chip active={plan === 'paid'} onPress={() => setPlan('paid')}>有料版</Chip>
+      {import.meta.env.DEV && <Chip active={plan === 'free'} onPress={() => setPlan('free')}>開発：無料版</Chip>}
+      {import.meta.env.DEV && <Chip active={plan === 'paid'} onPress={() => setPlan('paid')}>開発：有料版</Chip>}
     </Chips>
 
     {(departureDay || tideChange || homecoming || revisit || currentQuestion) && <View style={S.stack}>

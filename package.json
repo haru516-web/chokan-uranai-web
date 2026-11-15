@@ -10,7 +10,9 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "check:site": "node scripts/check-site.mjs"
+    "check:site": "node scripts/check-site.mjs",
+    "dev:api": "node scripts/dev-api.mjs",
+    "test": "node --test tests/api.test.mjs"
   },
   "dependencies": {
     "react": "19.3.0",

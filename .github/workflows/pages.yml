@@ -4,9 +4,8 @@ name: Deploy Web (all branches)
 #   /                 … 本番（main）。検索に出す設定・静的ページ・サイトマップつき
 #   /branches/        … ブランチの一覧（確認用）
 #   /<ブランチ名>/     … そのブランチの画面（"/" は "-" に置き換え）。検索には出さない（noindex）
+# ※ 公開は Vercel に移しました（docs/vercel.md）。GitHub Pages に二重に公開すると、検索で重複するため、自動の実行は止めて、手動の実行だけにしています。
 on:
-  push:
-    branches: ['**']
   workflow_dispatch:
 
 permissions:

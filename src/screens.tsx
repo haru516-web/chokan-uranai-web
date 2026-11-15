@@ -10,6 +10,7 @@ import { TypeTraits } from './NameReading';
 import { TideMarks } from './ResidentCard';
 import { ctxFor, dayTable, FIVE_PHASES, labelOf, monthStagesFor, OUTER, SEASON, solarMonthStartDate, solarStageStartDate, STAGES, stageFor, yearScoreOf, blockScoreOf } from './scoring';
 import { TideWheel } from './TideCharts';
+import { requestUpgrade } from './entitlement';
 import { Art, Button, C, Card, Chip, Chips, Fold, Heading, NextLinks, S, Section, Tile, tapFx, useColumns } from './ui';
 import { findQuestion, ownResident, residents, type Reflection, type SavedQuestion } from './voyage';
 
@@ -302,7 +303,8 @@ export function Journal({ profile, notes, edit, pair, create, openNote, showToda
       <Button quiet onPress={pair}>二人の海をみる</Button>
     </Fold>
     <Card>
-      <Text style={S.kicker}>規約・表記</Text>
+      <Text style={S.kicker}>有料版・規約・表記</Text>
+      <Chips><Chip onPress={requestUpgrade}>有料版のご案内・管理</Chip></Chips>
       <Text style={S.tiny}>
         <a href="./terms/" style={{ color: C.gold }}>利用規約</a>　·　<a href="./privacy/" style={{ color: C.gold }}>プライバシーポリシー</a>　·　<a href="./tokushoho/" style={{ color: C.gold }}>特定商取引法に基づく表記</a>　·　<a href="./refund/" style={{ color: C.gold }}>返金の方針</a>
       </Text>

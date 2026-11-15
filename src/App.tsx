@@ -22,7 +22,7 @@ import { findQuestion, type Reflection, type SavedQuestion } from './voyage';
 import { mainTabs, TabBar, type MainTab } from './PetNavigation';
 
 const detailTitles: Record<string, string> = {
-  explanation: 'タイプ解説', profile: '自分の海をひらく',
+  explanation: 'タイプ解説', upgrade: '有料版', settings: '設定', profile: '自分の海をひらく',
   question: '問いを読む', compare: 'あの頃の海と比べる', homecoming: '帰郷の年', reflection: '振り返りを書く', trail: '問いの記録',
   share: '潮札を共有', myth: '潮環神話', resident: '住人の紹介', chapter: '神話を読む',
   note: '航海帳に記す', journal: '記録・設定', rank: '160名札の順位', people: '人の管理・リセット',
@@ -33,8 +33,13 @@ import { GlossProvider } from './Glossary';
 import { Ritual } from './Ritual';
 import { Opening } from './Opening';
 import { PeopleManager, type Person } from './People';
+import { Upgrade } from './Upgrade';
+import { Settings } from './Settings';
+import { finishCheckout, refresh as refreshAccount, UPGRADE } from './entitlement';
 type Detail =
   | { kind: 'explanation' }
+  | { kind: 'upgrade' }
+  | { kind: 'settings' }
   | { kind: 'profile'; questionId?: string; add?: boolean }
   | { kind: 'people' }
   | { kind: 'journal' }
@@ -163,6 +168,19 @@ function Voyage({ hold }: { hold: boolean }) {
     scrollTo(0);
     setPath(previous => [...previous, next]);
   };
+  // 有料版：サーバーに購入状態を確かめる。購入から戻ったとき（?checkout=…）は、案内の画面を開く。画面のどこからでも、案内を開ける（Premiumの鍵など）。
+  const openRef = useRef(open);
+  openRef.current = open;
+  useEffect(() => {
+    void (async () => {
+      const result = await finishCheckout();
+      if (!result) await refreshAccount();
+      else openRef.current({ kind: 'upgrade' });
+    })();
+    const onUpgrade = () => openRef.current({ kind: 'upgrade' });
+    window.addEventListener(UPGRADE, onUpgrade);
+    return () => window.removeEventListener(UPGRADE, onUpgrade);
+  }, []);
   const back = () => {
     scrollTo(scrollMemory.current.pop() ?? 0);
     setPath(previous => previous.slice(0, -1));
@@ -263,6 +281,10 @@ function Voyage({ hold }: { hold: boolean }) {
     switch (detail.kind) {
       case 'explanation':
         return <Guide today={today} profile={profile} onClose={back} />;
+      case 'upgrade':
+        return <Upgrade />;
+      case 'settings':
+        return <Settings openUpgrade={() => open({ kind: 'upgrade' })} openJournal={() => open({ kind: 'journal' })} openPeople={() => open({ kind: 'people' })} openGuide={() => open({ kind: 'explanation' })} />;
       case 'profile':
         return <ProfileForm title={detail.add ? '友人・気になる人を占う' : 'あなたの海を、ひらきます。'} initial={detail.add ? blankInputs : inputs ?? blankInputs}
           persist={detail.add ? false : active ? active.saved : true} submitLabel={detail.add ? 'この人を占う' : undefined}
@@ -367,6 +389,9 @@ function Voyage({ hold }: { hold: boolean }) {
           <View accessible={false} style={layout.helpMark}><Text style={layout.helpMarkText}>?</Text></View>
           <Text style={layout.helpText}>使い方・解説</Text>
         </Pressable>}
+        {detail?.kind !== 'settings' && <Pressable accessibilityRole="button" accessibilityLabel="設定を開く（契約の管理など）" onPress={() => open({ kind: 'settings' })} style={layout.gear}>
+          <Text style={layout.gearMark}>⚙</Text>
+        </Pressable>}
       </View>
       <TabBar wide={wide} seasonIndex={profile?.t.mod ?? null} activeTab={tab} onSelect={go} />
       {storageError && <Text accessibilityRole="alert" style={[S.tiny, layout.error]}>端末の保存領域にアクセスできませんでした。この画面で続けられます。</Text>}
@@ -397,6 +422,8 @@ const layout = StyleSheet.create({
   backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: C.panel, borderWidth: 1, borderColor: C.line },
   backMark: { color: C.ink, fontSize: 28, lineHeight: 30, fontWeight: '700' },
   help: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingLeft: 6, paddingRight: 13, minHeight: 40, borderRadius: 20, borderWidth: 1.5, borderColor: C.aqua, backgroundColor: 'rgba(126,226,208,.14)' },
+  gear: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: C.line, backgroundColor: C.panel },
+  gearMark: { color: C.ink, fontSize: 20, lineHeight: 24 },
   helpMark: { width: 26, height: 26, borderRadius: 13, backgroundColor: C.aqua, alignItems: 'center', justifyContent: 'center' },
   helpMarkText: { color: C.dark, fontSize: 16, lineHeight: 20, fontWeight: '900' },
   helpText: { color: C.ink, fontSize: 14, lineHeight: 18, fontWeight: '900' },
