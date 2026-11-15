@@ -360,7 +360,8 @@ function Voyage({ hold }: { hold: boolean }) {
         </View>
         {detail?.kind !== 'explanation' && <Pressable accessibilityRole="button" accessibilityLabel="仕組みの解説を開く" onPress={() => open({ kind: 'explanation' })}
           style={layout.help}>
-          <Text style={{ color: C.aqua, fontWeight: '800' }}>? 解説</Text>
+          <View accessible={false} style={layout.helpMark}><Text style={layout.helpMarkText}>?</Text></View>
+          <Text style={layout.helpText}>使い方・解説</Text>
         </Pressable>}
       </View>
       <TabBar wide={wide} seasonIndex={profile?.t.mod ?? null} activeTab={tab} onSelect={go} />
@@ -391,7 +392,10 @@ const layout = StyleSheet.create({
   pageTitle: { color: C.ink, fontSize: 19, lineHeight: 26, fontWeight: '800' },
   backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: C.panel, borderWidth: 1, borderColor: C.line },
   backMark: { color: C.ink, fontSize: 28, lineHeight: 30, fontWeight: '700' },
-  help: { paddingHorizontal: 12, minHeight: 40, justifyContent: 'center', borderRadius: 20, borderWidth: 1, borderColor: '#4c6aa8' },
+  help: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingLeft: 6, paddingRight: 13, minHeight: 40, borderRadius: 20, borderWidth: 1.5, borderColor: C.aqua, backgroundColor: 'rgba(126,226,208,.14)' },
+  helpMark: { width: 26, height: 26, borderRadius: 13, backgroundColor: C.aqua, alignItems: 'center', justifyContent: 'center' },
+  helpMarkText: { color: C.dark, fontSize: 16, lineHeight: 20, fontWeight: '900' },
+  helpText: { color: C.ink, fontSize: 14, lineHeight: 18, fontWeight: '900' },
   wash: { position: 'absolute', top: 0, left: 0, right: 0, height: 300 },
   scroll: { flex: 1 },
   hidden: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0, pointerEvents: 'none', visibility: 'hidden' } as object,
