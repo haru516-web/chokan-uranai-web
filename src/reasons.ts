@@ -1,9 +1,9 @@
 // 「なぜこの文が出るのか」を、点数の内訳から決める。
 // その日の点数は 海の時計(base)・月(moon)・潮(depth)・月の五行(aff)・年の五行(comp)・日の海(day)・特性(vor,hw) の合計。
 // 全160タイプの平均からどれだけずれているか（z）が大きい項目ほど、その人のその日を動かした理由。文はその理由から作る。
-import { BRANCHES, BRANCH_ELEMENTS, DAY_STAGES, FIVE_PHASES, SEASON, STAGES, fivePhaseRelation, stageFor, type RankRow, type SeaContext } from './scoring';
+import { DAY_STAGES, FIVE_PHASES, SEASON, STAGES, fivePhaseRelation, stageFor, type RankRow, type SeaContext } from './scoring';
 import {
-  BRANCH_HOURS, DAY_RELATION, DAY_WAVE, ELEMENT_NATURE, MONTH_ACT, MONTH_READ, MOON_ACT, MOON_RESONANCE, MOON_SHAPE, STAGE_TEXT,
+  DAY_RELATION, DAY_WAVE, ELEMENT_NATURE, MONTH_ACT, MONTH_READ, MOON_ACT, MOON_RESONANCE, MOON_SHAPE, STAGE_TEXT,
   TIDE_ACT, TIDE_DIST, TIDE_EFFECT, TIDE_SHAPE, TRAIT_A, TRAIT_MINUS, YEAR_ACT, YEAR_BRANCH_READ, YEAR_STEM_READ, type Kind,
 } from './reasonText';
 
@@ -96,19 +96,4 @@ export function chooseFactors(factors: Factor[], level: number) {
     counter: worst && weight(worst) < -.4 && worst.id !== main.id && worst.id !== support.id ? worst : undefined,
     ranked: sorted,
   };
-}
-
-/** ラッキーの五行：日の五行があなたの味方ならその流れに乗り、そうでなければ、あなたを生み出す五行で支える。 */
-export function luckyElementFor(row: RankRow, c: SeaContext) {
-  const own = SEASON[row.t.mod].element;
-  const kind = kindOf(row, c.dayElement);
-  const ride = kind === '同気' || kind === '相生' || kind === '調整';
-  return { own, kind, ride, element: ride ? c.dayElement : (own + 4) % 5 };
-}
-
-/** ラッキーの時刻：その五行に当たる十二支の刻のうち、日柱の番号で一つ。 */
-export function luckyTimeFor(c: SeaContext, element: number) {
-  const branches = BRANCH_ELEMENTS.map((el: number, i: number) => el === element ? i : -1).filter((i: number) => i >= 0);
-  const branch = branches[c.dayCycleIndex % branches.length];
-  return BRANCHES[branch] + 'の刻（' + BRANCH_HOURS[branch] + '）';
 }
