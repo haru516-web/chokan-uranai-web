@@ -1,0 +1,33 @@
+// 動画B「相性を見てみた」：先に自分の占いを済ませてから、相性タブで相手を入力 → 儀式 → 結果。録画するのは相性のところだけ。
+import { launch, sleep } from './cdp.mjs';
+const T = t => `[...document.querySelectorAll('div,span,button')].filter(e=>e.children.length===0&&e.textContent.trim()===${JSON.stringify(t)}).pop()`;
+const L = l => `document.querySelector('[aria-label=${JSON.stringify(l)}]')`;
+const b = await launch({ url: process.env.URL ?? 'http://localhost:5175/' });
+await b.waitFor(`document.querySelector('.opening')||document.body.innerText.includes('占ってみる')`, 60000);
+if (await b.evalJs(`!!document.querySelector('.opening')`)) { await b.tapAt(195, 400); await b.waitFor(`!document.querySelector('.opening')`); }
+await b.tap(T('占ってみる　›'));
+await b.waitFor(L('生年月日の年'));
+await b.tap(L('生年月日の年')); await b.type('1998', 40); await b.type('4', 40); await b.type('12', 40);
+await b.tap(L('下の名前')); await b.type('汐里', 100);
+await b.tap(T('海をひらく　✦'));
+await b.waitFor(`document.querySelector('.ritual')`);
+await b.waitFor(`!document.querySelector('.ritual')`, 60000);
+await sleep(2500);
+await b.evalJs(`window.scrollTo(0,0)`);
+await b.startRec('b');
+await sleep(400);
+b.mark('start');
+await b.tap(`document.querySelector('[aria-label="二人の相性"]')`);
+await sleep(900);
+await b.waitFor(L('相手の生年月日の年')); b.mark('form');
+await b.tap(L('相手の生年月日の年')); await b.type('2001', 70); await b.type('9', 70); await b.type('3', 70);
+await b.tap(L('相手の下の名前')); await sleep(150); await b.type('健太', 200); await sleep(500);
+b.mark('typed');
+await b.tap(T('この人との相性を読む　✦')); b.mark('submit');
+await b.waitFor(`document.querySelector('.ritual')`);
+await b.waitFor(`!document.querySelector('.ritual')`, 60000); b.mark('result');
+await sleep(2500);
+await sleep(1500); b.mark('scroll');
+await b.scrollBy(420, 900); await sleep(1500);
+console.log('frames', await b.stopRec());
+await b.close();
