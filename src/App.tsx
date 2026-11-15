@@ -22,7 +22,7 @@ import { findQuestion, type Reflection, type SavedQuestion } from './voyage';
 import { mainTabs, TabBar, type MainTab } from './PetNavigation';
 
 const detailTitles: Record<string, string> = {
-  explanation: 'タイプ解説', selfQuiz: '診断', selfResult: '診断の結果', selfWish: '意志を潮に乗せる', profile: '自分の海をひらく',
+  explanation: 'タイプ解説', profile: '自分の海をひらく',
   question: '問いを読む', compare: 'あの頃の海と比べる', homecoming: '帰郷の年', reflection: '振り返りを書く', trail: '問いの記録',
   share: '潮札を共有', myth: '潮環神話', resident: '住人の紹介', chapter: '神話を読む',
   note: '航海帳に記す', journal: '記録・設定', rank: '160名札の順位', people: '人の管理・リセット',
@@ -32,14 +32,9 @@ import { ToTop } from './ToTop';
 import { GlossProvider } from './Glossary';
 import { Ritual } from './Ritual';
 import { Opening } from './Opening';
-import { PeopleManager, PersonSwitcher, type Person } from './People';
-import { SelfHome, SelfQuiz, SelfResultView, SelfWish } from './SelfPurity';
-import { emptySelf, quadOf, quads, score, type Move, type SelfState } from './self';
+import { PeopleManager, type Person } from './People';
 type Detail =
   | { kind: 'explanation' }
-  | { kind: 'selfQuiz' }
-  | { kind: 'selfResult'; id: number }
-  | { kind: 'selfWish' }
   | { kind: 'profile'; questionId?: string; add?: boolean }
   | { kind: 'people' }
   | { kind: 'journal' }
@@ -55,8 +50,8 @@ type Detail =
   | { kind: 'note'; day: string }
   | { kind: 'rank'; date: Date };
 
-type Saved = { inputs: Inputs | null; people: Person[]; notes: Note[]; favorites: number[]; read: number[]; questions: SavedQuestion[]; reflections: Reflection[]; self: SelfState; tarotDraw: SavedTarotDraw | null; tarotLog: SavedTarotDraw[] };
-const empty: Saved = { inputs: null, people: [], notes: [], favorites: [], read: [], questions: [], reflections: [], self: emptySelf, tarotDraw: null, tarotLog: [] };
+type Saved = { inputs: Inputs | null; people: Person[]; notes: Note[]; favorites: number[]; read: number[]; questions: SavedQuestion[]; reflections: Reflection[]; tarotDraw: SavedTarotDraw | null; tarotLog: SavedTarotDraw[] };
+const empty: Saved = { inputs: null, people: [], notes: [], favorites: [], read: [], questions: [], reflections: [], tarotDraw: null, tarotLog: [] };
 const storageKey = 'chokan/v1';
 let pendingSave: Promise<void> = Promise.resolve();
 
@@ -86,8 +81,6 @@ function Voyage({ hold }: { hold: boolean }) {
   const active = people.find(person => person.id === activeId) ?? null;
   const inputs = active?.inputs ?? null;
   const profile = inputs ? makeProfile(inputs) : null;
-  const me = people.find(person => person.me) ?? people[0];
-  const meProfile = me ? makeProfile(me.inputs) : null;
   const selectedQuestion = findQuestion(selectedQuestionId);
   const day = dateKey(today);
   const accent = mainTabs.find(item => item.id === tab)?.accent ?? '#eacc8c';
@@ -102,8 +95,9 @@ function Voyage({ hold }: { hold: boolean }) {
     AsyncStorage.getItem(storageKey).then(raw => {
       if (!mounted || !raw) return;
       const parsed = JSON.parse(raw);
-      const data: Saved = { ...empty, ...parsed, self: { ...emptySelf, ...parsed.self },
+      const data: Saved = { ...empty, ...parsed,
         tarotLog: Array.isArray(parsed.tarotLog) ? parsed.tarotLog.filter((item: SavedTarotDraw) => typeof item?.day === 'string' && typeof item?.cardId === 'string') : [] };
+      delete (data as Record<string, unknown>).self; // 以前の自己診断の保存データは、もう使わない
       if (data.tarotDraw && !data.tarotLog.some(item => item.day === data.tarotDraw?.day)) data.tarotLog = [...data.tarotLog, data.tarotDraw];
       let list: Person[] = Array.isArray(parsed.people) ? parsed.people.filter((person: Person) => person?.inputs && !validate(person.inputs)) : [];
       if (!list.length && parsed.inputs && !validate(parsed.inputs)) list = [{ id: 1, inputs: parsed.inputs, me: true, saved: true }];
@@ -144,7 +138,6 @@ function Voyage({ hold }: { hold: boolean }) {
     setTimeout(apply, 80);
   };
   function go(next: MainTab) {
-    if (next === 'self') return; // 自己診断タブは公開していない。どの入口からも開かない。
     scrollMemory.current = [];
     scrollTo(0);
     setPath([]);
@@ -188,23 +181,6 @@ function Voyage({ hold }: { hold: boolean }) {
   const compare = (id: string) => open({ kind: 'compare', id });
   const writeReflection = (year: number, month: number, questionId?: string) => open({ kind: 'reflection', year, month, questionId });
   const editReflection = (record: Reflection) => open({ kind: 'reflection', year: record.year, month: record.month, id: record.id });
-
-  const self = stored.self;
-  const updateSelf = (change: (value: SelfState) => SelfState) => setStored(previous => ({ ...previous, self: change(previous.self) }));
-  const startQuiz = () => open({ kind: 'selfQuiz' });
-  const openWish = () => open({ kind: 'selfWish' });
-
-  function finishQuiz(answers: number[]) {
-    const { p, s } = score(answers);
-    const id = Date.now();
-    updateSelf(value => ({ ...value, results: [{ id, day, p, s, answers }, ...value.results].slice(0, 60) }));
-    setPath(previous => [...previous.slice(0, -1), { kind: 'selfResult', id }]);
-    if (Platform.OS === 'ios') void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-  }
-
-  function saveMove(move: Omit<Move, 'id'>, wish: string) {
-    updateSelf(value => ({ ...value, wish, moves: [{ ...move, id: Date.now() }, ...value.moves].slice(0, 60) }));
-  }
 
   function removeQuestion(id: string, day: string) {
     setStored(previous => ({ ...previous, questions: previous.questions.filter(entry => entry.id !== id || entry.day !== day) }));
@@ -261,9 +237,7 @@ function Voyage({ hold }: { hold: boolean }) {
       ranks={openRanking} onSave={openNote} questions={stored.questions} reflections={stored.reflections}
       tarotDraw={stored.tarotDraw} tarotLog={stored.tarotLog} onDrawTarot={drawTarot}
       openQuestion={id => openQuestion(id, true)} openQuestions={() => go('questions')}
-      shareTideCard={() => open({ kind: 'share' })} goSelf={() => go('self')}
-      openExplanation={() => open({ kind: 'explanation' })} startQuiz={startQuiz}
-      selfLast={self.results[0] ? { name: quads[quadOf(self.results[0].p, self.results[0].s)].name, mark: quads[quadOf(self.results[0].p, self.results[0].s)].mark, color: quads[quadOf(self.results[0].p, self.results[0].s)].color } : null}
+      shareTideCard={() => open({ kind: 'share' })} openExplanation={() => open({ kind: 'explanation' })}
       selectedQuestion={selectedQuestion ? {
         question: selectedQuestion,
         saved: stored.questions.some(entry => entry.id === selectedQuestion.id && entry.day === day),
@@ -274,10 +248,6 @@ function Voyage({ hold }: { hold: boolean }) {
     tarot: <TarotHome today={today} savedDraw={stored.tarotDraw} log={stored.tarotLog} onDraw={drawTarot}
       personKey={profile ? 'k' + profile.t.key : 'guest'} season={profile ? seasonOf(profile.t.mod) : null}
       level={profile ? readDay(today, profile).layers.day : null} onCreate={editProfile} goToday={() => go('today')} />,
-    self: <SelfHome state={self} profile={meProfile} today={day} start={startQuiz} openWish={openWish}
-      openResult={id => open({ kind: 'selfResult', id })} goToday={() => go('today')}
-      saveCheck={reason => updateSelf(value => ({ ...value, checks: [{ day, reason }, ...value.checks.filter(check => check.day !== day)].slice(0, 60) }))}
-      saveAfter={(id, after) => updateSelf(value => ({ ...value, moves: value.moves.map(move => move.id === id ? { ...move, after } : move) }))} />,
     match: <Compat profile={profile}people={people} create={editProfile} />,
     questions: <QuestionSea open={openQuestion} create={profile ? undefined : editProfile} />,
     chart: <LifeWave embedCalendar calendarFocus={calendarFocus} today={today} profile={profile} create={editProfile} openJournal={() => open({ kind: 'journal' })}
@@ -289,16 +259,6 @@ function Voyage({ hold }: { hold: boolean }) {
     switch (detail.kind) {
       case 'explanation':
         return <Guide today={today} profile={profile} onClose={back} />;
-      case 'selfQuiz':
-        return <SelfQuiz done={finishQuiz} />;
-      case 'selfResult': {
-        const index = self.results.findIndex(entry => entry.id === detail.id);
-        const result = self.results[index];
-        return result && <SelfResultView result={result} previous={self.results[index + 1]} profile={meProfile}
-          again={() => setPath(previous => [...previous.slice(0, -1), { kind: 'selfQuiz' }])} openWish={openWish} openHome={() => go('self')} />;
-      }
-      case 'selfWish':
-        return <SelfWish profile={meProfile} today={today} wish={self.wish} saveMove={saveMove} createProfile={editProfile} finish={() => go('self')} />;
       case 'profile':
         return <ProfileForm title={detail.add ? '友人・気になる人を占う' : 'あなたの海を、ひらきます。'} initial={detail.add ? blankInputs : inputs ?? blankInputs}
           persist={detail.add ? false : active ? active.saved : true} submitLabel={detail.add ? 'この人を占う' : undefined}
@@ -306,7 +266,7 @@ function Voyage({ hold }: { hold: boolean }) {
       case 'journal':
         return <Journal profile={profile} notes={stored.notes} edit={editProfile} pair={() => go('match')} showToday={() => go('today')}
           questions={stored.questions} reflections={stored.reflections} openTrail={openTrail} editReflection={editReflection} openChart={() => go('chart')}
-          create={() => openNote(dateKey(today))} openNote={openNote} goSelf={() => go('self')} selfCount={self.results.length}
+          create={() => openNote(dateKey(today))} openNote={openNote}
           onForget={() => open({ kind: 'people' })} />;
       case 'people':
         return <PeopleManager people={people} activeId={activeId} select={id => { setActiveId(id); go('today'); }} remove={removePerson}

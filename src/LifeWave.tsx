@@ -10,7 +10,7 @@ import { ReflectionCards } from './LifeChart';
 import { ctxFor, labelOf, SEASON } from './scoring';
 import { Calendar } from './screens';
 import { isLocked, Premium, usePlan } from './Premium';
-import { Button, C, Card, display, rounded, S } from './ui';
+import { Button, C, display, rounded, S } from './ui';
 import { findQuestion, ownResident, periodFor, type Reflection } from './voyage';
 import { Float, fx, Sparkles } from './Visual';
 

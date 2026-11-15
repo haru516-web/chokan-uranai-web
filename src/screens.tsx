@@ -251,13 +251,12 @@ export function Chapter({ index, read, done, open }: { index: number; read: bool
   </View>;
 }
 
-export function Journal({ profile, notes, edit, pair, create, openNote, showToday, onForget, questions, reflections, openTrail, editReflection, openChart, goSelf, selfCount }: {
+export function Journal({ profile, notes, edit, pair, create, openNote, showToday, onForget, questions, reflections, openTrail, editReflection, openChart }: {
   profile: Profile | null; notes: Note[]; edit: () => void; pair: () => void; create: () => void;
   openNote: (day: string) => void; showToday: () => void; onForget: () => void;
   questions: SavedQuestion[]; reflections: Reflection[]; openTrail: (id: string) => void;
-  editReflection: (record: Reflection) => void; openChart: () => void; goSelf: () => void; selfCount: number;
+  editReflection: (record: Reflection) => void; openChart: () => void;
 }) {
-  const [confirm, setConfirm] = useState(false);
   const [fold, setFold] = useState<'data' | 'about' | null>(null);
   const resident = profile && ownResident(profile);
   const trails = [...new Set([...questions.map(entry => entry.id), ...reflections.flatMap(record => record.questionId ? [record.questionId] : [])])];

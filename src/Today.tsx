@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { ReactNode } from 'react';
-import { currents, godArt, iconArt, residentArt, scenes, stages, tierArt } from './art';
+import { currents, godArt, residentArt, scenes, stages, tierArt } from './art';
 import { Image } from './web/image';
 import { LayeredReading } from './DailyReading';
 import { addDays, calendarEvents, dateKey, dateLabel, readDay, residentIndex, shortDate, tierColors, tiers, type Profile } from './domain';
-import { BornSea, NameReadingDetails, TypeFortunes, TypeTraits } from './NameReading';
+import { NameReadingDetails, TypeFortunes, TypeTraits } from './NameReading';
 import { SelectedQuestionReading } from './Questions';
 import { TideFlow } from './ResidentCard';
 import { ctxFor, DAY_STAGES, FIVE_PHASES, labelOf, OUTER, SEASON, STAGES, stageFor } from './scoring';
@@ -14,34 +14,31 @@ import { GodAnimation } from './GodAnimation';
 import { Scene } from './Story';
 import { fortuneFor, tomorrowFor } from './fortune';
 import { FortuneAreas, LuckyCard, TomorrowCard } from './FortuneDetail';
-import { Gloss, GlossHint, TermText, useGloss } from './Glossary';
+import { Gloss, GlossHint, TermText } from './Glossary';
 import type { Person } from './People';
 import { ResultPoster } from './ResultPoster';
 import { createPortal } from 'react-dom';
 import { makePosterImage } from './posterImage';
-import { Float, glow, Sparkles } from './Visual';
+import { Float, glow } from './Visual';
 import { Art, Button, C, Card, Chip, Chips, Fold, NextLinks, S, Tile, display, rounded, useColumns } from './ui';
 import { findQuestion, nextTideChange, ownResident, revisitQuestion, type Question, type Reflection, type SavedQuestion } from './voyage';
-import { DailyTarot, type SavedTarotDraw } from './DailyTarot';
-import { seasonOf } from './tarotDeck';
+import { type SavedTarotDraw } from './DailyTarot';
 import { isLocked, Premium, setPlan, usePlan } from './Premium';
 
 type Reading = ReturnType<typeof readDay>;
 // 結果の演出は、その人・その日の初回だけフル再生。再訪は即表示（「もう一度」で再生できる）。
 const seenResults = new Set<string>();
-const tierIcons = ['🎣', '⛵', '🌙', '⚡', '🌀'];
 type FoldId = 'why' | 'me' | 'layers' | 'flow' | 'moon';
 
 export function Today({ people, activeId, onSwitch, onAdd, onManage, today, profile, goMyth, openCalendar, create, ranks, onSave, questions, reflections, openQuestion, openQuestions, openHomecoming, tarotDraw, tarotLog, onDrawTarot,
-  shareTideCard, openJournal, goSelf, openExplanation, startQuiz, selfLast, selectedQuestion }: {
+  shareTideCard, openJournal, openExplanation, selectedQuestion }: {
   people: Person[]; activeId: number | null; onSwitch: (id: number) => void; onAdd: () => void; onManage: () => void;
   today: Date; profile: Profile | null; goMyth: () => void; openCalendar: (date: Date, mode: 'current' | 'stage') => void;
   create: () => void; ranks: (date: Date) => void; onSave: (day: string) => void;
   questions: SavedQuestion[]; reflections: Reflection[]; openQuestion: (id: string) => void;
   openQuestions: () => void; openHomecoming: (year: number) => void;
   tarotDraw: SavedTarotDraw | null; tarotLog: SavedTarotDraw[]; onDrawTarot: (cardId: string) => void;
-  shareTideCard: () => void; openJournal: () => void; goSelf: () => void; openExplanation: () => void; startQuiz: () => void;
-  selfLast: { name: string; mark: string; color: string } | null;
+  shareTideCard: () => void; openJournal: () => void; openExplanation: () => void;
   selectedQuestion?: { question: Question; saved: boolean; toggle: () => void; compare: () => void };
 }) {
   const [offset, setOffset] = useState(0);
@@ -62,7 +59,6 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
   useEffect(() => { seenResults.add(seenKey); }, [seenKey]);
   const instant = wasSeen || skipKey === playKey;
   const reading = profile && readDay(date, profile);
-  const tarotLevel = profile ? (offset === 0 && reading ? reading.layers.day : readDay(today, profile).layers.day) : null;
   const c = reading?.context ?? ctxFor(date);
   const stageIndex = stageFor(c, profile?.t);
   const events = calendarEvents(date, profile);
@@ -140,9 +136,6 @@ export function Today({ people, activeId, onSwitch, onAdd, onManage, today, prof
   const { outlook, row } = reading;
   // 荒波・轟沈は「注意」を赤で示し、ゆっくり脈打つ光で目を引く。
   const tierColor = ['#efd393', '#b6dfc4', '#c1d2ef', '#ff5a4d', '#e0245e'][reading.layers.day];
-  const danger = reading.layers.day >= 3;
-  const pulse = (spread: number) => `0 0 0 1px ${tierColor}66, 0 0 ${spread}px ${tierColor}${spread > 40 ? '99' : '55'}`;
-  const events2 = events;
   const activePerson = people.find(person => person.id === activeId);
   const fortune = fortuneFor(reading, profile);
   const tomorrow = isToday ? tomorrowFor(today, profile, row.rank) : null;
