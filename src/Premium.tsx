@@ -12,6 +12,7 @@ export const PREMIUM_SECTIONS: string[] = [
   'lucky',     // 今日タブ・四「ラッキー」の方角・時間・もの・数字（色は無料）
   'tomorrow',  // 今日タブ・終「予告」（明日の潮）
   'compatAreaText', // 相性タブ・4つの相性の文（ラベルと点数とバーは無料）
+  'lifeFuture',     // 人生タブ・未来の読み（次の追い風、これから1年の月、来年以降の年と今年の先の月）
   'compatDetail',   // 相性タブ・深さの組み合わせ、点数の内訳、二人の読み
 ];
 
@@ -34,9 +35,9 @@ export function usePlan(): Plan {
 }
 
 /** 有料の場所。無料版ではぼかして、触れないようにし、鍵の案内を重ねる。 */
-export function Premium({ id, children, label = '有料版で読めます', compact }: { id: string; children: ReactNode; label?: string; compact?: boolean }) {
+export function Premium({ id, children, label = '有料版で読めます', compact, when = true }: { id: string; children: ReactNode; label?: string; compact?: boolean; when?: boolean }) {
   const plan = usePlan();
-  const locked = isLocked(id, plan);
+  const locked = when && isLocked(id, plan);
   if (!locked) return <>{children}</>;
   return <View style={styles.wrap}>
     <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants"

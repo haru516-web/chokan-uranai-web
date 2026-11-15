@@ -9,6 +9,7 @@ import { useInView } from './FortuneDetail';
 import { ReflectionCards } from './LifeChart';
 import { ctxFor, labelOf, SEASON } from './scoring';
 import { Calendar } from './screens';
+import { isLocked, Premium, usePlan } from './Premium';
 import { Button, C, Card, display, rounded, S } from './ui';
 import { findQuestion, ownResident, periodFor, type Reflection } from './voyage';
 import { Float, fx, Sparkles } from './Visual';
@@ -108,13 +109,15 @@ function WaveChart({ years, thisYear, selected, onSelect, season, demo }: {
   </View>;
 }
 
-function Answer({ mark, kicker, title, body, color, delay }: { mark: string; kicker: string; title: string; body: string; color: string; delay: number }) {
+function Answer({ mark, kicker, title, body, color, delay, lock }: { mark: string; kicker: string; title: string; body: string; color: string; delay: number; lock?: boolean }) {
   return <View {...fx('up')} style={[styles.answer, asStyle({ animationDelay: delay + 'ms', borderColor: color + '88', backgroundImage: `linear-gradient(110deg, ${color}26, transparent 70%)` })]}>
     <Text style={[styles.answerMark, { color }]}>{mark}</Text>
     <View style={{ flex: 1, gap: 1 }}>
       <Text style={[S.kicker, { color }]}>{kicker}</Text>
-      <Gloss style={styles.answerTitle}>{title}</Gloss>
-      <Gloss style={styles.answerBody}>{body}</Gloss>
+      <Premium id="lifeFuture" when={lock}>
+        <Gloss style={styles.answerTitle}>{title}</Gloss>
+        <Gloss style={styles.answerBody}>{body}</Gloss>
+      </Premium>
     </View>
   </View>;
 }
@@ -127,6 +130,68 @@ export function scrollToLifeCalendar() {
   setTimeout(() => document.getElementById('life-calendar')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 280);
 }
 
+type Ahead = ReturnType<typeof monthsAhead>[number];
+const monthNo = (block: { date: Date }) => block.date.getUTCMonth() + 1;
+const byBest = (a: { level: number; solarMonth: number }, b: { level: number; solarMonth: number }) => a.level - b.level || a.solarMonth - b.solarMonth;
+
+/** 今年の読み。年の海流、去年・来年との流れ、12か月の内訳、いちばん良い月と慎重にしたい月まで書く。 */
+function thisYearBody(person: Profile, thisYear: number, now: Year) {
+  const blocks = periodFor(thisYear, person.t).blocks;
+  const before = tiers[periodFor(thisYear - 1, person.t).level];
+  const after = tiers[periodFor(thisYear + 1, person.t).level];
+  const good = blocks.filter(block => block.level <= 1).length;
+  const rough = blocks.filter(block => block.level >= 3).length;
+  const best = [...blocks].sort(byBest)[0];
+  const worst = [...blocks].sort((a, b) => byBest(b, a))[0];
+  return YEAR_TEXT[now.level] + '今年の海流は「' + now.current + '」で、' + now.theme + 'の年。去年は「' + before + '」、来年は「' + after + '」の流れです。'
+    + '12か月のうち、動きやすい月は' + good + 'か月、波が立つ月は' + rough + 'か月。いちばん流れが良いのは' + monthNo(best) + '月ごろ、慎重にしたいのは' + monthNo(worst) + '月ごろです。';
+}
+
+/** 次の追い風の年の読み。その年の海流、今からの年数、動きやすい月、追い風が続く長さ、名札の力の使い方。 */
+function nextGoodBody(person: Profile, thisYear: number, entry: { year: number; level: number }, nowGood: boolean) {
+  const period = periodFor(entry.year, person.t);
+  const gap = entry.year - thisYear;
+  const months = [...period.blocks].sort(byBest).slice(0, 2).map(monthNo).sort((a, b) => a - b);
+  let run = 1;
+  while (run < 6 && periodFor(entry.year + run, person.t).level <= 1) run++;
+  const lead = gap === 1 ? '来年のことなので、今年の後半から準備を始められます。'
+    : gap <= 3 ? '準備期間がたっぷりあります。今のうちに、続けたいことの土台と、やめることを決めておくと楽です。'
+      : '少し先なので、焦らなくて大丈夫。今は力を蓄え、人間関係と資金の土台を整えておきましょう。';
+  const intro = nowGood ? '今年がちょうど追い風の年です。この先で次に来るのは、' + entry.year + '年（今から' + gap + '年後）。' : entry.year + '年（今から' + gap + '年後）は';
+  return intro + '「' + tiers[entry.level] + '」の年で、海流は「' + period.current.n + '」（' + period.current.th + 'の年）。' + lead
+    + 'その年のなかでは、' + months.join('月・') + '月ごろがとくに動きやすく、' + (run > 1 ? '追い風は' + (entry.year + run - 1) + '年まで続きます。' : '')
+    + 'あなたの型は「' + SEASON[person.t.mod].act + '」力が出るタイプ。その年は、この力を外へ向けて使うと流れに噛み合います。';
+}
+
+const runLength = (ahead: Ahead[], start: number, test: (level: number) => boolean) => {
+  let n = 0;
+  for (let i = start; i < ahead.length && test(ahead[i].level); i++) n++;
+  return n;
+};
+
+/** 気をつけたい月の読み。続く長さ、その月の海況、避けたいこと、前の月の備え方。 */
+function cautionBody(person: Profile, ahead: Ahead[], entry: Ahead) {
+  const start = ahead.indexOf(entry);
+  const run = runLength(ahead, start, level => level >= 3);
+  const end = ahead[start + run - 1];
+  const stage = periodFor(entry.year, person.t).blocks[entry.solarMonth].stage;
+  const advice = entry.level === 4 ? '無理に進まず、休むこと・手放すことを優先して。大きな決断や契約は、この時期を避けるのが安全です。'
+    : '広げるより守る時期。大きな決断や契約は、避けるか、余裕を持って。';
+  return '「' + tiers[entry.level] + '」の海況で、' + (run > 1 ? end.year + '年' + end.month + '月ごろまでの' + run + 'か月間、' : '') + '波が立ちやすくなります。'
+    + '海況は「' + stage.n + '」：' + stage.d + '。' + advice + '前の月のうちに、予定を詰めすぎないよう整えておくと安心です。';
+}
+
+/** いちばんの月の読み。続く長さ、その月の海況、何をその月に寄せるか。 */
+function bestBody(person: Profile, ahead: Ahead[], entry: Ahead) {
+  const start = ahead.indexOf(entry);
+  const run = runLength(ahead, start, level => level <= 1);
+  const end = ahead[start + run - 1];
+  const stage = periodFor(entry.year, person.t).blocks[entry.solarMonth].stage;
+  return '「' + tiers[entry.level] + '」の海況で、' + (run > 1 ? end.year + '年' + end.month + '月ごろまでの' + run + 'か月間、' : '') + '流れに乗りやすくなります。'
+    + '海況は「' + stage.n + '」：' + stage.d + '。始めたいことの一歩目は、この月に置くと進めやすいです。'
+    + 'あなたの型は「' + SEASON[person.t.mod].act + '」力が出るので、その力を使う動き（人に会う・出す・申し込む）をこの月に寄せてみましょう。';
+}
+
 export function LifeWave({ today, profile, questionId, initialYear, create, embedCalendar, calendarFocus, write, records, edit, openJournal, showToday }: {
   today: Date; profile: Profile | null; questionId?: string; initialYear?: number; create: () => void;
   embedCalendar?: boolean; calendarFocus?: { date: Date; mode: 'current' | 'stage'; key: number } | null;
@@ -134,6 +199,7 @@ export function LifeWave({ today, profile, questionId, initialYear, create, embe
   openJournal?: () => void; showToday: () => void;
 }) {
   const open = useGloss();
+  const plan = usePlan();
   const demo = !profile;
   const person = profile ?? demoProfile;
   const c = ctxFor(today);
@@ -153,6 +219,9 @@ export function LifeWave({ today, profile, questionId, initialYear, create, embe
   const season = person.t.mod;
   const relevant = records.filter(record => ctxFor(new Date(Date.UTC(record.year, record.month - 1, 15))).solarYear === selected && (!questionId || record.questionId === questionId));
   const resident = ownResident(person);
+
+  /** 未来の月（来年以降の全部と、今年の今月より先）。無料版では中身を見せない。 */
+  const futureMonth = (i: number) => isLocked('lifeFuture', plan) && (selected > thisYear || (selected === thisYear && i > c.solarMonth));
 
   function choose(year: number) { setSelected(year); setMonth(null); }
 
@@ -181,15 +250,15 @@ export function LifeWave({ today, profile, questionId, initialYear, create, embe
 
     <Text accessibilityRole="header" style={S.h2}>この波から分かること</Text>
     <Answer mark={tiers[now.level].slice(0, 1)} kicker={thisYear + '年（今年）'} title={'今年は「' + tiers[now.level] + '」の年'}
-      body={YEAR_TEXT[now.level]} color={tierColors[now.level]} delay={0} />
-    <Answer mark="↗" kicker="次の追い風"
+      body={thisYearBody(person, thisYear, now)} color={tierColors[now.level]} delay={0} />
+    <Answer lock mark="↗" kicker="次の追い風"
       title={now.level <= 1 && (!nextGood || nextGood.year > thisYear + 1) ? '追い風は、いま吹いています' : nextGood ? nextGood.year + '年（' + (nextGood.year - thisYear) + '年後）' : 'しばらく凪が続きます'}
-      body={nextGood ? nextGood.year + '年は「' + tiers[nextGood.level] + '」。大きく動くなら、この年に照準を合わせて準備を。' : '派手な追い風はありませんが、荒れる年もありません。着実さが味方です。'}
+      body={nextGood ? nextGoodBody(person, thisYear, nextGood, now.level <= 1) : '派手な追い風はありませんが、荒れる年もありません。着実さが味方です。'}
       color={tierColors[nextGood?.level ?? 2]} delay={120} />
-    {caution && <Answer mark="!" kicker="これから1年で気をつけたい月" title={caution.year + '年' + caution.month + '月ごろ〜'}
-      body={'「' + tiers[caution.level] + '」の海況。大きな決断や契約は、この時期を避けるか、余裕を持って。'} color={tierColors[caution.level]} delay={240} />}
-    {best && <Answer mark="★" kicker="これから1年でいちばんの月" title={best.year + '年' + best.month + '月ごろ〜'}
-      body={'「' + tiers[best.level] + '」の海況。始めたいことの一歩目は、この月に置くと流れに乗れます。'} color={tierColors[best.level]} delay={360} />}
+    {caution && <Answer lock mark="!" kicker="これから1年で気をつけたい月" title={caution.year + '年' + caution.month + '月ごろ〜'}
+      body={cautionBody(person, ahead, caution)} color={tierColors[caution.level]} delay={240} />}
+    {best && <Answer lock mark="★" kicker="これから1年でいちばんの月" title={best.year + '年' + best.month + '月ごろ〜'}
+      body={bestBody(person, ahead, best)} color={tierColors[best.level]} delay={360} />}
 
     {!demo && <View key={selected} {...fx('up')} style={[S.card, styles.year, asStyle({ borderColor: tierColors[sel.level] })]}>
       <View style={S.between}>
@@ -203,20 +272,22 @@ export function LifeWave({ today, profile, questionId, initialYear, create, embe
           <Text style={S.tiny}>{sel.theme}の年</Text>
         </View>
       </View>
-      <Text style={styles.yearText}>{YEAR_TEXT[sel.level]}</Text>
+      <Premium id="lifeFuture" when={selected > thisYear}><Text style={styles.yearText}>{YEAR_TEXT[sel.level]}</Text></Premium>
       <Text style={S.h3}>この年の12か月</Text>
       <View style={styles.months}>
         {blocks.map((block, i) => {
           const active = chosen === i;
-          const height = 18 + (4 - block.level) * 9;
+          const hidden = futureMonth(i);
+          const height = hidden ? 26 : 18 + (4 - block.level) * 9;
           return <View key={i} style={styles.monthCol}>
-            <Pressable accessibilityRole="button" accessibilityLabel={(block.date.getUTCMonth() + 1) + '月ごろ ' + tiers[block.level]} onPress={() => setMonth(i)} {...fx('grow-up')}
-              style={[styles.monthBar, asStyle({ height, backgroundColor: tierColors[block.level], opacity: active ? 1 : .55, animationDelay: i * 45 + 'ms', boxShadow: active ? `0 0 14px ${tierColors[block.level]}` : 'none' })]} />
+            <Pressable accessibilityRole="button" accessibilityLabel={(block.date.getUTCMonth() + 1) + '月ごろ ' + (hidden ? '有料版で読めます' : tiers[block.level])} onPress={() => setMonth(i)} {...fx('grow-up')}
+              style={[styles.monthBar, asStyle({ height, backgroundColor: hidden ? '#2a3552' : tierColors[block.level], opacity: active ? 1 : .55, animationDelay: i * 45 + 'ms', boxShadow: active && !hidden ? `0 0 14px ${tierColors[block.level]}` : 'none' })]} />
             <Text style={[styles.monthLabel, active && { color: C.ink, fontWeight: '900' }]}>{block.date.getUTCMonth() + 1}</Text>
           </View>;
         })}
       </View>
-      {chosen !== null && <View key={chosen} {...fx('fade')} style={styles.monthDetail}>
+      {chosen !== null && futureMonth(chosen) && <View key={chosen} {...fx('fade')} style={styles.monthDetail}><Text style={S.tiny}>🔒 これから先の月は、有料版で読めます。</Text></View>}
+      {chosen !== null && !futureMonth(chosen) && <View key={chosen} {...fx('fade')} style={styles.monthDetail}>
         <Text style={S.kicker}>{blocks[chosen].date.getUTCMonth() + 1}月ごろ〜</Text>
         <Text style={S.h3}><Text style={{ color: tierColors[blocks[chosen].level] }}>{tiers[blocks[chosen].level]}</Text>　{MONTH_TEXT[blocks[chosen].level]}</Text>
         <Gloss style={S.body}>{'海況「' + blocks[chosen].stage.n + '」：' + blocks[chosen].stage.d + '。'}</Gloss>
