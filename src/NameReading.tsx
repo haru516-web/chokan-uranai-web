@@ -11,7 +11,7 @@ import { useInView } from './FortuneDetail';
 import { Meter } from './TideCharts';
 import { Card, S, Section } from './ui';
 import { fx } from './Visual';
-import { ownResident, residents } from './voyage';
+import { residents } from './voyage';
 
 const seasonOrder = [1, 2, 3, 0];
 
@@ -20,18 +20,6 @@ function Pop({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
   const [ref, seen] = useInView<HTMLDivElement>();
   return <View ref={ref as never} {...(seen ? fx('pop') : {})}
     style={(seen ? { animationDelay: delay + 'ms' } : { opacity: 0 }) as unknown as ViewStyle}>{children}</View>;
-}
-
-export function BornSea({ profile }: { profile: Profile }) {
-  const resident = ownResident(profile);
-  const { t } = profile;
-  return <Card>
-    <Text accessibilityRole="header" style={S.kicker}>生まれ持った海</Text>
-    <Text style={S.h2}>{resident.hook}</Text>
-    <Text style={S.body}>{resident.inner}</Text>
-    <Text style={S.tiny}>あなたの名札　{labelOf(t)}</Text>
-    <TypeBadges profile={profile} />
-  </Card>;
 }
 
 const AREAS = [

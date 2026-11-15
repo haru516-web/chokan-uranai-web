@@ -9,22 +9,6 @@ import type { ReactNode } from 'react';
 
 type ReadingCardProps = { reading: ReturnType<typeof readDay>; isToday?: boolean; children?: ReactNode };
 
-export function DailyAdvice({ reading, isToday = true, children }: ReadingCardProps) {
-  const { row, outlook } = reading;
-  const day = isToday ? '今日' : 'この日';
-  return <Card>
-    <Text accessibilityRole="header" style={S.kicker}>{day}のひと言</Text>
-    <Text style={S.h2}>{outlook.line}</Text>
-    <Text style={S.body}>{outlook.detail}</Text>
-    <View style={styles.action}>
-      <Text accessibilityRole="header" style={S.kicker}>{day}の一手</Text>
-      <Text style={S.h2}>{outlook.action}</Text>
-      {row.t.minus && row.rank > 80 && <Text style={S.body}>「−」の名札は向かい風を受けやすい読みです。今いる場所を守ることも、一つの舵の切り方です。</Text>}
-      {children}
-    </View>
-  </Card>;
-}
-
 const asStyle = (style: object) => style as never;
 const pale = ['#fff3cf', '#e2f6ea', '#e3ecff', '#ffdcc6', '#ffd0dc'];
 

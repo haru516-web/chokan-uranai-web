@@ -7,8 +7,8 @@ import { Button, C, Card, Chip, Chips, Heading, S } from './ui';
 const dateOf = (seconds: number) => new Date(seconds * 1000).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
 const links = [['利用規約', './terms/'], ['プライバシーポリシー', './privacy/'], ['特定商取引法に基づく表記', './tokushoho/'], ['返金の方針', './refund/']] as const;
 
-export function Settings({ openUpgrade, openJournal, openPeople }: {
-  openUpgrade: () => void; openJournal: () => void; openPeople: () => void;
+export function Settings({ openUpgrade, openPeople }: {
+  openUpgrade: () => void; openPeople: () => void;
 }) {
   const account = useAccount();
   const plan = usePlan();
@@ -46,7 +46,6 @@ export function Settings({ openUpgrade, openJournal, openPeople }: {
     <Card>
       <Text style={S.kicker}>データ</Text>
       <Text style={S.tiny}>入力した内容は、この端末の中だけに保存されます。</Text>
-      <Button quiet onPress={openJournal}>記録・日記を見る</Button>
       <Button quiet onPress={openPeople}>人の管理・データのリセット</Button>
     </Card>
 
@@ -54,6 +53,12 @@ export function Settings({ openUpgrade, openJournal, openPeople }: {
       <Text style={S.kicker}>規約・表記</Text>
       <Chips>{links.map(([label, href]) => <Chip key={href} onPress={() => { window.location.href = href; }}>{label}</Chip>)}</Chips>
       <Text style={styles.note}>お問い合わせは、各ページに記載のメールアドレスまで。</Text>
+    </Card>
+
+    <Card>
+      <Text style={S.kicker}>潮環占いについて・出典</Text>
+      <Text style={S.body}>潮環占いは、四季・名前の画数・暦を使って自分の状況を見つめるための創作占いです。人生の予測や性格を測定する方法としては実証されていません。月相と節気の切り替えは日本時間正午の天文値、日の干支は日本時間の日付を基準にしています。十干・十二支・節気・五行の対応を暦上の参照枠にし、十二支と既存の海流の対応、四季型との五行照合、海況への反映は潮環独自の設計です。十二支の五行は一つに簡略化し、月干や時刻は扱いません。</Text>
+      <Text style={S.tiny}>漢字の画数　KANJIDIC2 © EDRDG（CC BY-SA 4.0）　／　月の計算　Jean Meeus『Astronomical Algorithms』</Text>
     </Card>
   </View>;
 }

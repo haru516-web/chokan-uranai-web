@@ -1,99 +1,7 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { dateKey, tierColors, tiers, type Profile } from './domain';
-import { TideMarks } from './ResidentCard';
-import { ctxFor, labelOf, monthStagesFor, OUTER, solarMonthStartDate, STAGES, stageFor } from './scoring';
-import { Button, C, Card, Chip, Chips, Heading, S, Section, tapFx } from './ui';
-import { categories, findQuestion, nextTideChange, ownResident, periodFor, questions, type Reflection, type SavedQuestion } from './voyage';
-
-const solarMonths = Array.from({ length: 12 }, (_, i) => i);
-
-export function LifeChart({ today, profile, questionId, initialYear, create, calendar, write, showToday, records, edit }: {
-  today: Date; profile: Profile | null; questionId?: string; create: () => void; calendar?: () => void;
-  write: (year: number, month: number, questionId?: string) => void; showToday: () => void;
-  initialYear?: number; records: Reflection[]; edit: (record: Reflection) => void;
-}) {
-  const todayContext = ctxFor(today);
-  const thisYear = todayContext.solarYear;
-  const [year, setYear] = useState(initialYear ?? (questionId ? thisYear - 1 : thisYear));
-  const [month, setMonth] = useState<number | null>(null);
-  const years = Array.from({ length: 13 }, (_, i) => initialYear ? thisYear - 12 + i : thisYear - i);
-  const question = findQuestion(questionId);
-  const period = profile && periodFor(year, profile.t);
-  const currentPeriod = profile && periodFor(thisYear, profile.t);
-  const selectedMonth = month ?? (year === thisYear ? todayContext.solarMonth : 0);
-  const selectedDate = solarMonthStartDate(year, selectedMonth);
-  const context = ctxFor(selectedDate);
-  const next = nextTideChange(today);
-  const relevant = records.filter(record => ctxFor(new Date(Date.UTC(record.year, record.month - 1, 15))).solarYear === year &&
-    (!questionId || record.questionId === questionId));
-
-  function chooseYear(nextYear: number) {
-    setYear(nextYear);
-    setMonth(null);
-  }
-
-  return <View style={S.stack}>
-    <Heading tag="人生の流れ" title={question ? 'その問いを強く感じたのは、いつ頃？' : '過去の年を、今の目で読み返す'}
-      body="① 年をタップ　② 月をタップ　③ その頃の出来事を記録" />
-    {question && <Card><Text style={S.kicker}>{question.id}　問いを重ねる</Text><Text style={S.h3}>{question.question}</Text></Card>}
-    {!profile && <Card><Text style={S.body}>潮札をつくると、同じ時期をあなたの名札で読めます。</Text><Button quiet onPress={create}>私の潮札をひらく</Button></Card>}
-    <View style={S.between}>
-      <Text style={S.h3}>年を選ぶ</Text>
-      <Chip active={year === thisYear} onPress={() => chooseYear(thisYear)}>今年へ</Chip>
-    </View>
-    <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={{ gap: 8, paddingBottom: 8 }}>
-      {years.map(y => {
-        const tide = profile && periodFor(y, profile.t);
-        const names = solarMonths.map(i => monthStagesFor(y, i, profile?.t).n);
-        return <Pressable {...tapFx} key={y} onPress={() => chooseYear(y)} accessibilityRole="button" accessibilityState={{ selected: year === y }}
-          accessibilityLabel={`${y}年、${names.join('、')}`} style={[S.card, styles.year, year === y && styles.selected]}>
-          <Text style={S.h3}>{y}</Text>
-          <Text numberOfLines={1} style={S.tiny}>{OUTER[ctxFor(new Date(Date.UTC(y, 0, 1))).outer].n}</Text>
-          <View style={styles.band}>
-          {names.map((name, i) => <View key={name + i} style={[styles.stripe, { backgroundColor: tide ? tierColors[tide.blocks[i].level] : [C.aqua, C.line, C.gold][i % 3] }]} />)}
-          </View>
-        </Pressable>;
-      })}
-    </ScrollView>
-    <Card>
-      <Text style={S.kicker}>{year}年の海流</Text>
-      <Text style={S.h2}>{OUTER[context.outer].n}{period ? ' ／ ' + tiers[period.level] : ''}</Text>
-      <Text style={S.body}>{OUTER[context.outer].th}の年。{OUTER[context.outer].d}。</Text>
-      {solarMonths.map(i => {
-        const canSelect = year < thisYear || i <= todayContext.solarMonth;
-        const monthStage = monthStagesFor(year, i, profile?.t);
-        return <Chip key={i} active={selectedMonth === i} onPress={canSelect ? () => setMonth(i) : undefined}>
-          {(solarMonthStartDate(year, i).getUTCMonth() + 1) + '月ごろ　' + monthStage.n + '→' + monthStage.second.n + (period ? ' ／ ' + tiers[period.blocks[i].level] : '')}
-        </Chip>;
-      })}
-      {currentPeriod && year !== thisYear && <Text style={S.tiny}>今は {currentPeriod.current.n} ／ {tiers[currentPeriod.level]}。現在の海況は {currentPeriod.blocks[todayContext.solarMonth].stage.n} です。</Text>}
-    </Card>
-    <Card>
-      <Text style={S.h3}>月ごとの海を読む</Text>
-      <Chips>{solarMonths.filter(i => year < thisYear || i <= todayContext.solarMonth).map(i =>
-        <Chip key={i} active={selectedMonth === i} onPress={() => setMonth(i)}>{(solarMonthStartDate(year, i).getUTCMonth() + 1) + '月ごろ'}</Chip>,
-      )}</Chips>
-      {month !== null && <>
-        <Text style={S.h2}>{context.solarYear}年 · {context.MO}月{context.DA}日ごろ · {STAGES[stageFor(context, profile?.t)].n}</Text>
-        <Text style={S.body}>{STAGES[stageFor(context, profile?.t)].d}。</Text>
-        {profile && <>
-          <Text style={S.body}>この象徴で読み直すなら、{ownResident(profile).band}（名札 {labelOf(profile.t)}）にとって、年の海は「{tiers[period!.level]}」、この節気の海は「{tiers[period!.blocks[selectedMonth].level]}」です。</Text>
-          <TideMarks profile={profile} />
-        </>}
-        <Text style={S.tiny}>海流と海況は、当時の出来事を振り返るための創作占いの象徴です。</Text>
-        <Button onPress={() => write(context.Y, context.MO, questionId)}>この頃の出来事を記録する</Button>
-      </>}
-    </Card>
-    {!!relevant.length && <>
-      <Section title={year + '年の航海帳'} />
-      <ReflectionCards records={relevant} edit={edit} />
-    </>}
-    {calendar && <Button quiet onPress={calendar}>潮環の暦と次の節目を見る</Button>}
-    <Text style={S.tiny}>次の潮替わり　{dateKey(next.date)} ／ あと{next.days}日</Text>
-    {question && <><Text style={S.body}>問いを解決できなくても、見え方は変わるかもしれません。</Text><Button quiet onPress={showToday}>今日の海へ</Button></>}
-  </View>;
-}
+import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Button, C, Card, Chip, Chips, Heading, S } from './ui';
+import { categories, findQuestion, questions, type Reflection } from './voyage';
 
 export function ReflectionEditor({ initial, existing, save, remove }: {
   initial: { year: number; month: number; questionId?: string }; existing?: Reflection;
@@ -134,7 +42,7 @@ export function ReflectionEditor({ initial, existing, save, remove }: {
           {item.id + '　' + item.question}
         </Chip>,
       )}
-      <Text style={S.tiny}>記録はこの端末の航海帳に保存されます。</Text>
+      <Text style={S.tiny}>記録はこの端末に保存されます。</Text>
       <Button disabled={![event, then, now].some(text => text.trim())}
         onPress={() => save({ year, month, questionId, event: event.trim(), then: then.trim(), now: now.trim() })}>記録を保存</Button>
       {remove && (confirm ? <Chips>
@@ -153,30 +61,6 @@ export function ReflectionCards({ records, edit }: { records: Reflection[]; edit
       </View>)}
     <Button quiet onPress={() => edit(record)}>記録を読み直す・編集する</Button>
   </Card>)}</>;
-}
-
-export function QuestionTrail({ id, saved, records, reopen, compare, remove, edit }: {
-  id: string; saved: SavedQuestion[]; records: Reflection[]; reopen: () => void; compare: () => void;
-  remove: (day: string) => void; edit: (record: Reflection) => void;
-}) {
-  const question = findQuestion(id);
-  if (!question) return null;
-  const dates = saved.filter(entry => entry.id === id);
-  const linked = records.filter(record => record.questionId === id);
-  return <View style={S.stack}>
-    <Heading tag="同じ問いの航跡" title={question.question} />
-    <Button onPress={reopen}>問いをもう一度読む</Button>
-    <Button quiet onPress={compare}>あの頃の海と比べる</Button>
-    <Section title="この問いを残した日" />
-    {dates.length === 0 && <Text style={S.body}>保存した日はまだありません。</Text>}
-    {dates.map(entry => <Card key={entry.day}>
-      <Text style={S.h3}>{entry.day}</Text>
-      <Chip onPress={() => remove(entry.day)}>この日の保存を取り消す</Chip>
-    </Card>)}
-    <Section title="問いに紐づけた出来事" />
-    {linked.length === 0 && <Text style={S.body}>紐づけた出来事はまだありません。</Text>}
-    <ReflectionCards records={linked} edit={edit} />
-  </View>;
 }
 
 const styles = StyleSheet.create({

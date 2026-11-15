@@ -1,11 +1,9 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Svg, { Circle, ClipPath, Defs, G, LinearGradient, Path, RadialGradient, Rect, Stop, SvgImage, Text as SvgText, type Svg as SvgHandle } from './web/svg';
 import { godArt, residentArt } from './art';
-import { dateLabel, type readDay, type Profile } from './domain';
-import { DailyRank } from './DailyRank';
-import { GodAnimation } from './GodAnimation';
-import { labelOf, OUTER, SEASON, solarMonthStartDate, solarStageStartDate, STAGES, stageFor } from './scoring';
+import { type readDay, type Profile } from './domain';
+import { labelOf, SEASON, solarMonthStartDate, solarStageStartDate } from './scoring';
 import { TideWheel } from './TideCharts';
 import { Button, C, Card, Chip, Chips, S } from './ui';
 import { headwind, ownResident, residents, vortex } from './voyage';
@@ -42,29 +40,6 @@ export function TypeBadges({ profile }: { profile: Profile }) {
     <Chip>{profile.t.minus ? '− マイナスあり' : '− マイナスなし'}</Chip>
     <Chip>{profile.t.A ? 'A 渦あり' : 'A 渦なし'}</Chip>
   </Chips>;
-}
-
-export function TideSummary({ profile, reading, isToday = true, children }: {
-  profile: Profile; reading: ReturnType<typeof readDay>;
-  isToday?: boolean; children?: ReactNode;
-}) {
-  const entry = ownResident(profile);
-  const season = profile.t.mod;
-  const { context } = reading;
-  return <View style={[S.card, S.pad, styles.crest]}>
-    <Text style={S.kicker}>あなたの名札</Text>
-    <Text style={[S.title, styles.center]} accessibilityRole="header">{labelOf(profile.t)}</Text>
-    <Text style={[S.h3, styles.center]}>タイプ名　{entry.band}</Text>
-    <Text style={[S.body, styles.center]}>{entry.subtitle}</Text>
-    <TypeBadges profile={profile} />
-    <Text style={[S.tiny, styles.center]}>{dateLabel(context)}</Text>
-    <View style={styles.resultRow}>
-      <GodAnimation index={season} style={styles.god} label={SEASON[season].n + 'の神'} />
-      <View style={styles.rank}><DailyRank reading={reading} isToday={isToday} /></View>
-    </View>
-    <Text style={[S.tiny, styles.center]}>{context.yearPillar}　／　{OUTER[context.outer].n}　·　{STAGES[stageFor(context, profile.t)].n}　／　{context.moon}</Text>
-    {children}
-  </View>;
 }
 
 export function TideFlow({ profile, context, showCalendar }: {

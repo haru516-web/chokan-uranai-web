@@ -30,15 +30,15 @@ type Reading = ReturnType<typeof readDay>;
 const seenResults = new Set<string>();
 type FoldId = 'why' | 'me' | 'layers' | 'flow' | 'moon';
 
-export function Today({ people, activeId, onSwitch, onAdd, onManage, today, profile, goMyth, openCalendar, create, ranks, onSave, questions, reflections, openQuestion, openQuestions, openHomecoming, tarotDraw, tarotLog, onDrawTarot,
-  shareTideCard, openJournal, openExplanation, selectedQuestion }: {
+export function Today({ people, activeId, onSwitch, onAdd, onManage, today, profile, goMyth, openCalendar, create, ranks, questions, reflections, openQuestion, openQuestions, openHomecoming, tarotDraw, tarotLog, onDrawTarot,
+  shareTideCard, openExplanation, selectedQuestion }: {
   people: Person[]; activeId: number | null; onSwitch: (id: number) => void; onAdd: () => void; onManage: () => void;
   today: Date; profile: Profile | null; goMyth: () => void; openCalendar: (date: Date, mode: 'current' | 'stage') => void;
-  create: () => void; ranks: (date: Date) => void; onSave: (day: string) => void;
+  create: () => void; ranks: (date: Date) => void;
   questions: SavedQuestion[]; reflections: Reflection[]; openQuestion: (id: string) => void;
   openQuestions: () => void; openHomecoming: (year: number) => void;
   tarotDraw: SavedTarotDraw | null; tarotLog: SavedTarotDraw[]; onDrawTarot: (cardId: string) => void;
-  shareTideCard: () => void; openJournal: () => void; openExplanation: () => void;
+  shareTideCard: () => void; openExplanation: () => void;
   selectedQuestion?: { question: Question; saved: boolean; toggle: () => void; compare: () => void };
 }) {
   const [offset, setOffset] = useState(0);

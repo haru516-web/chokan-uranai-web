@@ -192,11 +192,11 @@ function bestBody(person: Profile, ahead: Ahead[], entry: Ahead) {
     + 'あなたの型は「' + SEASON[person.t.mod].act + '」力が出るので、その力を使う動き（人に会う・出す・申し込む）をこの月に寄せてみましょう。';
 }
 
-export function LifeWave({ today, profile, questionId, initialYear, create, embedCalendar, calendarFocus, write, records, edit, openJournal, showToday }: {
+export function LifeWave({ today, profile, questionId, initialYear, create, embedCalendar, calendarFocus, write, records, edit, showToday }: {
   today: Date; profile: Profile | null; questionId?: string; initialYear?: number; create: () => void;
   embedCalendar?: boolean; calendarFocus?: { date: Date; mode: 'current' | 'stage'; key: number } | null;
   write: (year: number, month: number, questionId?: string) => void; records: Reflection[]; edit: (record: Reflection) => void;
-  openJournal?: () => void; showToday: () => void;
+  showToday: () => void;
 }) {
   const open = useGloss();
   const plan = usePlan();

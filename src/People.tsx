@@ -6,21 +6,6 @@ import { Button, C, Card, Chip, Chips, S } from './ui';
 // 自分＋友人など、複数の人を切り替えて占えるようにする。
 export type Person = { id: number; inputs: Inputs; me: boolean; saved: boolean };
 
-export function PersonSwitcher({ people, activeId, onSwitch, onAdd, onManage }: {
-  people: Person[]; activeId: number | null; onSwitch: (id: number) => void; onAdd: () => void; onManage: () => void;
-}) {
-  return <View style={{ gap: 6 }}>
-    <Text style={S.tiny}>占う人</Text>
-    <Chips>
-      {people.map(person => <Chip key={person.id} active={person.id === activeId} onPress={() => onSwitch(person.id)}>
-        {(person.me ? '👤 ' : '🙂 ') + person.inputs.name + (person.me ? '（自分）' : '')}
-      </Chip>)}
-      <Chip onPress={onAdd}>＋ 別の人を占う</Chip>
-      <Chip onPress={onManage}>⚙ 管理・削除</Chip>
-    </Chips>
-  </View>;
-}
-
 export function PeopleManager({ people, activeId, select, remove, add, resetAll }: {
   people: Person[]; activeId: number | null; select: (id: number) => void; remove: (id: number) => void; add: () => void; resetAll: () => void;
 }) {

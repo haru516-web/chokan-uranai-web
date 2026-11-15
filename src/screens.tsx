@@ -1,20 +1,17 @@
 import { useState } from 'react';
 import { Image } from './web/image';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { currents, residentArt, scenes, stages } from './art';
 import { addDays, calendarEvents, content, cycleFor, cycleTier, dateLabel, lifeFields, residentIndex, shortDate, tierColors, tiers, type Profile } from './domain';
-import { ReflectionCards } from './LifeChart';
 import { GodAnimation } from './GodAnimation';
 import { Gloss } from './Glossary';
 import { TypeTraits } from './NameReading';
 import { TideMarks } from './ResidentCard';
 import { ctxFor, dayTable, FIVE_PHASES, labelOf, monthStagesFor, OUTER, SEASON, solarMonthStartDate, solarStageStartDate, STAGES, stageFor, yearScoreOf, blockScoreOf } from './scoring';
 import { TideWheel } from './TideCharts';
-import { requestUpgrade } from './entitlement';
-import { Art, Button, C, Card, Chip, Chips, Fold, Heading, NextLinks, S, Section, Tile, tapFx, useColumns } from './ui';
-import { findQuestion, ownResident, residents, type Reflection, type SavedQuestion } from './voyage';
+import { Art, Button, C, Card, Chip, Chips, Heading, S, Section, Tile, tapFx, useColumns } from './ui';
+import { residents } from './voyage';
 
-export type Note = { day: string; text: string };
 export type OpenResident = (index: number) => void;
 
 export function Calendar({ today, profile, initial }: { today: Date; profile: Profile | null; initial?: { date: Date; mode: 'current' | 'stage' } }) {
@@ -249,87 +246,6 @@ export function Chapter({ index, read, done, open }: { index: number; read: bool
     </View>
     <Button quiet={read} onPress={done}>{read ? '✓ 読了済み' : '読了を記録する'}</Button>
     {index < content.chapters.length - 1 && <Button quiet onPress={() => open(index + 1)}>次の章へ　›</Button>}
-  </View>;
-}
-
-export function Journal({ profile, notes, edit, pair, create, openNote, showToday, onForget, questions, reflections, openTrail, editReflection, openChart }: {
-  profile: Profile | null; notes: Note[]; edit: () => void; pair: () => void; create: () => void;
-  openNote: (day: string) => void; showToday: () => void; onForget: () => void;
-  questions: SavedQuestion[]; reflections: Reflection[]; openTrail: (id: string) => void;
-  editReflection: (record: Reflection) => void; openChart: () => void;
-}) {
-  const [fold, setFold] = useState<'data' | 'about' | null>(null);
-  const resident = profile && ownResident(profile);
-  const trails = [...new Set([...questions.map(entry => entry.id), ...reflections.flatMap(record => record.questionId ? [record.questionId] : [])])];
-  const empty = !notes.length && !trails.length && !reflections.length;
-  return <View style={S.stack}>
-    <Heading tag="記録" title="あなたの記録" body="考えたこと・残した問い・振り返りが、ここに集まります。" />
-    <Button onPress={create}>今日のことを書く　›</Button>
-    <Chips>
-      <Chip active={notes.length > 0}>{`日記 ${notes.length}`}</Chip>
-      <Chip active={trails.length > 0}>{`問い ${trails.length}`}</Chip>
-      <Chip active={reflections.length > 0}>{`振り返り ${reflections.length}`}</Chip>
-    </Chips>
-    {empty && <Card>
-      <Text style={S.h3}>まだ何も残っていません</Text>
-      <Text style={S.body}>占いのあとに「記録する」を押すと、ここに並びます。</Text>
-    </Card>}
-    <NextLinks items={[
-      { label: '今日の占いを見る', onPress: showToday },
-      { label: '過去の年を振り返って記録する', hint: '人生の流れから、あの頃の出来事を残せます', onPress: openChart },
-    ]} />
-    {notes.length > 0 && <>
-      <Section title="日記" />
-      {notes.map(note => <Pressable {...tapFx} accessibilityRole="button" key={note.day} onPress={() => openNote(note.day)} style={[S.card, S.pad]}>
-        <Text style={S.kicker}>{note.day}</Text><Text numberOfLines={2} style={S.body}>{note.text}</Text>
-      </Pressable>)}
-    </>}
-    {trails.length > 0 && <>
-      <Section title="残した問い" note="タップすると、残した日と出来事を読み返せます。" />
-      {trails.map(id => {
-        const question = findQuestion(id);
-        return question && <Pressable {...tapFx} accessibilityRole="button" key={id} onPress={() => openTrail(id)} style={[S.card, S.pad]}>
-          <Text style={S.kicker}>{id}　{question.title}</Text><Text style={S.h3}>{question.question}</Text>
-        </Pressable>;
-      })}
-    </>}
-    {reflections.length > 0 && <>
-      <Section title="あの頃の振り返り" />
-      <ReflectionCards records={reflections} edit={editReflection} />
-    </>}
-    <Fold title="私の潮札・データの管理" hint={resident ? resident.band + '・端末に保存中' : '未作成'} open={fold === 'data'} onToggle={() => setFold(fold === 'data' ? null : 'data')}>
-      <Text style={S.body}>登録した人の入力内容や、記録のすべてを消せます。</Text>
-      <Button quiet onPress={onForget}>人の管理・データのリセット</Button>
-      <Button quiet onPress={pair}>二人の海をみる</Button>
-    </Fold>
-    <Card>
-      <Text style={S.kicker}>有料版・規約・表記</Text>
-      <Chips><Chip onPress={requestUpgrade}>有料版のご案内・管理</Chip></Chips>
-      <Text style={S.tiny}>
-        <a href="./terms/" style={{ color: C.gold }}>利用規約</a>　·　<a href="./privacy/" style={{ color: C.gold }}>プライバシーポリシー</a>　·　<a href="./tokushoho/" style={{ color: C.gold }}>特定商取引法に基づく表記</a>　·　<a href="./refund/" style={{ color: C.gold }}>返金の方針</a>
-      </Text>
-    </Card>
-    <Fold title="潮環占いについて" hint="占いの位置づけ・出典" open={fold === 'about'} onToggle={() => setFold(fold === 'about' ? null : 'about')}>
-      <Gloss style={S.body}>潮環占いは、四季・名前の画数・暦を使って自分の状況を見つめるための創作占いです。人生の予測や性格を測定する方法としては実証されていません。月相と節気の切り替えは日本時間正午の天文値、日の干支は日本時間の日付を基準にしています。十干・十二支・節気・五行の対応を暦上の参照枠にし、十二支と既存の海流の対応、四季型との五行照合、海況への反映は潮環独自の設計です。十二支の五行は一つに簡略化し、月干や時刻は扱いません。</Gloss>
-      <Text style={S.tiny}>漢字の画数　KANJIDIC2 © EDRDG（CC BY-SA 4.0）　／　月の計算　Jean Meeus『Astronomical Algorithms』</Text>
-    </Fold>
-  </View>;
-}
-
-export function NoteEditor({ day, existing, save }: { day: string; existing?: string; save: (text: string) => void }) {
-  const [text, setText] = useState(existing ?? '');
-  const [confirm, setConfirm] = useState(false);
-  return <View style={S.stack}>
-    <Heading tag={day} title="航海帳に記す" body="今日見たもの、考えたこと、次に持っていきたいもの。" />
-    <Card>
-      <TextInput accessibilityLabel="航海の記録" multiline maxLength={1200} value={text} onChangeText={setText}
-        placeholder="海を見て、何を考えましたか。" placeholderTextColor={C.muted} style={[S.field, { minHeight: 180, textAlignVertical: 'top' }]} />
-      <Text style={S.tiny}>{text.length} / 1200</Text>
-      <Button disabled={!text.trim()} onPress={() => save(text.trim())}>記録を保存</Button>
-      {existing && (confirm
-        ? <Chips><Chip onPress={() => setConfirm(false)}>キャンセル</Chip><Chip active onPress={() => save('')}>記録を削除</Chip></Chips>
-        : <Chip onPress={() => setConfirm(true)}>記録を削除する</Chip>)}
-    </Card>
   </View>;
 }
 
