@@ -11,6 +11,8 @@ export const PREMIUM_SECTIONS: string[] = [
   'layers',    // 今日タブ・三「年・月・日」の読みの文（輪の絵は無料）
   'lucky',     // 今日タブ・四「ラッキー」の方角・時間・もの・数字（色は無料）
   'tomorrow',  // 今日タブ・終「予告」（明日の潮）
+  'compatAreaText', // 相性タブ・4つの相性の文（ラベルと点数とバーは無料）
+  'compatDetail',   // 相性タブ・深さの組み合わせ、点数の内訳、二人の読み
 ];
 
 export type Plan = 'free' | 'paid';

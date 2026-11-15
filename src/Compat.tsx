@@ -3,6 +3,7 @@
 //   ・名前と生年月日で選ぶ … 占いと同じ入力。深さの数値・「−」「A」・生まれ年の十二支・生まれた日の月・名前の五行まで使う。
 //   ・タイプで選ぶ         … 16タイプから選ぶ。季節と深さの帯だけで読む。
 // どちらも、自分の側は占いの結果（名札の数値）をそのまま使う。
+import { Premium } from './Premium';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { residentArt } from './art';
@@ -77,11 +78,11 @@ function PairResult({ result }: { result: CompatResult }) {
       {result.sameType && <Text style={S.tiny}>同じタイプ同士です。似ているところと、似すぎて重なるところの両方が出ます。</Text>}
     </View>
 
-    <View style={[S.card, S.pad]}>
+    <Premium id="compatDetail"><View style={[S.card, S.pad]}>
       <Text style={S.kicker}>深さの組み合わせ　{a.num.toFixed(1)} × {b.num.toFixed(1)}（差 {result.diff.toFixed(1)}）</Text>
       <Text style={S.h3}>{result.depth.title}</Text>
       <Text style={S.body}>{result.depth.text}</Text>
-    </View>
+    </View></Premium>
 
     {result.areas.map(area => <View key={area.id} style={[S.card, S.pad, { borderColor: area.color + '66' }]}>
       <View style={S.between}>
@@ -89,8 +90,10 @@ function PairResult({ result }: { result: CompatResult }) {
         <Text style={[S.tiny, { color: area.color }]}>{area.score}　{area.level.name}</Text>
       </View>
       <Bar value={area.score} color={area.color} />
-      <Text style={S.body}>{area.text}</Text>
+      <Premium id="compatAreaText" compact><Text style={S.body}>{area.text}</Text></Premium>
     </View>)}
+
+    <Premium id="compatDetail"><View style={S.stack}>
 
     <View style={[S.card, S.pad]}>
       <Text style={S.kicker}>点数の内訳（基準点に足した点数）</Text>
@@ -114,6 +117,7 @@ function PairResult({ result }: { result: CompatResult }) {
       <Text style={S.h3}>二人の一手</Text>
       <Text style={S.body}>{result.season.tip}</Text>
     </View>
+    </View></Premium>
     <Text style={S.tiny}>相性の良し悪しを決めるものではなく、会話のきっかけです。点数が低くても、違いを知っていれば関係は育てられます。</Text>
   </View>;
 }
