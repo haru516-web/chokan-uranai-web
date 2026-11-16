@@ -1,0 +1,30 @@
+// 相性タブの「全タイプとの相性」ランキングを、実アプリから読み取って out/rank.json に書く。
+import { launch, sleep } from './cdp.mjs';
+import { writeFileSync } from 'node:fs';
+const T = t => `[...document.querySelectorAll('div,span,button')].filter(e=>e.children.length===0&&e.textContent.trim()===${JSON.stringify(t)}).pop()`;
+const L = l => `document.querySelector('[aria-label=${JSON.stringify(l)}]')`;
+const b = await launch({ url: process.env.URL ?? 'http://localhost:5175/' });
+await b.waitFor(`document.querySelector('.opening')||document.body.innerText.includes('占ってみる')`, 60000);
+if (await b.evalJs(`!!document.querySelector('.opening')`)) { await b.tapAt(195, 400); await b.waitFor(`!document.querySelector('.opening')`); }
+await b.tap(T('占ってみる　›'));
+await b.waitFor(L('生年月日の年'));
+await b.tap(L('生年月日の年')); await b.type('1998', 40); await b.type('4', 40); await b.type('12', 40);
+await b.tap(L('下の名前')); await b.type('汐里', 50);
+await b.tap(T('海をひらく　✦'));
+await b.waitFor(`document.querySelector('.ritual')`);
+await b.waitFor(`!document.querySelector('.ritual')`, 60000);
+await sleep(1500);
+await b.tap(`document.querySelector('[aria-label="二人の相性"]')`);
+await sleep(900); await b.waitFor(L('相手の生年月日の年'));
+await b.tap(L('相手の生年月日の年')); await b.type('2001', 70); await b.type('9', 70); await b.type('3', 70);
+await b.tap(L('相手の下の名前')); await b.type('健太', 50);
+await b.tap(T('この人との相性を読む　✦'));
+await b.waitFor(`document.body.innerText.includes('全タイプとの相性')`, 90000);
+await b.waitFor(`!document.querySelector('.ritual')`, 60000);
+await sleep(1500);
+const rows = await b.evalJs(String.raw`[...document.querySelectorAll('[role=button]')].filter(e=>/^\d+\n/.test(e.innerText)&&e.querySelector('img')).map(e=>({text:e.innerText.split('\n'),img:e.querySelector('img').src.split('/').pop().split('?')[0]}))`);
+const own = await b.evalJs(String.raw`document.body.innerText.match(/あなたの名札[^\n]*\n[^\n]*\n[^\n]*/)?.[0]`);
+const head = await b.evalJs(`[...document.querySelectorAll('div,span')].filter(e=>e.children.length===0&&/から見た、全タイプとの相性/.test(e.textContent)).map(e=>e.textContent)`);
+writeFileSync('promo/tiktok/out/rank.json', JSON.stringify({ own, head, rows }, null, 1));
+console.log(JSON.stringify({ own, head, rows: rows.slice(0, 6) }, null, 1));
+await b.close();
