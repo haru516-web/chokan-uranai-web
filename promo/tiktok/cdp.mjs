@@ -42,7 +42,7 @@ export async function launch({ url, width = 390, height = 693, scale = Number(pr
   });
   const api = {
     send, evalJs, sleep,
-    async startRec(dirName) { const d = join('promo/tiktok/out/frames', dirName); rmSync(d, { recursive: true, force: true }); mkdirSync(d, { recursive: true }); rec = { dir: d, frames: [], marks: [] };
+    async startRec(dirName) { const d = join(process.env.REC_DIR ?? join(tmpdir(), 'tiktok-frames'), dirName); rmSync(d, { recursive: true, force: true }); mkdirSync(d, { recursive: true }); rec = { dir: d, frames: [], marks: [] };
       await send('Page.startScreencast', { format: 'jpeg', quality: 92, maxWidth: 2000, maxHeight: 3000, everyNthFrame: 1 }); },
     mark(name) { rec?.marks.push({ name, wall: Date.now() / 1000 }); },
     async stopRec() { await send('Page.stopScreencast'); const r = rec; rec = null;
