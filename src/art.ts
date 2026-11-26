@@ -1,6 +1,8 @@
 const artFiles = import.meta.glob('../assets/art/*', { eager: true, import: 'default', query: '?url' }) as Record<string, string>;
 const deityFiles = import.meta.glob('../img/*', { eager: true, import: 'default', query: '?url' }) as Record<string, string>;
 
+const uiFiles = import.meta.glob('../assets/ui/*', { eager: true, import: 'default', query: '?url' }) as Record<string, string>;
+
 function find(files: Record<string, string>, name: string) {
   const entry = Object.entries(files).find(([path]) => path.endsWith('/' + name));
   if (!entry) throw new Error('Missing web asset: ' + name);
@@ -18,6 +20,8 @@ export const iconArt = {
   compass: optional('icon-compass.webp'), question: optional('icon-question.webp'), book: optional('icon-book.webp'),
   work: optional('icon-work.webp'), love: optional('icon-love.webp'), money: optional('icon-money.webp'), health: optional('icon-health.webp'),
 };
+/** UI のアイコン画像（assets/ui/）。画像が無いときは undefined で、画面は、文字の記号で代用する。 */
+export const uiIcon = (name: string): string | undefined => uiFiles['../assets/ui/' + name + '.webp'];
 /** タロットのカード絵。番号（0〜21）で探す。Codex の作業中でまだ無い札は undefined。 */
 export const tarotArt = (no: number) => optional(`tarot-${String(no).padStart(2, '0')}-`, true);
 /** タロットの裏面（Codex に依頼中）。無いあいだは undefined で、画面は図形で代用する。 */

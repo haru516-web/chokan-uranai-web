@@ -52,8 +52,10 @@ type Detail =
   | { kind: 'chapter'; index: number }
   | { kind: 'rank'; date: Date };
 
-type Saved = { inputs: Inputs | null; people: Person[]; favorites: number[]; read: number[]; questions: SavedQuestion[]; reflections: Reflection[]; tarotDraw: SavedTarotDraw | null; tarotLog: SavedTarotDraw[] };
-const empty: Saved = { inputs: null, people: [], favorites: [], read: [], questions: [], reflections: [], tarotDraw: null, tarotLog: [] };
+type Saved = { inputs: Inputs | null; people: Person[]; favorites: number[]; read: number[]; questions: SavedQuestion[]; reflections: Reflection[]; tarotDraw: SavedTarotDraw | null; tarotLog: SavedTarotDraw[];
+  /** 「鑑定」タブを最後に開いた日（YYYY-MM-DD）。null＝まだ一度も開いていない。タブの NEW・赤い点の出し分けに使う。 */
+  readingDay: string | null };
+const empty: Saved = { inputs: null, people: [], favorites: [], read: [], questions: [], reflections: [], tarotDraw: null, tarotLog: [], readingDay: null };
 const storageKey = 'chokan/v1';
 let pendingSave: Promise<void> = Promise.resolve();
 
@@ -136,18 +138,14 @@ function Voyage({ hold }: { hold: boolean }) {
     return () => { clearInterval(timer); subscription.remove(); };
   }, []);
 
-  // 画面を開くときは先頭から、戻るときは元の位置へ（ページ全体がスクロールするため、自分で覚えて戻す）。
-  const scrollMemory = useRef<number[]>([]);
-  const scrollTo = (top: number) => {
-    if (Platform.OS !== 'web') return;
-    // 画面の組み替えが終わってから位置を合わせる（念のため、レイアウト確定後にもう一度）。
-    const apply = () => window.scrollTo({ top, left: 0, behavior: 'instant' as ScrollBehavior });
-    setTimeout(apply, 0);
-    setTimeout(apply, 80);
-  };
+  // 「鑑定」タブを開いたら、今日は読んだことにする（NEW・赤い点が消える）。占った人がいるときだけ。
+  useEffect(() => {
+    if (!ready || tab !== 'reading' || detail || !profile || stored.readingDay === day) return;
+    setStored(previous => previous.readingDay === day ? previous : { ...previous, readingDay: day });
+  }, [ready, tab, detail, !!profile, stored.readingDay, day]);
+
+  // 画面ごとに別の ScrollView を重ねるので、戻ったときの位置は、そのまま残る。
   function go(next: MainTab) {
-    scrollMemory.current = [];
-    scrollTo(0);
     setPath([]);
     setTab(next);
     setTodayVisit(previous => previous + 1);
@@ -162,11 +160,7 @@ function Voyage({ hold }: { hold: boolean }) {
       return { ...previous, tarotDraw: entry, tarotLog: [...previous.tarotLog.filter(item => item.day !== drawDay), entry].slice(-400) };
     });
   }
-  const open = (next: Detail) => {
-    if (Platform.OS === 'web') scrollMemory.current.push(window.scrollY);
-    scrollTo(0);
-    setPath(previous => [...previous, next]);
-  };
+  const open = (next: Detail) => setPath(previous => [...previous, next]);
   // 有料版：サーバーに購入状態を確かめる。購入から戻ったとき（?checkout=…）は、案内の画面を開く。画面のどこからでも、案内を開ける（Premiumの鍵など）。
   const openRef = useRef(open);
   openRef.current = open;
@@ -180,10 +174,7 @@ function Voyage({ hold }: { hold: boolean }) {
     window.addEventListener(UPGRADE, onUpgrade);
     return () => window.removeEventListener(UPGRADE, onUpgrade);
   }, []);
-  const back = () => {
-    scrollTo(scrollMemory.current.pop() ?? 0);
-    setPath(previous => previous.slice(0, -1));
-  };
+  const back = () => setPath(previous => previous.slice(0, -1));
   const openResident = (index: number) => open({ kind: 'resident', index });
   const openChapter = (index: number) => open({ kind: 'chapter', index });
   const editProfile = () => open({ kind: 'profile' });
@@ -246,8 +237,7 @@ function Voyage({ hold }: { hold: boolean }) {
     if (Platform.OS === 'ios') void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
   }
 
-  const body = {
-    today: <Today people={people} activeId={activeId} onSwitch={id => { setActiveId(id); setTodayVisit(previous => previous + 1); }}
+  const renderToday = (view: 'result' | 'reading') => <Today view={view} openReading={() => go('reading')} people={people} activeId={activeId} onSwitch={id => { setActiveId(id); setTodayVisit(previous => previous + 1); }}
       onAdd={() => open({ kind: 'profile', add: true })} onManage={() => open({ kind: 'people' })} today={today} profile={profile} goMyth={openMyth} openCalendar={openCalendar} create={editProfile}
       ranks={openRanking} questions={stored.questions} reflections={stored.reflections}
       tarotDraw={stored.tarotDraw} tarotLog={stored.tarotLog} onDrawTarot={drawTarot}
@@ -259,7 +249,10 @@ function Voyage({ hold }: { hold: boolean }) {
         toggle: () => toggleQuestion(selectedQuestion.id),
         compare: () => compare(selectedQuestion.id),
       } : undefined}
-      openHomecoming={year => open({ kind: 'homecoming', year })} />,
+      openHomecoming={year => open({ kind: 'homecoming', year })} />;
+  const body = {
+    today: renderToday('result'),
+    reading: renderToday('reading'),
     tarot: <TarotHome today={today} savedDraw={stored.tarotDraw} log={stored.tarotLog} onDraw={drawTarot}
       personKey={profile ? 'k' + profile.t.key : 'guest'} season={profile ? seasonOf(profile.t.mod) : null}
       level={profile ? readDay(today, profile).layers.day : null} onCreate={editProfile} goToday={() => go('today')} />,
@@ -366,9 +359,10 @@ function Voyage({ hold }: { hold: boolean }) {
           <Text style={layout.gearMark}>⚙</Text>
         </Pressable>}
       </View>
-      <TabBar wide={wide} seasonIndex={profile?.t.mod ?? null} activeTab={tab} onSelect={go} />
+      <TabBar wide={wide} seasonIndex={profile?.t.mod ?? null} activeTab={tab === 'questions' ? 'today' : tab} onSelect={go}
+        badges={ready && profile && stored.readingDay !== day ? { reading: stored.readingDay === null ? 'new' : 'dot' } : undefined} />
       {storageError && <Text accessibilityRole="alert" style={[S.tiny, layout.error]}>端末の保存領域にアクセスできませんでした。この画面で続けられます。</Text>}
-      {ready ? <>
+      {ready ? <View style={layout.stage}>
         <ScrollView key={`${tab}-${todayVisit}`} {...({ dataSet: { screen: tab, layer: 'tab' } } as object)} style={[layout.scroll, detail && layout.hidden]} contentContainerStyle={[layout.content, desktop && layout.contentDesktop]}
           keyboardShouldPersistTaps="handled">
           {hold || (ritual && profile) ? null : body}
@@ -378,7 +372,7 @@ function Voyage({ hold }: { hold: boolean }) {
           keyboardShouldPersistTaps="handled">
           {detailBody(entry)}
         </ScrollView>)}
-      </> : <View style={[layout.scroll, layout.content]}><Text style={S.body}>海図をひらいています…</Text></View>}
+      </View> : <View style={[layout.scroll, layout.content]}><Text style={S.body}>海図をひらいています…</Text></View>}
     </KeyboardAvoidingView>
     <ToTop resetKey={tab + (detail ? detail.kind + path.length : "")} />
     {ritual && profile && <Ritual profile={profile} today={today} onDone={() => setRitual(false)} />}
@@ -386,8 +380,8 @@ function Voyage({ hold }: { hold: boolean }) {
 }
 
 const layout = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.base, alignItems: 'center' },
-  frame: { flex: 1, width: '100%', maxWidth: 780, backgroundColor: C.base, alignSelf: 'center', overflow: 'hidden' },
+  root: { flex: 1, minHeight: 0, backgroundColor: C.base, alignItems: 'center' },
+  frame: { flex: 1, minHeight: 0, width: '100%', maxWidth: 780, backgroundColor: C.base, alignSelf: 'center', overflow: 'hidden' },
   frameDesktop: { maxWidth: 1120 },
   contentDesktop: { paddingHorizontal: 32, paddingTop: 24 },
   header: { minHeight: 62, paddingHorizontal: 14, gap: 12, flexDirection: 'row', alignItems: 'center', borderBottomColor: C.line, borderBottomWidth: StyleSheet.hairlineWidth },
@@ -401,7 +395,9 @@ const layout = StyleSheet.create({
   helpMarkText: { color: C.dark, fontSize: 16, lineHeight: 20, fontWeight: '900' },
   helpText: { color: C.ink, fontSize: 14, lineHeight: 18, fontWeight: '900' },
   wash: { position: 'absolute', top: 0, left: 0, right: 0, height: 300 },
-  scroll: { flex: 1 },
+  // 本文の枠。隠している画面もこの枠に重ねるので、大きさが変わらず、戻ったときのスクロール位置がずれない。
+  stage: { flex: 1, minHeight: 0 },
+  scroll: { flex: 1, minHeight: 0 },
   hidden: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0, pointerEvents: 'none', visibility: 'hidden' } as object,
   content: { padding: 16, paddingBottom: 32 },
   error: { backgroundColor: '#4b2c29', padding: 8, color: C.error },
