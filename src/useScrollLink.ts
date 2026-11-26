@@ -12,7 +12,7 @@ const AUTO_MS = 3200;
 
 /**
  * p … 進み具合（0〜1）。スクロール由来と自動再生のうち小さいほう。
- * y … ページのスクロール量（輪をスクロールに合わせて回すのに使う）。
+ * y … 画面のスクロール量（輪をスクロールに合わせて回すのに使う）。
  */
 export function useScrollLink() {
   const ref = useRef<unknown>(null);
@@ -31,7 +31,8 @@ export function useScrollLink() {
       const vh = window.innerHeight;
       const start = vh * 0.95, end = vh * 0.35;
       const p = Math.round(clamp01((start - rect.top) / (start - end)) * 1000) / 1000;
-      const y = Math.round(window.scrollY);
+      // 画面は固定で、流れるのは中のスクロール枠（data-layer）。その位置を使う。
+      const y = Math.round(node.closest('[data-layer]')?.scrollTop ?? window.scrollY);
       setScroll(prev => prev.p === p && prev.y === y ? prev : { p, y });
       // 見え始めた最初の一度だけ、時間で進む 0→1 を走らせる。
       if (!started.current && rect.top < vh * 0.98 && rect.bottom > 0) {
